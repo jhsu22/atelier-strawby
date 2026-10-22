@@ -1,0 +1,55 @@
+{
+  "name": "atelier-strawby",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "dev": "astro dev --host 127.0.0.1",
+    "build": "astro build",
+    "preview:pages": "wrangler pages dev dist --ip 127.0.0.1",
+    "check": "astro check && tsc --noEmit",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "node scripts/run-tests.ts unit",
+    "test:integration": "node scripts/run-tests.ts integration",
+    "test:d1": "node scripts/run-tests.ts d1",
+    "test:schema": "node scripts/verify-schema.ts",
+    "test:smoke": "node scripts/smoke-stage1.ts",
+    "validate": "npm run check && npm test && npm run build",
+    "db:generate": "drizzle-kit generate",
+    "db:types": "wrangler types src/worker-configuration.d.ts --env-interface CloudflareBindings --include-runtime false",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate:sqlite": "node scripts/migrate-sqlite.ts",
+    "seed:csv": "node scripts/seed-from-csv.ts",
+    "seed:local": "node scripts/seed-from-csv.ts --target d1-local",
+    "seed:sqlite": "node scripts/seed-from-csv.ts --target sqlite",
+    "seed:sample-cds": "node scripts/seed-sample-cds.ts",
+    "verify:seed": "node scripts/verify-seed.ts",
+    "dev:offline": "node scripts/dev-offline.ts",
+    "preview:offline": "node scripts/render-diagnostic.ts"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "12.6.13",
+    "@astrojs/react": "4.4.2",
+    "@tailwindcss/vite": "4.1.18",
+    "astro": "5.18.2",
+    "drizzle-orm": "0.45.4",
+    "lucide-react": "0.563.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "tailwindcss": "4.1.18",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.6",
+    "@cloudflare/workers-types": "5.20261022.1",
+    "@types/node": "22.19.7",
+    "@types/react": "19.2.9",
+    "@types/react-dom": "19.2.3",
+    "drizzle-kit": "0.31.8",
+    "typescript": "5.9.3",
+    "wrangler": "4.151.3"
+  }
+}

@@ -1,0 +1,2532 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "ce6b82d7-5133-4c1a-86c6-0de31e1627ef",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "tables": {
+    "album_creators": {
+      "name": "album_creators",
+      "columns": {
+        "album_id": {
+          "name": "album_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "creator_id": {
+          "name": "creator_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "credit_order": {
+          "name": "credit_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "credited_as": {
+          "name": "credited_as",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "join_phrase": {
+          "name": "join_phrase",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "album_creators_creator_id_idx": {
+          "name": "album_creators_creator_id_idx",
+          "columns": [
+            "creator_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "album_creators_album_id_albums_id_fk": {
+          "name": "album_creators_album_id_albums_id_fk",
+          "tableFrom": "album_creators",
+          "tableTo": "albums",
+          "columnsFrom": [
+            "album_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "album_creators_creator_id_creators_id_fk": {
+          "name": "album_creators_creator_id_creators_id_fk",
+          "tableFrom": "album_creators",
+          "tableTo": "creators",
+          "columnsFrom": [
+            "creator_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "album_creators_album_id_creator_id_role_pk": {
+          "columns": [
+            "album_id",
+            "creator_id",
+            "role"
+          ],
+          "name": "album_creators_album_id_creator_id_role_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "album_creators_check_1": {
+          "name": "album_creators_check_1",
+          "value": "credit_order >= 0"
+        }
+      }
+    },
+    "album_releases": {
+      "name": "album_releases",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "album_id": {
+          "name": "album_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "edition_title": {
+          "name": "edition_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "release_date": {
+          "name": "release_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "date_precision": {
+          "name": "date_precision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "country_code": {
+          "name": "country_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "edition_description": {
+          "name": "edition_description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "barcode": {
+          "name": "barcode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "cover_asset_id": {
+          "name": "cover_asset_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "metadata_state": {
+          "name": "metadata_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'unverified'"
+        }
+      },
+      "indexes": {
+        "album_releases_barcode_idx": {
+          "name": "album_releases_barcode_idx",
+          "columns": [
+            "barcode"
+          ],
+          "isUnique": false
+        },
+        "album_releases_album_id_idx": {
+          "name": "album_releases_album_id_idx",
+          "columns": [
+            "album_id"
+          ],
+          "isUnique": false
+        },
+        "album_releases_cover_asset_id_idx": {
+          "name": "album_releases_cover_asset_id_idx",
+          "columns": [
+            "cover_asset_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "album_releases_album_id_albums_id_fk": {
+          "name": "album_releases_album_id_albums_id_fk",
+          "tableFrom": "album_releases",
+          "tableTo": "albums",
+          "columnsFrom": [
+            "album_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "album_releases_cover_asset_id_cover_assets_id_fk": {
+          "name": "album_releases_cover_asset_id_cover_assets_id_fk",
+          "tableFrom": "album_releases",
+          "tableTo": "cover_assets",
+          "columnsFrom": [
+            "cover_asset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "album_releases_check_1": {
+          "name": "album_releases_check_1",
+          "value": "metadata_state IN ('unverified','partial','confirmed')"
+        },
+        "album_releases_check_2": {
+          "name": "album_releases_check_2",
+          "value": "(release_date IS NULL AND date_precision IS NULL) OR (release_date IS NOT NULL AND date_precision IS NOT NULL AND ((date_precision = 'year' AND release_date GLOB '[0-9][0-9][0-9][0-9]') OR (date_precision = 'month' AND release_date GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]') OR (date_precision = 'day' AND release_date GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]')))"
+        }
+      }
+    },
+    "albums": {
+      "name": "albums",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sort_title": {
+          "name": "sort_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "albums_sort_title_idx": {
+          "name": "albums_sort_title_idx",
+          "columns": [
+            "sort_title"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "cds": {
+      "name": "cds",
+      "columns": {
+        "item_id": {
+          "name": "item_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "media_kind": {
+          "name": "media_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'cd'"
+        },
+        "release_id": {
+          "name": "release_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "cds_release_id_idx": {
+          "name": "cds_release_id_idx",
+          "columns": [
+            "release_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "cds_release_id_album_releases_id_fk": {
+          "name": "cds_release_id_album_releases_id_fk",
+          "tableFrom": "cds",
+          "tableTo": "album_releases",
+          "columnsFrom": [
+            "release_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "cds_item_id_media_kind_collection_items_id_media_kind_fk": {
+          "name": "cds_item_id_media_kind_collection_items_id_media_kind_fk",
+          "tableFrom": "cds",
+          "tableTo": "collection_items",
+          "columnsFrom": [
+            "item_id",
+            "media_kind"
+          ],
+          "columnsTo": [
+            "id",
+            "media_kind"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "cds_check_1": {
+          "name": "cds_check_1",
+          "value": "media_kind = 'cd'"
+        }
+      }
+    },
+    "collection_items": {
+      "name": "collection_items",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "media_kind": {
+          "name": "media_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "acquired_on": {
+          "name": "acquired_on",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "is_sample": {
+          "name": "is_sample",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "0"
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "1"
+        },
+        "import_batch_id": {
+          "name": "import_batch_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "idempotency_key": {
+          "name": "idempotency_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "collection_items_id_media_kind_uq": {
+          "name": "collection_items_id_media_kind_uq",
+          "columns": [
+            "id",
+            "media_kind"
+          ],
+          "isUnique": true
+        },
+        "collection_items_idempotency_key_uq": {
+          "name": "collection_items_idempotency_key_uq",
+          "columns": [
+            "idempotency_key"
+          ],
+          "isUnique": true
+        },
+        "collection_items_is_sample_media_kind_acquired_on_idx": {
+          "name": "collection_items_is_sample_media_kind_acquired_on_idx",
+          "columns": [
+            "is_sample",
+            "media_kind",
+            "acquired_on"
+          ],
+          "isUnique": false
+        },
+        "collection_items_import_batch_id_idx": {
+          "name": "collection_items_import_batch_id_idx",
+          "columns": [
+            "import_batch_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "collection_items_import_batch_id_import_batches_id_fk": {
+          "name": "collection_items_import_batch_id_import_batches_id_fk",
+          "tableFrom": "collection_items",
+          "tableTo": "import_batches",
+          "columnsFrom": [
+            "import_batch_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "collection_items_check_1": {
+          "name": "collection_items_check_1",
+          "value": "media_kind IN ('manga','cd')"
+        },
+        "collection_items_check_2": {
+          "name": "collection_items_check_2",
+          "value": "is_sample IN (0,1)"
+        },
+        "collection_items_check_3": {
+          "name": "collection_items_check_3",
+          "value": "version >= 1"
+        },
+        "collection_items_check_4": {
+          "name": "collection_items_check_4",
+          "value": "acquired_on IS NULL OR (acquired_on GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]' AND date(acquired_on, '+0 days') IS NOT NULL AND date(acquired_on, '+0 days') = acquired_on)"
+        }
+      }
+    },
+    "collection_state": {
+      "name": "collection_state",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "0"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "collection_state_check_1": {
+          "name": "collection_state_check_1",
+          "value": "id = 1"
+        },
+        "collection_state_check_2": {
+          "name": "collection_state_check_2",
+          "value": "revision >= 0"
+        }
+      }
+    },
+    "cover_assets": {
+      "name": "cover_assets",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "source_record_id": {
+          "name": "source_record_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "storage_mode": {
+          "name": "storage_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "match_scope": {
+          "name": "match_scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source_language": {
+          "name": "source_language",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "fetched_at": {
+          "name": "fetched_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "retry_after": {
+          "name": "retry_after",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "last_error_code": {
+          "name": "last_error_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "policy_version": {
+          "name": "policy_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "attribution": {
+          "name": "attribution",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "is_owner_selected": {
+          "name": "is_owner_selected",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "0"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "cover_assets_check_1": {
+          "name": "cover_assets_check_1",
+          "value": "storage_mode IN ('r2','external')"
+        },
+        "cover_assets_check_2": {
+          "name": "cover_assets_check_2",
+          "value": "status IN ('pending','ready','missing','failed')"
+        },
+        "cover_assets_check_3": {
+          "name": "cover_assets_check_3",
+          "value": "match_scope IN ('edition','representative')"
+        },
+        "cover_assets_check_4": {
+          "name": "cover_assets_check_4",
+          "value": "source_language IS NULL OR source_language IN ('EN','JP','KR')"
+        },
+        "cover_assets_check_5": {
+          "name": "cover_assets_check_5",
+          "value": "is_owner_selected IN (0,1)"
+        }
+      }
+    },
+    "cover_variants": {
+      "name": "cover_variants",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "cover_asset_id": {
+          "name": "cover_asset_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "variant": {
+          "name": "variant",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "object_key": {
+          "name": "object_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "external_url": {
+          "name": "external_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "sha256": {
+          "name": "sha256",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "mime_type": {
+          "name": "mime_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "width": {
+          "name": "width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "height": {
+          "name": "height",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "byte_size": {
+          "name": "byte_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "etag": {
+          "name": "etag",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "cover_variants_cover_asset_id_variant_uq": {
+          "name": "cover_variants_cover_asset_id_variant_uq",
+          "columns": [
+            "cover_asset_id",
+            "variant"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "cover_variants_cover_asset_id_cover_assets_id_fk": {
+          "name": "cover_variants_cover_asset_id_cover_assets_id_fk",
+          "tableFrom": "cover_variants",
+          "tableTo": "cover_assets",
+          "columnsFrom": [
+            "cover_asset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "cover_variants_check_1": {
+          "name": "cover_variants_check_1",
+          "value": "variant IN ('grid','detail','original')"
+        },
+        "cover_variants_check_2": {
+          "name": "cover_variants_check_2",
+          "value": "(object_key IS NOT NULL) + (external_url IS NOT NULL) = 1"
+        },
+        "cover_variants_check_3": {
+          "name": "cover_variants_check_3",
+          "value": "width IS NULL OR width > 0"
+        },
+        "cover_variants_check_4": {
+          "name": "cover_variants_check_4",
+          "value": "height IS NULL OR height > 0"
+        },
+        "cover_variants_check_5": {
+          "name": "cover_variants_check_5",
+          "value": "byte_size IS NULL OR byte_size > 0"
+        }
+      }
+    },
+    "creators": {
+      "name": "creators",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "search_key": {
+          "name": "search_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "creators_search_key_idx": {
+          "name": "creators_search_key_idx",
+          "columns": [
+            "search_key"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "creators_check_1": {
+          "name": "creators_check_1",
+          "value": "kind IN ('person','group','collective','unknown')"
+        }
+      }
+    },
+    "edition_runs": {
+      "name": "edition_runs",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "series_id": {
+          "name": "series_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "edition_title": {
+          "name": "edition_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "language": {
+          "name": "language",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "language_basis": {
+          "name": "language_basis",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "publisher_id": {
+          "name": "publisher_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "format": {
+          "name": "format",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "numbering_basis": {
+          "name": "numbering_basis",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "numbering_verified": {
+          "name": "numbering_verified",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "0"
+        }
+      },
+      "indexes": {
+        "edition_runs_series_id_language_publisher_id_idx": {
+          "name": "edition_runs_series_id_language_publisher_id_idx",
+          "columns": [
+            "series_id",
+            "language",
+            "publisher_id"
+          ],
+          "isUnique": false
+        },
+        "edition_runs_publisher_id_idx": {
+          "name": "edition_runs_publisher_id_idx",
+          "columns": [
+            "publisher_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "edition_runs_series_id_series_id_fk": {
+          "name": "edition_runs_series_id_series_id_fk",
+          "tableFrom": "edition_runs",
+          "tableTo": "series",
+          "columnsFrom": [
+            "series_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "edition_runs_publisher_id_publishers_id_fk": {
+          "name": "edition_runs_publisher_id_publishers_id_fk",
+          "tableFrom": "edition_runs",
+          "tableTo": "publishers",
+          "columnsFrom": [
+            "publisher_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "edition_runs_check_1": {
+          "name": "edition_runs_check_1",
+          "value": "language IN ('EN','JP','KR')"
+        },
+        "edition_runs_check_2": {
+          "name": "edition_runs_check_2",
+          "value": "language_basis IN ('specified','assumed','confirmed')"
+        },
+        "edition_runs_check_3": {
+          "name": "edition_runs_check_3",
+          "value": "format IN ('standard','omnibus','collectors','artbook','anthology','unknown')"
+        },
+        "edition_runs_check_4": {
+          "name": "edition_runs_check_4",
+          "value": "numbering_basis IN ('printed','source_record','unknown')"
+        },
+        "edition_runs_check_5": {
+          "name": "edition_runs_check_5",
+          "value": "numbering_verified IN (0,1)"
+        }
+      }
+    },
+    "external_refs": {
+      "name": "external_refs",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "provider_entity_type": {
+          "name": "provider_entity_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "external_id": {
+          "name": "external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "fetched_at": {
+          "name": "fetched_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "match_basis": {
+          "name": "match_basis",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "is_owner_confirmed": {
+          "name": "is_owner_confirmed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "0"
+        },
+        "series_id": {
+          "name": "series_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "volume_edition_id": {
+          "name": "volume_edition_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "album_id": {
+          "name": "album_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "release_id": {
+          "name": "release_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "creator_id": {
+          "name": "creator_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "external_refs_provider_provider_entity_type_external_id_uq": {
+          "name": "external_refs_provider_provider_entity_type_external_id_uq",
+          "columns": [
+            "provider",
+            "provider_entity_type",
+            "external_id"
+          ],
+          "isUnique": true
+        },
+        "external_refs_series_id_idx": {
+          "name": "external_refs_series_id_idx",
+          "columns": [
+            "series_id"
+          ],
+          "isUnique": false
+        },
+        "external_refs_volume_edition_id_idx": {
+          "name": "external_refs_volume_edition_id_idx",
+          "columns": [
+            "volume_edition_id"
+          ],
+          "isUnique": false
+        },
+        "external_refs_album_id_idx": {
+          "name": "external_refs_album_id_idx",
+          "columns": [
+            "album_id"
+          ],
+          "isUnique": false
+        },
+        "external_refs_release_id_idx": {
+          "name": "external_refs_release_id_idx",
+          "columns": [
+            "release_id"
+          ],
+          "isUnique": false
+        },
+        "external_refs_creator_id_idx": {
+          "name": "external_refs_creator_id_idx",
+          "columns": [
+            "creator_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "external_refs_series_id_series_id_fk": {
+          "name": "external_refs_series_id_series_id_fk",
+          "tableFrom": "external_refs",
+          "tableTo": "series",
+          "columnsFrom": [
+            "series_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "external_refs_volume_edition_id_volume_editions_id_fk": {
+          "name": "external_refs_volume_edition_id_volume_editions_id_fk",
+          "tableFrom": "external_refs",
+          "tableTo": "volume_editions",
+          "columnsFrom": [
+            "volume_edition_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "external_refs_album_id_albums_id_fk": {
+          "name": "external_refs_album_id_albums_id_fk",
+          "tableFrom": "external_refs",
+          "tableTo": "albums",
+          "columnsFrom": [
+            "album_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "external_refs_release_id_album_releases_id_fk": {
+          "name": "external_refs_release_id_album_releases_id_fk",
+          "tableFrom": "external_refs",
+          "tableTo": "album_releases",
+          "columnsFrom": [
+            "release_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "external_refs_creator_id_creators_id_fk": {
+          "name": "external_refs_creator_id_creators_id_fk",
+          "tableFrom": "external_refs",
+          "tableTo": "creators",
+          "columnsFrom": [
+            "creator_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "external_refs_check_1": {
+          "name": "external_refs_check_1",
+          "value": "is_owner_confirmed IN (0,1)"
+        },
+        "external_refs_check_2": {
+          "name": "external_refs_check_2",
+          "value": "(series_id IS NOT NULL) + (volume_edition_id IS NOT NULL) + (album_id IS NOT NULL) + (release_id IS NOT NULL) + (creator_id IS NOT NULL) = 1"
+        }
+      }
+    },
+    "import_batches": {
+      "name": "import_batches",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source_kind": {
+          "name": "source_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source_filename": {
+          "name": "source_filename",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source_sha256": {
+          "name": "source_sha256",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "mapping_version": {
+          "name": "mapping_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "preview_revision": {
+          "name": "preview_revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "error_summary": {
+          "name": "error_summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "import_batches_source_kind_source_sha256_mapping_version_uq": {
+          "name": "import_batches_source_kind_source_sha256_mapping_version_uq",
+          "columns": [
+            "source_kind",
+            "source_sha256",
+            "mapping_version"
+          ],
+          "isUnique": true
+        },
+        "import_batches_initial_source_uq": {
+          "name": "import_batches_initial_source_uq",
+          "columns": [
+            "source_kind"
+          ],
+          "isUnique": true,
+          "where": "source_kind = 'initial-collection'"
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "import_batches_check_1": {
+          "name": "import_batches_check_1",
+          "value": "status IN ('preview','committing','complete','failed')"
+        }
+      }
+    },
+    "import_records": {
+      "name": "import_records",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "batch_id": {
+          "name": "batch_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source_record_number": {
+          "name": "source_record_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "item_id": {
+          "name": "item_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "source_row_json": {
+          "name": "source_row_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "normalization_audit_json": {
+          "name": "normalization_audit_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "issue_codes_json": {
+          "name": "issue_codes_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "import_records_batch_id_source_record_number_uq": {
+          "name": "import_records_batch_id_source_record_number_uq",
+          "columns": [
+            "batch_id",
+            "source_record_number"
+          ],
+          "isUnique": true
+        },
+        "import_records_item_id_idx": {
+          "name": "import_records_item_id_idx",
+          "columns": [
+            "item_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "import_records_batch_id_import_batches_id_fk": {
+          "name": "import_records_batch_id_import_batches_id_fk",
+          "tableFrom": "import_records",
+          "tableTo": "import_batches",
+          "columnsFrom": [
+            "batch_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "import_records_item_id_collection_items_id_fk": {
+          "name": "import_records_item_id_collection_items_id_fk",
+          "tableFrom": "import_records",
+          "tableTo": "collection_items",
+          "columnsFrom": [
+            "item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "import_records_check_1": {
+          "name": "import_records_check_1",
+          "value": "source_record_number > 0"
+        },
+        "import_records_check_2": {
+          "name": "import_records_check_2",
+          "value": "status IN ('imported','skipped')"
+        },
+        "import_records_check_3": {
+          "name": "import_records_check_3",
+          "value": "json_valid(source_row_json)"
+        },
+        "import_records_check_4": {
+          "name": "import_records_check_4",
+          "value": "json_valid(normalization_audit_json)"
+        },
+        "import_records_check_5": {
+          "name": "import_records_check_5",
+          "value": "json_valid(issue_codes_json)"
+        }
+      }
+    },
+    "item_tags": {
+      "name": "item_tags",
+      "columns": {
+        "item_id": {
+          "name": "item_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tag_id": {
+          "name": "tag_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "rule_version": {
+          "name": "rule_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "item_tags_tag_id_idx": {
+          "name": "item_tags_tag_id_idx",
+          "columns": [
+            "tag_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "item_tags_item_id_collection_items_id_fk": {
+          "name": "item_tags_item_id_collection_items_id_fk",
+          "tableFrom": "item_tags",
+          "tableTo": "collection_items",
+          "columnsFrom": [
+            "item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "item_tags_tag_id_tags_id_fk": {
+          "name": "item_tags_tag_id_tags_id_fk",
+          "tableFrom": "item_tags",
+          "tableTo": "tags",
+          "columnsFrom": [
+            "tag_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "item_tags_item_id_tag_id_source_pk": {
+          "columns": [
+            "item_id",
+            "tag_id",
+            "source"
+          ],
+          "name": "item_tags_item_id_tag_id_source_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "item_tags_check_1": {
+          "name": "item_tags_check_1",
+          "value": "source IN ('derived','manual')"
+        }
+      }
+    },
+    "labels": {
+      "name": "labels",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "normalized_name": {
+          "name": "normalized_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "labels_normalized_name_uq": {
+          "name": "labels_normalized_name_uq",
+          "columns": [
+            "normalized_name"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "metadata_cache": {
+      "name": "metadata_cache",
+      "columns": {
+        "cache_key": {
+          "name": "cache_key",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "adapter_version": {
+          "name": "adapter_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "payload_json": {
+          "name": "payload_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "fetched_at": {
+          "name": "fetched_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "retry_after": {
+          "name": "retry_after",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "metadata_cache_expires_at_idx": {
+          "name": "metadata_cache_expires_at_idx",
+          "columns": [
+            "expires_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "metadata_cache_check_1": {
+          "name": "metadata_cache_check_1",
+          "value": "status IN ('ready','missing','failed')"
+        },
+        "metadata_cache_check_2": {
+          "name": "metadata_cache_check_2",
+          "value": "payload_json IS NULL OR (json_valid(payload_json) AND length(payload_json) <= 1048576)"
+        }
+      }
+    },
+    "provider_state": {
+      "name": "provider_state",
+      "columns": {
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "lease_token": {
+          "name": "lease_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "lease_expires_at": {
+          "name": "lease_expires_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "next_allowed_at": {
+          "name": "next_allowed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "blocked_until": {
+          "name": "blocked_until",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "publishers": {
+      "name": "publishers",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "normalized_name": {
+          "name": "normalized_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "publishers_normalized_name_uq": {
+          "name": "publishers_normalized_name_uq",
+          "columns": [
+            "normalized_name"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "release_labels": {
+      "name": "release_labels",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "release_id": {
+          "name": "release_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "label_id": {
+          "name": "label_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "catalog_number": {
+          "name": "catalog_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "credit_order": {
+          "name": "credit_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "release_labels_release_id_label_id_catalog_number_uq": {
+          "name": "release_labels_release_id_label_id_catalog_number_uq",
+          "columns": [
+            "release_id",
+            "label_id",
+            "catalog_number"
+          ],
+          "isUnique": true
+        },
+        "release_labels_label_id_catalog_number_idx": {
+          "name": "release_labels_label_id_catalog_number_idx",
+          "columns": [
+            "label_id",
+            "catalog_number"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "release_labels_release_id_album_releases_id_fk": {
+          "name": "release_labels_release_id_album_releases_id_fk",
+          "tableFrom": "release_labels",
+          "tableTo": "album_releases",
+          "columnsFrom": [
+            "release_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "release_labels_label_id_labels_id_fk": {
+          "name": "release_labels_label_id_labels_id_fk",
+          "tableFrom": "release_labels",
+          "tableTo": "labels",
+          "columnsFrom": [
+            "label_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "release_labels_check_1": {
+          "name": "release_labels_check_1",
+          "value": "credit_order >= 0"
+        }
+      }
+    },
+    "release_media": {
+      "name": "release_media",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "release_id": {
+          "name": "release_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "format": {
+          "name": "format",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "release_media_release_id_position_uq": {
+          "name": "release_media_release_id_position_uq",
+          "columns": [
+            "release_id",
+            "position"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "release_media_release_id_album_releases_id_fk": {
+          "name": "release_media_release_id_album_releases_id_fk",
+          "tableFrom": "release_media",
+          "tableTo": "album_releases",
+          "columnsFrom": [
+            "release_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "release_media_check_1": {
+          "name": "release_media_check_1",
+          "value": "position > 0"
+        },
+        "release_media_check_2": {
+          "name": "release_media_check_2",
+          "value": "format IN ('CD','Blu-ray','DVD','other')"
+        }
+      }
+    },
+    "series": {
+      "name": "series",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "canonical_title": {
+          "name": "canonical_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sort_title": {
+          "name": "sort_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "representative_cover_id": {
+          "name": "representative_cover_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "series_sort_title_idx": {
+          "name": "series_sort_title_idx",
+          "columns": [
+            "sort_title"
+          ],
+          "isUnique": false
+        },
+        "series_representative_cover_id_idx": {
+          "name": "series_representative_cover_id_idx",
+          "columns": [
+            "representative_cover_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "series_representative_cover_id_cover_assets_id_fk": {
+          "name": "series_representative_cover_id_cover_assets_id_fk",
+          "tableFrom": "series",
+          "tableTo": "cover_assets",
+          "columnsFrom": [
+            "representative_cover_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "series_aliases": {
+      "name": "series_aliases",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "series_id": {
+          "name": "series_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "search_key": {
+          "name": "search_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "locale": {
+          "name": "locale",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "series_aliases_series_id_search_key_kind_uq": {
+          "name": "series_aliases_series_id_search_key_kind_uq",
+          "columns": [
+            "series_id",
+            "search_key",
+            "kind"
+          ],
+          "isUnique": true
+        },
+        "series_aliases_search_key_idx": {
+          "name": "series_aliases_search_key_idx",
+          "columns": [
+            "search_key"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "series_aliases_series_id_series_id_fk": {
+          "name": "series_aliases_series_id_series_id_fk",
+          "tableFrom": "series_aliases",
+          "tableTo": "series",
+          "columnsFrom": [
+            "series_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "series_aliases_check_1": {
+          "name": "series_aliases_check_1",
+          "value": "kind IN ('native','romanized','edition','legacy')"
+        }
+      }
+    },
+    "series_creators": {
+      "name": "series_creators",
+      "columns": {
+        "series_id": {
+          "name": "series_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "creator_id": {
+          "name": "creator_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "credit_order": {
+          "name": "credit_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "series_creators_creator_id_idx": {
+          "name": "series_creators_creator_id_idx",
+          "columns": [
+            "creator_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "series_creators_series_id_series_id_fk": {
+          "name": "series_creators_series_id_series_id_fk",
+          "tableFrom": "series_creators",
+          "tableTo": "series",
+          "columnsFrom": [
+            "series_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "series_creators_creator_id_creators_id_fk": {
+          "name": "series_creators_creator_id_creators_id_fk",
+          "tableFrom": "series_creators",
+          "tableTo": "creators",
+          "columnsFrom": [
+            "creator_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "series_creators_series_id_creator_id_role_pk": {
+          "columns": [
+            "series_id",
+            "creator_id",
+            "role"
+          ],
+          "name": "series_creators_series_id_creator_id_role_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "series_creators_check_1": {
+          "name": "series_creators_check_1",
+          "value": "credit_order >= 0"
+        }
+      }
+    },
+    "tags": {
+      "name": "tags",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "tags_slug_uq": {
+          "name": "tags_slug_uq",
+          "columns": [
+            "slug"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "tags_check_1": {
+          "name": "tags_check_1",
+          "value": "category IN ('memory','edition')"
+        }
+      }
+    },
+    "tracks": {
+      "name": "tracks",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "medium_id": {
+          "name": "medium_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "printed_number": {
+          "name": "printed_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "duration_ms": {
+          "name": "duration_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "recording_mbid": {
+          "name": "recording_mbid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "tracks_medium_id_position_uq": {
+          "name": "tracks_medium_id_position_uq",
+          "columns": [
+            "medium_id",
+            "position"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "tracks_medium_id_release_media_id_fk": {
+          "name": "tracks_medium_id_release_media_id_fk",
+          "tableFrom": "tracks",
+          "tableTo": "release_media",
+          "columnsFrom": [
+            "medium_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "tracks_check_1": {
+          "name": "tracks_check_1",
+          "value": "position > 0"
+        },
+        "tracks_check_2": {
+          "name": "tracks_check_2",
+          "value": "duration_ms IS NULL OR duration_ms >= 0"
+        }
+      }
+    },
+    "volume_editions": {
+      "name": "volume_editions",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "edition_run_id": {
+          "name": "edition_run_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "volume_label": {
+          "name": "volume_label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "volume_sort": {
+          "name": "volume_sort",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "numbering_key": {
+          "name": "numbering_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "isbn13": {
+          "name": "isbn13",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "cover_asset_id": {
+          "name": "cover_asset_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "metadata_state": {
+          "name": "metadata_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'unverified'"
+        }
+      },
+      "indexes": {
+        "volume_editions_edition_run_id_numbering_key_uq": {
+          "name": "volume_editions_edition_run_id_numbering_key_uq",
+          "columns": [
+            "edition_run_id",
+            "numbering_key"
+          ],
+          "isUnique": true
+        },
+        "volume_editions_edition_run_id_volume_sort_idx": {
+          "name": "volume_editions_edition_run_id_volume_sort_idx",
+          "columns": [
+            "edition_run_id",
+            "volume_sort"
+          ],
+          "isUnique": false
+        },
+        "volume_editions_cover_asset_id_idx": {
+          "name": "volume_editions_cover_asset_id_idx",
+          "columns": [
+            "cover_asset_id"
+          ],
+          "isUnique": false
+        },
+        "volume_editions_confirmed_isbn_uq": {
+          "name": "volume_editions_confirmed_isbn_uq",
+          "columns": [
+            "isbn13"
+          ],
+          "isUnique": true,
+          "where": "isbn13 IS NOT NULL AND metadata_state = 'confirmed'"
+        }
+      },
+      "foreignKeys": {
+        "volume_editions_edition_run_id_edition_runs_id_fk": {
+          "name": "volume_editions_edition_run_id_edition_runs_id_fk",
+          "tableFrom": "volume_editions",
+          "tableTo": "edition_runs",
+          "columnsFrom": [
+            "edition_run_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "volume_editions_cover_asset_id_cover_assets_id_fk": {
+          "name": "volume_editions_cover_asset_id_cover_assets_id_fk",
+          "tableFrom": "volume_editions",
+          "tableTo": "cover_assets",
+          "columnsFrom": [
+            "cover_asset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "volume_editions_check_1": {
+          "name": "volume_editions_check_1",
+          "value": "metadata_state IN ('unverified','partial','confirmed')"
+        },
+        "volume_editions_check_2": {
+          "name": "volume_editions_check_2",
+          "value": "isbn13 IS NULL OR (length(isbn13) = 13 AND isbn13 NOT GLOB '*[^0-9]*')"
+        }
+      }
+    },
+    "volumes": {
+      "name": "volumes",
+      "columns": {
+        "item_id": {
+          "name": "item_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "media_kind": {
+          "name": "media_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'manga'"
+        },
+        "volume_edition_id": {
+          "name": "volume_edition_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "volumes_volume_edition_id_idx": {
+          "name": "volumes_volume_edition_id_idx",
+          "columns": [
+            "volume_edition_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "volumes_volume_edition_id_volume_editions_id_fk": {
+          "name": "volumes_volume_edition_id_volume_editions_id_fk",
+          "tableFrom": "volumes",
+          "tableTo": "volume_editions",
+          "columnsFrom": [
+            "volume_edition_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "volumes_item_id_media_kind_collection_items_id_media_kind_fk": {
+          "name": "volumes_item_id_media_kind_collection_items_id_media_kind_fk",
+          "tableFrom": "volumes",
+          "tableTo": "collection_items",
+          "columnsFrom": [
+            "item_id",
+            "media_kind"
+          ],
+          "columnsTo": [
+            "id",
+            "media_kind"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "volumes_check_1": {
+          "name": "volumes_check_1",
+          "value": "media_kind = 'manga'"
+        }
+      }
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}

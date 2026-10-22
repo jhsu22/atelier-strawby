@@ -1,0 +1,2 @@
+# The seed importer verifies the exact source bytes, including line endings.
+initial_collection.csv -text

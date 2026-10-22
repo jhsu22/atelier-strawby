@@ -1,0 +1,6 @@
+# Copy to .dev.vars for localhost development only.
+APP_ENV=local
+LOCAL_DEV_AUTH=true
+# Hosted authentication is implemented in Stage 2. Hosted reads currently fail closed.
+# ACCESS_TEAM_DOMAIN=your-team.cloudflareaccess.com
+# ACCESS_AUDIENCE=

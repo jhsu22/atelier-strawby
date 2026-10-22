@@ -1,0 +1,12 @@
+---
+import '../styles/global.css';
+import { brand } from '../config/brand.ts';
+---
+<!doctype html>
+<html lang="en">
+  <head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width" /><title>{brand.title} — Collection foundation</title></head>
+  <body>
+    <a href="#main" class="sr-only focus:not-sr-only">Skip to collection counts</a>
+    <main id="main" class="mx-auto max-w-3xl p-6 sm:p-10"><slot /></main>
+  </body>
+</html>

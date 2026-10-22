@@ -1,0 +1,26 @@
+name = "atelier-strawby"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-01-16"
+compatibility_flags = ["nodejs_compat"]
+send_metrics = false
+
+# Placeholder IDs are for local emulation only. Provision isolated preview and
+# production resources before deployment; this project does not deploy or seed remotely.
+[[d1_databases]]
+binding = "DB"
+database_name = "atelier-strawby-local"
+database_id = "00000000-0000-0000-0000-000000000001"
+migrations_dir = "drizzle"
+
+[[r2_buckets]]
+binding = "COVERS"
+bucket_name = "atelier-strawby-covers-local"
+
+[vars]
+APP_ENV = "unconfigured"
+
+[env.preview.vars]
+APP_ENV = "preview"
+
+[env.production.vars]
+APP_ENV = "production"

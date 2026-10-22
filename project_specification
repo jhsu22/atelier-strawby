@@ -1,0 +1,89 @@
+# Role & Objective
+Act as an expert full-stack TypeScript engineer and UI/UX designer. Build and configure a production-ready, mobile-first personal media library web application called **"Strawby Stacks" (The Strawby Library)** to visually catalog, browse, and manage my physical **Manga** and **CD** collections.
+
+The app must be architected for **Cloudflare Pages** (with **Cloudflare D1** SQLite database for persistence, or static pre-rendered JSON + API routes for mutations).
+
+---
+
+# 1. Tech Stack & Architecture
+- **Framework:** Astro 5 (or Next.js App Router compiled for Cloudflare Pages) with TypeScript and React/Preact islands for interactive filtering, modals, and drawers.
+- **Styling:** Tailwind CSS + Lucide Icons.
+- **Database / Storage:** Cloudflare D1 (via Drizzle ORM) or structured local JSON seed data with a clean migration path to D1.
+- **Image Fetching Strategy:** Build an automated cover-fetching and caching utility:
+  - **Manga Covers:** Query the **MangaDex API** (or OpenLibrary/AniList GraphQL API) by series title and volume number to pull high-res tankobon volume cover art.
+  - **CD Covers:** Query the **MusicBrainz API** + **Cover Art Archive** (or iTunes Search API fallback) for album cover art and tracklists.
+
+---
+
+# 2. Aesthetic & Responsive UX Design ("Tactile Boutique Library")
+- **Visual Vibe:** Warm editorial Japanese bookstore meets modern music catalog (think Kinokuniya / Tsutaya Books meets Discogs & Letterboxd).
+  - **Color Palette:** Warm alabaster/cream paper background (`#FAF8F5`) in light mode, rich espresso/charcoal (`#141413`) in dark mode, with a subtle strawberry-red accent (`#D9383A`) and matcha/sage secondary badges (`#6B8E78`).
+  - **Typography:** Editorial serif headers (e.g., *Instrument Serif*, *Playfair Display*, or *Newsreader*) paired with clean geometric sans-serif body text (*Inter* or *Plus Jakarta Sans*) and monospace metadata (*JetBrains Mono*) for volume numbers, dates, and catalog IDs.
+- **Mobile-First Ergonomics (Primary Target):**
+  - Sticky bottom navigation bar on mobile (`[Shelf]`, `[Search & Filter]`, `[Haul Timeline]`, `[Stats]`, `[+ Add]`).
+  - Thumb-friendly horizontal filter pills and a 2-column or 3-column responsive cover grid on mobile (scaling to 5–7 columns on desktop).
+  - Tapping a series or CD opens a smooth **Bottom Sheet Drawer** on mobile (and a split-pane side panel or modal on desktop).
+- **Two Signature Browsing Modes:**
+  1. **Cover Grid View:** Displays Series cards (for Manga, showing Cover #1 or latest volume, plus a progress badge like `14 Vols`) and Square Jewel-Case cards (for CDs, with a subtle plastic spine/hinge CSS detail).
+  2. **Virtual Spine / Shelf View:** A visual bookshelf mode where volumes are rendered side-by-side as vertical book spines (color-coded by Publisher or Series) and CD spines, letting the user visually scan their physical shelf.
+
+---
+
+# 3. Data Schema & CSV Ingestion Rules (CRITICAL)
+Read the attached CSV file `Mega Manga Database (The Strawby Library) - Full Chronological Collection.csv` in the project root and write a deterministic ingestion/normalization script (`scripts/seed-from-csv.ts`) that transforms the 177 rows into normalized `Series`, `Volumes`, and `CDs` tables.
+
+Your parser MUST implement these exact data-cleaning rules on my CSV:
+1. **Drop Extra Columns:** Ignore `Unnamed: 6`, `Language Legend`, and `Unnamed: 8` (columns G, H, I), which only contain spreadsheet legend notes.
+2. **Trim Whitespace:** Strip leading/trailing whitespace from all fields (e.g., `"Kodansha "` -> `"Kodansha"`, `"Kakifly "` -> `"Kakifly"`).
+3. **Parse Cascade Notes (`|` and `\/`):**
+   - In my CSV, when I buy multiple volumes at once, I write the note on the first row (e.g., `"first b&n manga trip"`, `"box set"`, `"from sammy <3"`, `"xmas gifts"`), and put `|` on the rows below it, ending with `\/` on the final row of that batch.
+   - Implement a stateful forward-fill: when a row has a real text note, store it as `activeBatchNote`. If the next row's note is `|` or `\/`, replace it with `activeBatchNote` (and if it is `\/`, clear `activeBatchNote` after applying it).
+   - Exception: If a row has `\/` with no preceding active note (e.g., row 11 *The Promised Neverland* Vol 5 or row 138 *My Happy Marriage* Vol 1), look 1 row up to see if it shares the exact same `Date Acquired` and copy that note, otherwise set `Notes` to `null`.
+4. **Fix Known CSV Typos & Missing Metadata:**
+   - Merge title `"Girls Last Tour"` into `"Girls' Last Tour"`.
+   - Normalize author `"Yoshitoki Oima"` to `"Yoshitoki Ōima"`.
+   - Row 120 (*SPY x FAMILY* Vol 3): Change Author from `"Tatsuki Fujimoto"` to `"Tatsuya Endo"`.
+   - Row 153 (*Fruits Basket: Illustrations* Vol 1): Change Author from `"Keigo Maki"` to `"Natsuki Takaya"` and Publisher from `"Kodansha"` to `"Yen Press"`.
+   - Rows 173–175 (*The Fragrant Flower Blooms With Dignity* Vols 1–3): Fill missing Author as `"Saka Mikami"` and Publisher as `"Kodansha"`.
+   - Row 176 (*LOVE BULLET* Vol 1): Fill missing Author as `"inee"` and Publisher as `"Kadokawa"`.
+5. **Group Multilingual Editions & Deduplicate Series:**
+   - Add a `language` field (`'EN' | 'JP' | 'KR'`) to each volume.
+   - Link alternate-language titles to a single parent Series so they group together cleanly on the shelf, while preserving the volume's specific edition title and language badge:
+     - *A Sign of Affection (KR)* (Vol 1) -> Parent Series: `"A Sign of Affection"`, `language: 'KR'`.
+     - *Yubisaki to Renren* (Vol 1) -> Parent Series: `"A Sign of Affection"`, `language: 'JP'`.
+     - *Kaoru Hana wa Rin to Saku* (Vol 1) -> Parent Series: `"The Fragrant Flower Blooms With Dignity"`, `language: 'JP'`.
+     - *K-ON!* Vols 1–4 published by `"Houbunsha"` (note: `"akira proxy c:"`) -> `language: 'JP'`; *K-ON!* Vols 1–4 published by `"Yen Press"` -> `language: 'EN'`.
+     - *Project SEKAI Comic Anthology* (DNA Media) -> `language: 'JP'`.
+     - *The Guy She Was Interested in Wasn't a Guy At All* has two Vol 1 entries (row 157 and row 172)—keep both as separate physical copies/editions under the same series.
+
+---
+
+# 4. Core Features & Views to Build
+1. **Unified Media Switcher:** Top-level toggle between **All Media**, **Manga** (grouped by Series), and **CDs** (grouped by Artist/Album). Seed the CD section with 4–5 sample Japanese/soundtrack CDs (e.g., *Kessoku Band*, *Radwimps - Your Name OST*, *Evangelion Finally*, *Susumu Hirasawa / J-Pop*) so the CD UI is immediately demonstrable, plus a CSV/Discogs import & manual entry form for my actual CDs.
+2. **Series Detail Drawer (Manga):**
+   - Clicking a Manga Series opens a drawer showing series metadata (Author, Publisher, Languages owned, Total Volumes owned).
+   - Displays a visual grid of all owned volumes in numerical order with individual volume cover art, acquisition date, language badge (`EN`/`JP`/`KR`), edition tags (`Omnibus`, `Collector's Edition`, `Box Set`), and personal haul notes (e.g., `"from sammy <3"`, `"kinokuniya arcadia opened (massive lose money glitch unlocked)"`).
+   - Includes a **"Missing Volume Gap Detector"** toggle that highlights gaps in owned volume numbers (e.g., owning Vols 1–3 and 7 of *86: EIGHTY-SIX* highlights Vols 4–6 if missing, or shows non-contiguous runs).
+3. **Album Detail Drawer (CDs):**
+   - Renders a custom interactive square CD jewel case / obi-strip card.
+   - Shows Artist, Release Year, Label, Format (`CD`, `Limited Edition CD+Blu-ray`), Catalog Number, Tracklist, and Acquisition Note.
+4. **Instant Search, Categories & Smart Filters:**
+   - Instant client-side fuzzy search across Title, Japanese Alternate Title, Author/Artist, Publisher/Label, and Notes.
+   - Smart Category Chips:
+     - **By Publisher:** Kodansha, VIZ Media, Yen Press, Seven Seas, Udon, Kadokawa, etc.
+     - **By Language:** English, Japanese, Korean.
+     - **By Haul / Memory Tag:** Auto-extracted tags from my notes (`Gifts from Sammy`, `Kinokuniya Trips`, `Box Sets`, `Korea Trip`, `Proxy Hauls`).
+5. **"Haul Timeline" & Collection Analytics View:**
+   - A chronological feed grouping volumes by `Date Acquired` so I can relive specific bookstore trips (like the `10/27/2021` first B&N trip or the `12/25/2022` Christmas haul).
+   - Clean visual stats cards: Total Manga Volumes (177), Unique Series, Top Publishers breakdown bar, Volumes Acquired by Year chart (2021–2024+), and Top Authors.
+6. **Quick "+ Add / Edit" Flow:**
+   - A clean modal to add new Manga volumes or CDs (with auto-complete metadata lookup via MangaDex / MusicBrainz APIs) and an **"Export to CSV / JSON"** button so I always have a local backup.
+
+---
+
+# 5. Deliverables & Execution Steps
+1. Initialize the project, install dependencies, and run the CSV parser script first to generate the normalized dataset from `Mega Manga Database (The Strawby Library) - Full Chronological Collection.csv`.
+2. Verify that all 177 manga volumes are accounted for and properly grouped into series.
+3. Build the Cover Art caching utility with graceful, stylized typographic book-cover fallbacks if an external image API rate-limits.
+4. Implement the responsive mobile-first UI, Series/CD detail drawers, Spine View, and Haul Timeline.
+5. Configure `wrangler.toml` / Cloudflare Pages deployment scripts and provide local dev instructions.

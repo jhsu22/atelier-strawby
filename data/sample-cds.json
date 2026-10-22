@@ -1,0 +1,6 @@
+[
+  { "key": "kessoku-band", "title": "Kessoku Band", "artist": "Kessoku Band", "artistKind": "group", "source": "project_specification §4.1", "resolution": "unresolved", "isSample": true },
+  { "key": "your-name", "title": "Your Name OST", "artist": "RADWIMPS", "artistKind": "group", "source": "project_specification §4.1", "resolution": "unresolved", "isSample": true },
+  { "key": "evangelion-finally", "title": "Evangelion Finally", "artist": null, "artistKind": "unknown", "source": "project_specification §4.1", "resolution": "unresolved", "isSample": true },
+  { "key": "hirasawa", "title": "Susumu Hirasawa sample (album unresolved)", "artist": "Susumu Hirasawa", "artistKind": "person", "source": "project_specification §4.1; no specific album supplied", "resolution": "unresolved", "isSample": true }
+]
