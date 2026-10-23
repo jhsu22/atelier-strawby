@@ -28,7 +28,8 @@
     "seed:sample-cds": "node scripts/seed-sample-cds.ts",
     "verify:seed": "node scripts/verify-seed.ts",
     "dev:offline": "node scripts/dev-offline.ts",
-    "preview:offline": "node scripts/render-diagnostic.ts"
+    "preview:offline": "node scripts/render-diagnostic.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@astrojs/cloudflare": "12.6.13",
@@ -44,7 +45,9 @@
   },
   "devDependencies": {
     "@astrojs/check": "0.9.6",
+    "@axe-core/playwright": "4.14.0",
     "@cloudflare/workers-types": "5.20261022.1",
+    "@playwright/test": "1.64.1",
     "@types/node": "22.19.7",
     "@types/react": "19.2.9",
     "@types/react-dom": "19.2.3",

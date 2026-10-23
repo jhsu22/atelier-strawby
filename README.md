@@ -1,12 +1,22 @@
 # Atelier Strawby · Strawby Stacks
 
-Stage 1 implements the collection normalization, relational model, and application scaffold described in [Stage 0](docs/ARCHITECTURE.md). The authoritative input is the unchanged `initial_collection.csv`, not the longer filename mentioned in the original specification.
+Stage 2 adds the visual design system, real collection browsing, and responsive UI to the established Stage 1 data foundation. The authoritative input is the unchanged `initial_collection.csv`, not the longer filename mentioned in the original specification.
 
-**Current status:** Stage 1's local functional acceptance checks pass: locked installation, full Astro/TypeScript checking, 38 unit tests, 17 integration tests, two real workerd D1 tests, Drizzle schema parity, local D1 migration/seed verification, and Astro/built Pages HTTP smoke checks. The [Stage 1 audit](docs/STAGE1_AUDIT.md) fixed private database path handling and strengthened smoke coverage. The dependency security review still reports upstream advisories in the required Astro 5/adapter 12 stack; a clean security audit and hosted readiness are not claimed. See [the verification record](docs/TESTING.md) and [validation results](docs/STAGE1_VALIDATION.md). Work remains limited to Stage 1.
+**Latest assessment (2026-10-23):** Stage 2 is locally verified; Stage 3 has not started. The current dependency audit reports 13 findings (6 moderate, 6 high, 1 critical). See [development status](docs/DEVELOPMENT_STATUS.md) for checks, incomplete features and next priorities.
+
+**Current status:** the local application includes the real 177 manga copies grouped into 38 series, four labeled sample CDs, light/dark themes, cover and equal-height manga spine views, search/filters, responsive detail drawers and edition-aware gap detection. Stage 1 schema/import behavior remains unchanged. See [the Stage 2 audit](docs/STAGE2_AUDIT.md) for acceptance and current verification, and [the implementation report](docs/STAGE2_UI.md) for the initial record. Dependency advisories remain open; hosted readiness is not claimed.
+
+## Browse the application
+
+After the local D1 setup below, run `npm run dev` and open **http://127.0.0.1:4321**. The main page is the new shelf; **/foundation** retains the Stage 1 database diagnostic and its counts/distributions. Search, filters, media/view changes and open details are reflected in the URL. Theme preference is stored locally. Use the refresh button to query D1 again.
+
+Manga covers are designed typographic placeholders using actual titles and credits. CD cases and metadata are explicitly labeled as demonstrations/unresolved. Add and Haul Timeline open clear upcoming-feature panels; collection stats show current derived totals. Remote cover APIs, metadata enrichment, mutations and import/export are reserved for the user's revised Stage 3.
+
+`npm run test:e2e` runs Chromium desktop/mobile interactions and axe checks against the local seeded app. It uses `/usr/bin/chromium` when available, or Playwright's installed Chromium; set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to select another compatible executable. `STRAWBY_TEST_URL` selects an already-running local built Pages server. See [STAGE2_UI.md](docs/STAGE2_UI.md) for exact commands and browser limits.
 
 ## Run the verified offline data foundation
 
-Requires Node **22.18+** (tested with 26.11.1), including built-in TypeScript stripping and `node:sqlite`. No npm dependencies are required for these commands. Node 22 may print an experimental SQLite warning.
+Requires Node **22.18+** (tested with 26.11.1), including built-in TypeScript stripping and `node:sqlite`. The seed/migration/diagnostic commands use Node built-ins. The combined test suites now include Stage 2 validation and require `npm ci`. Node 22 may print an experimental SQLite warning.
 
 ```bash
 npm run seed:csv -- --input initial_collection.csv
@@ -38,7 +48,7 @@ npm run check
 npm run dev
 ```
 
-Visit `http://localhost:4321`. The minimal Astro page renders Drizzle/D1 aggregate queries through the collection service and a server-rendered React component with Lucide icons. It does not load generated JSON or embed hardcoded collection counts. It is intentionally limited to counts and distributions.
+Visit `http://localhost:4321`. The Astro shelf reads normalized D1 records through the read service and hydrates a React browsing island. It does not load generated collection JSON or hardcode library content. `/foundation` preserves the original aggregate diagnostic and its React-rendered counts.
 
 ```bash
 npm run build
@@ -83,10 +93,10 @@ The baseline SQL was authored offline and has now been compared with Drizzle Kit
 
 Four deliberately unresolved CD definitions live in `data/sample-cds.json`; provenance points to the original specification. They carry `is_sample=1` and no invented acquisition dates, label/catalog numbers, media formats, or tracklists. An unspecified Hirasawa album is explicitly labeled unresolved. Personal counts exclude all four.
 
-Only Stage 1 paths have been implemented under the approved `src/{config,components,domain,layouts,pages,server,styles}`, `scripts`, `data`, `drizzle`, `tests`, and `docs` structure. Full browsing, editor/API mutations, Access JWT authentication, covers, metadata enrichment, and deployment remain later stages.
+Stage 1 foundation and Stage 2 browsing use the approved `src/{config,components,domain,layouts,pages,server,styles}`, `scripts`, `data`, `drizzle`, `tests`, and `docs` structure. Editing/mutation APIs, Access JWT authentication, remote covers, metadata enrichment, import/export and deployment remain future work.
 
 `wrangler.toml` uses local placeholders for `DB` and `COVERS`. Its preview/production environments are unprovisioned; create separate D1/R2 resources and bind them explicitly before any hosted verification. Hosted reads currently fail closed. Local reads require both `.dev.vars` flags and a localhost URL; no JWT verification is claimed. No deployment or remote writes have been attempted.
 
 ## Validation scripts
 
-`npm test` runs dependency-free `node:test` suites for normalization and SQLite integration. `npm run test:d1` runs separate real Wrangler/workerd tests and fails if dependencies are absent; it never silently substitutes SQLite. `npm run check` runs Astro and TypeScript checks; `npm run validate` runs those checks, offline suites, and the Astro build. Stage 1's local functional gate also requires `test:schema`, `test:d1`, `verify:seed` against D1, and `test:smoke` against the built Pages server. Dependency audit findings are recorded separately and remain unresolved.
+`npm test` runs the preserved Stage 1 normalization/SQLite suites plus Stage 2 library, search, gap and DTO checks using `node:test`. `npm run test:d1` runs separate real Wrangler/workerd tests and fails if dependencies are absent; it never silently substitutes SQLite. `npm run check` runs Astro and TypeScript checks; `npm run validate` runs those checks, offline suites, and the Astro build. Stage 1's local functional gate also requires `test:schema`, `test:d1`, `verify:seed` against D1, and `test:smoke` against the built Pages server. Dependency audit findings are recorded separately and remain unresolved.

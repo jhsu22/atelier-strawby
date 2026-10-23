@@ -71,3 +71,14 @@ The deployment-version risk is supported by [Astro's current adapter migration n
 No unanswered question prevents this architectural plan. Before hosted verification, supply/configure the Cloudflare account, Pages project, separate D1/R2 resources, hostname, owner Access policy, and provider contact identity. These are setup dependencies, not assumptions that an account or subscription has already been provisioned. Costs and quotas must be checked against the selected plan at deployment.
 
 Before approving uncertain catalog matches, edition language, ISBN/catalog number, or physical packaging can be refined incrementally using the editor. Such refinements must preserve original import provenance and ownership identity.
+
+
+## Revised Stage 2 UI decisions (2026-10-21)
+
+The user's current Stage 2 request supersedes the original metadata-first ordering. Build the visual shell and browsing on Stage 1 D1; reserve remote artwork, full mutations and import/export for Stage 3. Preserve the schema, migrations, seed identities, normalization and prior tests.
+
+Use a single server-rendered React island with typed read DTOs and a private read-only refresh endpoint. Keep the original counts page at `/foundation`; the foundation smoke command targets that route. URL parameters retain media/view/search/filter/detail state. Theme storage is optional and failure to access it does not block browsing.
+
+Use original locally served Google Fonts WOFF2 subsets with bundled OFL notices. Covers are explicit typographic placeholders built from real titles/credits. Do not invent illustrations, cover matches, CD catalog metadata or tracklists. Use native modal dialogs with explicit Tab wrapping, Escape and trigger-focus restoration; responsive CSS changes the same content into a mobile bottom sheet.
+
+All collection reads retain the existing local-only authorization and private/no-store headers. No hosted authentication, deployment or dependency major upgrade is included in this UI stage. Existing security findings remain open.

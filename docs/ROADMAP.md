@@ -1,12 +1,12 @@
 # Requirements and five-stage implementation plan
 
-Status as of 2026-10-21: **Stage 1 local functional acceptance passes; dependency security advisories remain documented. Stages 2–5 have not started.**
+Status as of 2026-10-23: **Stage 1 is preserved. Stage 2 implements the visual design system, collection browsing, and responsive UI requested by the user. Stage 3 has not started.** The latest user scope supersedes the original stage ordering: remote images, complete mutations, ingestion/editing, and import/export move to Stage 3. Latest assessment and verification: [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md); Stage 2 implementation record: [STAGE2_UI.md](STAGE2_UI.md).
 
 Authority: [project_specification](../project_specification), supplemented by the user's engineering and development-discipline requirements. Design: [ARCHITECTURE.md](ARCHITECTURE.md), [DATA_MODEL.md](DATA_MODEL.md). Evidence: [TESTING.md](TESTING.md). Assumptions and risk responses: [DECISIONS.md](DECISIONS.md).
 
 Implement one stage at a time. At each start, restate dependencies and acceptance criteria; at each finish, report files changed, features implemented, actual commands/checks and results, limitations, remaining work, and the recommended next stage. Passing a local check does not mean a hosted integration is verified. Keep these documents updated as decisions change.
 
-## Dependency sequence
+## Original dependency sequence (superseded for Stages 2–3)
 
 ```mermaid
 flowchart LR
@@ -40,45 +40,31 @@ Migration, authentication, loading/error behavior, accessibility, and regression
 
 **Stage boundary:** no complete shelf/editor UI or external metadata success claimed. Output is a working local foundation and real seed, not a finished application.
 
-## Stage 2 — Read services, metadata, and cover caching
+## Stage 2 — Visual design system, collection browsing, and responsive UI
 
-**Dependencies:** Stage 1 verified; local D1/R2 bindings; provider documentation/availability; identifying application contact for APIs requiring it. Hosted smoke checks additionally need isolated Cloudflare resources and Access configuration.
+**Authority:** the user's revised Stage 2 request. The original metadata-first ordering is superseded. See [STAGE2_UI.md](STAGE2_UI.md) for the complete current scope, acceptance comparison, and executed checks.
 
-**Deliver:** typed read DTOs/endpoints; Access enforcement for hosted data; MangaDex preferred lookup with verified fallback behavior; MusicBrainz + CAA exact release/tracklist integration; D1 metadata cache and shared throttle; R2 cover storage and serving; resumable `scripts/cache-covers.ts`; metadata/covers failure reports; sample CD release resolution.
+**Dependencies:** established Stage 1 D1 schema, seeded manga, labeled sample CDs, and the existing Astro/React stack. No remote image provider or hosted deployment is required.
 
-**Acceptance criteria:**
-
-1. Real D1-backed collection/detail responses validate against their contracts; no API returns hardcoded library content. Unauthorized hosted access fails, including direct-origin/preview routes.
-2. Document the live MangaDex contract, permitted cover use, and observed availability. Perform representative manga lookups, including an alternate title and a volume/language distinction. If unavailable, exercise the approved alternative and explicitly report MangaDex as unverified/unavailable.
-3. Resolve a real CD release with media/tracklist data from MusicBrainz and its exact-release artwork from CAA when available. Resolve the four sample CDs, or retain honest missing metadata with evidence; no fabricated success response.
-4. Candidate selection distinguishes exact edition/release matches from representative images. An ambiguous match never silently changes confirmed author, publisher, language, notes, or acquisition date.
-5. Cache an eligible real image in R2, retrieve it after a fresh server process, and confirm repeated requests reuse it. Providers requiring direct image delivery are recorded as external sources rather than covertly rehosted.
-6. Provider requests share a throttle across concurrent requests; verify MusicBrainz spacing, timeout/429/503 handling, response validation, and negative-cache behavior. A cache hit makes zero upstream calls.
-7. The utility resumes after interruption, reports eligible/matched/missing/failed counts, and does not fail the application build when providers are unavailable. Runtime requests remain bounded; no unsupported background durability is claimed.
-8. Invalid image type, excessive size, disallowed redirect, and missing/corrupt image are handled safely. Fallback data is available for every owned record regardless of provider coverage.
-
-**Stage boundary:** record actual coverage percentages and unresolved editions. Complete cover coverage is not an acceptance requirement because providers may lack the edition. A tested, working integration and honest fallback are requirements; recorded test fixtures do not replace live checks.
-
-## Stage 3 — Responsive shelf, search, and detail
-
-**Dependencies:** Stage 2 typed read services, provider outcomes, and cover service; Stage 1 real collection.
-
-**Deliver:** boutique visual tokens, light/dark theme, responsive shell and navigation, media switcher, cover and spine views, series/album drawers and direct detail pages, fuzzy search, smart filters and memory tags, gap detector, sample CD display.
+**Deliver:** editorial typography and shared light/dark tokens; responsive application shell and navigation; real D1-backed manga/CD cover and spine browsing; search and filters; mobile bottom-sheet and desktop side-panel details; edition-aware gap detection; honest unresolved CD metadata/tracklist states; accessible keyboard interaction, reduced motion, loading and failure states.
 
 **Acceptance criteria:**
 
-1. Shelf shows all 177 manga records grouped into 38 series, plus four labeled sample CD records in the sample-enabled view. All Media/Manga/CD switching and artist/album grouping work on real DTOs.
-2. At 360/390 px mobile widths, show 2 columns or an explicitly selected usable compact density, all five bottom-navigation actions, and safe-area spacing. At 1280–1440 px show 5–7 columns as appropriate. No document-level horizontal overflow; only intended pill/spine rows scroll sideways.
-3. Cover/spine switching preserves search/filter state. Spines represent each owned copy and support keyboard and touch selection. Book/CD shapes and jewel-case/obi details remain distinct.
-4. Series detail shows authors, edition publishers, languages, owned counts, numerically ordered individual volumes, date/unknown-date state, edition tags, and expanded personal notes. JP/KR variants and duplicate copies remain visible.
-5. CD detail shows real or explicitly unknown artist/year/label/format/catalog metadata, ordered media/tracklists, and per-owned-copy notes. Jewel-case interaction is keyboard operable and respects reduced motion.
-6. Gap tests include synthetic 1–3/7 → 4–6, actual 86 → 5–6, duplicate numbers, different languages, and uncertain omnibus numbering. No cross-edition or future-volume false gaps.
-7. Fuzzy search returns a matching title for an intentional typo; alternate/native titles, author/artist, publisher/label, and resolved notes are searchable. Combined filters follow documented item-level AND/OR semantics. All five required memory-tag categories are available where data supports them.
-8. URL state survives refresh and back/forward; direct detail routes render without an already-open shelf. Dialog focus is trapped/restored, Escape works, and labeled navigation/controls pass automated checks plus keyboard review.
-9. Verify light/dark, reduced motion, missing image, missing detail, no results, empty collection, loading, and failed fetch states. Target zero serious/critical axe findings on covered pages and WCAG AA contrast for text/controls.
-10. On a recorded 1,000-item fixture and defined test machine/browser, local search+filter processing has p95 below 100 ms after hydration, excluding intentional debounce and network. Measure, record, and address failures; do not add virtualization without evidence.
+1. The real seeded 177 manga ownership records appear under 38 series. Four labeled demonstration CDs remain separate from personal totals. No source schema or importer changes are required.
+2. The grid has 2–3 mobile columns and 5–7 desktop columns, with no document overflow. Individual-copy spines retain duplicates and permit intentional horizontal scrolling.
+3. Media, grid/spine, search and filter controls work; refresh and back/forward retain URL state. All five mobile navigation actions are usable. Add and Timeline clearly indicate their upcoming status; existing aggregate stats remain available.
+4. Manga details show original edition titles, credits, publishers, languages, acquisition dates/notes and every owned copy. Gap detection compares printed numbering only within the same edition and language; uncertain omnibus numbering does not produce claimed gaps.
+5. CD details provide an operable jewel case, known artist/title data, explicit unknown release/format/label/catalog/year fields, an honest missing-tracklist state and sample acquisition information. Future stored tracklists have an ordered rendering path.
+6. Theme preference persists, drawer focus is contained/restored, Escape works, reduced motion applies, touch controls are usable and representative accessibility scans pass.
+7. Run checks/build, real D1 and foundation regression checks, browser interactions and visual review at mobile/desktop sizes. Record browser/device limitations without claiming unperformed verification.
 
-**Stage boundary:** unfinished Add, Timeline, and Stats destinations must be clearly identified as upcoming during this incremental stage; no fake save/analytics actions. They become functional in Stages 4–5.
+**Boundary:** no remote artwork APIs, metadata enrichment, mutation API, import/export, authentication migration or deployment. Typographic artwork is an explicit designed fallback. Existing hosted access continues to fail closed.
+
+## Stage 3 — Metadata, artwork, and collection workflows (not started)
+
+The user's updated ordering places remote image APIs, ingestion/editing, full mutations and import/export here. Retain the original matching, caching, throttling, persistence, idempotence and backup requirements in [ARCHITECTURE.md](ARCHITECTURE.md) and [DATA_MODEL.md](DATA_MODEL.md). Establish the exact next-stage acceptance criteria before implementation. None of those integrations is claimed by Stage 2.
+
+The original Stage 4–5 requirement lists below are retained as future-work detail; their numbering does not override the user's revised scope.
 
 ## Stage 4 — Add/edit, imports, and portable backups
 
@@ -122,7 +108,7 @@ If hosted resources are unavailable, complete local deliverables and explicitly 
 
 ## Requirement traceability
 
-Stage 1 foundation requirements are implemented and locally verified as recorded above. Remaining features and their evidence are planned for their assigned stages; partial foundation work does not imply a complete later-stage requirement.
+Stage 1 foundation requirements are preserved. The table below retains the original stage references for historical traceability; the revised Stage 2 UI mapping above and STAGE2_UI.md take precedence. External integrations and mutations remain future work.
 
 | ID | Original requirement | Stage(s) | Evidence needed |
 | --- | --- | --- | --- |
@@ -156,4 +142,4 @@ Stage 1 foundation requirements are implemented and locally verified as recorded
 
 ## Current handoff
 
-Stage 1 foundation and local functional checks are complete. `README.md` documents locked setup and repeatable checks; `TESTING.md` records actual application/D1/Pages results and unresolved audit findings. No Stage 2–5 feature or hosted deployment was attempted. Resolve the recorded dependency/platform security decision before hosted release; any later-stage implementation remains a separate task.
+Stage 1 remains intact and the requested Stage 2 UI is implemented. See [STAGE2_UI.md](STAGE2_UI.md) and [TESTING.md](TESTING.md) for current evidence. The Stage 1 diagnostic is available at `/foundation`. Stage 3 integrations and hosted deployment were not attempted. The recorded dependency/platform security decision remains open before hosted release.

@@ -1,6 +1,6 @@
 # Atelier Strawby — proposed architecture
 
-Status: Stage 0 architecture retained. Stage 1's local functional checks pass, including locked installation, Astro checking/build, Drizzle schema parity, actual D1 integration and seeded Astro/Pages runtime smoke. Upstream dependency advisories remain; hosted readiness is unverified. See [Stage 1 results](STAGE1_VALIDATION.md) and [TESTING.md](TESTING.md). Updated 2026-10-21 (America/Los_Angeles).
+Status: Stage 0 architecture retained for future integrations. The user revised Stage 2 to prioritize visual design and browsing; the implemented UI and current boundary are documented in [STAGE2_UI.md](STAGE2_UI.md). Stage 1's local functional checks pass, including locked installation, Astro checking/build, Drizzle schema parity, actual D1 integration and seeded Astro/Pages runtime smoke. Upstream dependency advisories remain; hosted readiness is unverified. See [Stage 1 results](STAGE1_VALIDATION.md) and [TESTING.md](TESTING.md). Updated 2026-10-21 (America/Los_Angeles).
 
 The authoritative requirements are [project_specification](../project_specification). The supplied dataset is [initial_collection.csv](../initial_collection.csv). This document describes proposed behavior, not existing functionality. See [ROADMAP.md](ROADMAP.md) for requirement coverage, [DATA_MODEL.md](DATA_MODEL.md) for the relational design, [DECISIONS.md](DECISIONS.md) for assumptions and risks, and [TESTING.md](TESTING.md) for evidence and future checks.
 

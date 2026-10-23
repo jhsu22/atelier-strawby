@@ -3,4 +3,43 @@
   --color-ink: #141413;
   --color-strawberry: #d9383a;
   --color-sage: #6b8e78;
+  --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+:root {
+  color-scheme: light;
+  --page: #faf8f5;
+  --surface: #fffdf9;
+  --surface-soft: #f1eee7;
+  --surface-raised: #ffffff;
+  --text: #282822;
+  --muted: #68665d;
+  --faint: #aaa69a;
+  --line: #dedbd1;
+  --accent: #d9383a;
+  --accent-text: #b72e31;
+  --sage: #6b8e78;
+  --sage-text: #3e624b;
+  --sage-surface: #e8ede4;
+  --shadow: 0 12px 28px -16px #33281d55;
+  --font-heading: "Newsreader", Georgia, serif;
+  --font-ui: "Inter", system-ui, sans-serif;
+  --font-data: "JetBrains Mono", ui-monospace, monospace;
+  --content-width: 1320px;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #141413;
+  --surface: #1d1e1a;
+  --surface-soft: #252620;
+  --surface-raised: #292b24;
+  --text: #eee9dd;
+  --muted: #b0ada1;
+  --faint: #8b887d;
+  --line: #393b31;
+  --accent-text: #ff8f86;
+  --sage-text: #b2c9b5;
+  --sage-surface: #29372d;
+  --shadow: 0 14px 30px -12px #0009;
 }

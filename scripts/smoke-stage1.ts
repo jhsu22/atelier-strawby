@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import { request } from 'node:http';
 import { parseArgs } from 'node:util';
 
-const { values } = parseArgs({ options: { url: { type: 'string', default: 'http://127.0.0.1:8788' } } });
+const { values } = parseArgs({ options: { url: { type: 'string', default: 'http://127.0.0.1:8788/foundation' } } });
 const url = new URL(values.url!);
+if (url.pathname === '/') url.pathname = '/foundation';
 assert.ok(url.protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname), 'Stage 1 smoke checks require a local HTTP server');
 const response = await fetch(url, { signal: AbortSignal.timeout(20_000) });
 assert.equal(response.status, 200, 'Seeded collection page must render');

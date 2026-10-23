@@ -1,6 +1,14 @@
 # Testing strategy and verification record
 
-Status: Stage 1's local functional acceptance checks now pass, including clean locked installation, full checking/build, Drizzle schema parity, real D1 tests, persisted D1 verification, and Astro/built Pages HTTP smoke. The dependency audit remains nonzero. Hosted deployment, external metadata and later-stage features were not attempted. Earlier blocked results and Stage 0/future-stage material are retained below as history.
+Latest revalidation: [development assessment, 2026-10-23](DEVELOPMENT_STATUS.md). Checking/build, 48 unit tests, 21 integration tests, two real D1 tests, 22 browser tests against the compiled Pages worker, schema parity, persisted seed verification and built Pages smoke pass. The fresh dependency audit reports **13 findings: 6 moderate, 6 high, 1 critical**, superseding the historical 11-finding results below.
+
+Status: the user-requested Stage 2 visual/browsing UI is implemented and locally verified. [STAGE2_AUDIT.md](STAGE2_AUDIT.md) records the latest fixes, commands and browser limits; [STAGE2_UI.md](STAGE2_UI.md) preserves the initial implementation record. Stage 1's local functional acceptance checks still pass, including clean locked installation, full checking/build, Drizzle schema parity, real D1 tests, persisted D1 verification, and Astro/built Pages HTTP smoke. The dependency audit remains nonzero. Hosted deployment, external metadata and later-stage features were not attempted. Earlier blocked results and Stage 0/future-stage material are retained below as history.
+
+## Stage 2 visual and browsing verification
+
+The user's revised Stage 2 scope supersedes the original stage ordering. Current results: **48 unit + 21 integration tests, two actual D1 tests, full checking/build and 22 browser tests on each of the dev and built Pages runtimes pass**. No failed/skipped cases remain in final runs. The expanded 36 axe scans have zero violations. The audit fixes tablet navigation, narrow-screen overflow, touch dismissal, mobile CD clipping, spine publisher contrast and an invented unknown-artist credit. All 177 manga spines retain the requested uniform 235 px height. The CSV, schema, migrations, importer and original domain/database test files are unchanged. The original diagnostic is retained at `/foundation`.
+
+Exact commands, implementation acceptance, screenshots, failures/fixes and unverified browser/device behavior are recorded in [STAGE2_AUDIT.md](STAGE2_AUDIT.md). The dependency audit remains nonzero with 11 existing findings. Remote image/metadata APIs, mutations, import/export and hosted deployment were not attempted.
 
 ## Stage 1 audit revalidation
 

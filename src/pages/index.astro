@@ -1,27 +1,18 @@
 ---
 import AppLayout from '../layouts/AppLayout.astro';
-import { CollectionCounts } from '../components/stats/CollectionCounts.tsx';
-import { readCollectionSummary } from '../server/repositories/collection.ts';
-import { brand } from '../config/brand.ts';
-import type { CollectionSummary } from '../domain/types.ts';
-let summary: CollectionSummary | undefined;
-try { summary = await readCollectionSummary(Astro.locals.runtime.env.DB); }
+import { LibraryIsland } from '../components/shelf/LibraryIsland.tsx';
+import { readLibrary } from '../server/repositories/library.ts';
+import { parseBrowseState } from '../domain/library.ts';
+import type { LibraryData } from '../domain/library.ts';
+let data: LibraryData | undefined;
+try { data = await readLibrary(Astro.locals.runtime.env.DB); }
 catch { Astro.response.status = 503; }
 ---
 <AppLayout>
-  <p class="text-sm">{brand.subtitle} · Stage 1 development</p>
-  <h1 class="mt-2 font-serif text-4xl">{brand.title}</h1>
-  {summary ? <>
-    <p class="mt-4">Collection counts read from the normalized local database.</p>
-    <CollectionCounts summary={summary} />
-    {summary.physicalCopies === 0 && <p>No collection has been imported yet. Run the local migration and seed commands in the README.</p>}
-    <table><caption class="mb-2 text-left font-semibold">Manga copies by language</caption><thead><tr><th scope="col">Language</th><th scope="col">Copies</th></tr></thead>
-      <tbody>{summary.languages.map(row => <tr><th scope="row">{row.label}</th><td>{row.count}</td></tr>)}</tbody>
-    </table>
-    <p class="my-6">{summary.datedCopies} dated copies · {summary.undatedCopies} unknown dates · {summary.recordsWithNotes} acquisition notes</p>
-    <table><caption class="mb-2 text-left font-semibold">Publisher distribution</caption><thead><tr><th scope="col">Publisher</th><th scope="col">Copies</th></tr></thead>
-      <tbody>{summary.publishers.map(row => <tr><th scope="row">{row.label}</th><td>{row.count}</td></tr>)}</tbody>
-    </table>
-    <p class="mt-6">{summary.personalCds} personal CDs · {summary.sampleCds} demonstration CDs (excluded from personal totals)</p>
-  </> : <p class="mt-6" role="alert">The collection database is unavailable. Apply local migrations and check the D1 binding using the README setup commands.</p>}
+  {data ? <LibraryIsland initialData={data} initialState={parseBrowseState(Astro.url.searchParams)} client:load />
+    : <main id="main" class="unavailable-page">
+      <h1>Collection unavailable</h1><p role="alert">Check the database connection and setup.</p>
+      <a href="/" class="button button-primary">Try the shelf again</a><a href="/foundation" class="text-button">Open the collection record</a>
+    </main>}
+  <noscript><p class="noscript-notice">Enable JavaScript to search and filter, or <a href="/foundation">view the collection record</a>.</p></noscript>
 </AppLayout>
