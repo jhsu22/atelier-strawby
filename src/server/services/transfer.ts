@@ -20,6 +20,7 @@ import {
 import type { Store, Statement } from "../db/store.ts";
 import { ApiError } from "../http/api.ts";
 import type { ImportPreview, ImportKind } from "../../domain/transfer.ts";
+import { CSV_IMPORT_BYTES, BACKUP_IMPORT_BYTES } from "../../domain/transfer.ts";
 import { MEDIUM_LABELS } from "../../domain/types.ts";
 import type { Medium } from "../../domain/types.ts";
 
@@ -43,7 +44,7 @@ function medium(value: string): Medium {
 export const importSchema = z.object({
   kind: z.enum(["manga", "cd", "discogs", "json"]),
   filename: z.string().min(1).max(200),
-  text: z.string().max(900000),
+  text: z.string().max(BACKUP_IMPORT_BYTES),
   discogsDateAddedAsAcquired: z.boolean().default(false),
 });
 interface PlannedRow {
@@ -123,6 +124,8 @@ export async function createImportPreview(
   raw: unknown,
 ): Promise<ImportPreview> {
   const input = importSchema.parse(raw);
+  if (new TextEncoder().encode(input.text).length > (input.kind === "json" ? BACKUP_IMPORT_BYTES : CSV_IMPORT_BYTES))
+    throw new ApiError(413, input.kind === "json" ? "Backup exceeds 8 MiB. Use D1 database restore for larger snapshots." : "CSV exceeds 900 KB. Split it into smaller files.");
   await assertNoImport(db);
   const before = await revision(db),
     hash = await digest(
@@ -410,20 +413,31 @@ export async function createImportPreview(
     throw new ApiError(409, "The collection changed. Preview again.");
   const token = crypto.randomUUID(),
     payload = JSON.stringify(plan);
-  if (new TextEncoder().encode(payload).length > 1000000)
+  if (new TextEncoder().encode(payload).length > BACKUP_IMPORT_BYTES + 100000)
     throw new ApiError(
       413,
       "Preview is too large. Split this file into smaller imports.",
     );
-  await db.batch([
+  // A preview can exceed D1's per-row limit. Store bounded chunks atomically.
+  const chunks: string[] = [];
+  for (let offset = 0; offset < payload.length;) {
+    let end = Math.min(payload.length, offset + 240000);
+    // Do not split a UTF-16 surrogate pair between separate UTF-8 D1 values.
+    const last = payload.charCodeAt(end - 1);
+    if (last >= 0xd800 && last <= 0xdbff) end--;
+    chunks.push(payload.slice(offset, end));
+    offset = end;
+  }
+  const values = chunks.length === 1 ? [payload] : [JSON.stringify({ chunks: chunks.length, hash: plan.hash, revision: plan.revision }), ...chunks];
+  await db.batch(values.map((value, index) =>
     s(
       `INSERT INTO metadata_cache(cache_key,provider,adapter_version,payload_json,status,fetched_at,expires_at) VALUES (?,'import-preview','1',?,'ready',?,?)`,
-      `import:${token}`,
-      payload,
+      index === 0 ? `import:${token}` : `import:${token}:${index - 1}`,
+      index === 0 ? value : JSON.stringify(value),
       new Date().toISOString(),
       new Date(Date.now() + 86400000).toISOString(),
     ),
-  ]);
+  ));
   return {
     token,
     kind: input.kind,
@@ -454,7 +468,19 @@ async function loadPlan(db: Store, token: string): Promise<Plan> {
   )[0];
   if (!row)
     throw new ApiError(404, "Import preview expired. Preview the file again.");
-  return JSON.parse(String(row.payload_json)) as Plan;
+  const root = JSON.parse(String(row.payload_json));
+  if (root.kind) return root as Plan; // Existing resumable previews remain valid.
+  if (!Number.isInteger(root.chunks) || root.chunks < 1 || root.chunks > 40)
+    throw new ApiError(422, "Invalid import preview. Preview the file again.");
+  const chunks = await db.all("SELECT cache_key,payload_json FROM metadata_cache WHERE cache_key LIKE ? AND provider=?", [`import:${token}:%`, "import-preview"]);
+  const indexed = new Map(chunks.map(chunk => [String(chunk.cache_key), String(chunk.payload_json)]));
+  const parts: string[] = [];
+  for (let i = 0; i < root.chunks; i++) {
+    const part = indexed.get(`import:${token}:${i}`);
+    if (part === undefined) throw new ApiError(409, "Import preview is incomplete. Preview the file again.");
+    parts.push(JSON.parse(part) as string);
+  }
+  return JSON.parse(parts.join("")) as Plan;
 }
 export async function commitImport(
   db: Store,

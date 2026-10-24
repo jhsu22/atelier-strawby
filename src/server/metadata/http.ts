@@ -3,6 +3,7 @@ import type { Store } from "../db/store.ts";
 import { ApiError } from "../http/api.ts";
 export type Fetcher = typeof fetch;
 export const providerHosts = new Set([
+  "www.googleapis.com",
   "api.mangadex.org",
   "uploads.mangadex.org",
   "openlibrary.org",
@@ -35,6 +36,9 @@ export async function boundedFetch(
 ): Promise<{ response: Response; bytes: Uint8Array }> {
   const signal = AbortSignal.timeout(8000);
   for (let redirects = 0; redirects <= 4; redirects++) {
+    // A credential must never follow a redirect to an image host or another provider.
+    if (new Headers(init.headers).has("X-Goog-Api-Key") && new URL(url).origin !== "https://www.googleapis.com")
+      throw new ApiError(502, "Google Books returned an unexpected redirect.");
     if (!allowedProviderUrl(url))
       throw new ApiError(422, "Provider URL is not allowed.");
     const response = await fetcher(url, {
@@ -120,7 +124,7 @@ export async function providerJson(
   db: Store,
   provider: string,
   url: string,
-  options: { retry?: boolean; contact?: string; fetcher?: Fetcher } = {},
+  options: { retry?: boolean; contact?: string; fetcher?: Fetcher; googleBooksKey?: string } = {},
 ): Promise<unknown> {
   const cacheKey = `provider-v1:${provider}:${await digest(url)}`,
     now = new Date().toISOString();
@@ -146,6 +150,8 @@ export async function providerJson(
       {
         headers: {
           Accept: "application/json",
+          ...(provider === "googlebooks" && new URL(url).origin === "https://www.googleapis.com"
+            ? { "X-Goog-Api-Key": options.googleBooksKey ?? "" } : {}),
           "User-Agent": `StrawbyStacks/0.2 (${options.contact || "https://github.com/jhsu22/atelier-strawby"})`,
         },
       },
@@ -179,6 +185,16 @@ export async function providerJson(
           429,
           "The provider is rate limiting requests. Retry later.",
         );
+      }
+      if (provider === "googlebooks" && [400, 401, 403].includes(response.status)) {
+        let limited = false;
+        try {
+          const error = JSON.parse(new TextDecoder().decode(bytes));
+          limited = Array.isArray(error?.error?.errors) && error.error.errors.some((entry: {reason?: string}) =>
+            ["dailyLimitExceeded", "quotaExceeded", "rateLimitExceeded", "userRateLimitExceeded"].includes(entry.reason ?? ""));
+        } catch { /* Provider messages and credentials are never echoed. */ }
+        if (limited) throw new ApiError(429, "Google Books quota is exhausted. Wait for its quota to reset; other sources and manual entry remain available.");
+        throw new ApiError(422, "Google Books rejected access. Check that Books API is enabled and the API key is valid and restricted for server requests.");
       }
       if (!response.ok)
         throw new ApiError(

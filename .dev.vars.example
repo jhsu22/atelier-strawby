@@ -3,10 +3,15 @@ APP_ENV=local
 LOCAL_DEV_AUTH=true
 # Hosted configuration belongs in the corresponding Cloudflare environment.
 # Never enable LOCAL_DEV_AUTH on a hosted environment. Missing configuration
-# fails closed. See docs/STAGE3.md for the owner-only Access policy and JWT checks.
+# fails closed. See docs/DEPLOYMENT.md for the owner-only Access policy and JWT checks.
 # APP_ENV=preview
 # APP_ORIGIN=https://your-private-host.example.com
 # ACCESS_TEAM_DOMAIN=your-team.cloudflareaccess.com
 # ACCESS_AUDIENCE=
 # ACCESS_OWNER_EMAIL=
 # METADATA_CONTACT=https://github.com/jhsu22/atelier-strawby
+
+# Optional third book metadata source. Server-only; no billing required by this app.
+# Create a dedicated project without billing and restrict the key to Books API.
+# See docs/GOOGLE_BOOKS.md. Never use a PUBLIC_ variable for this secret.
+# GOOGLE_BOOKS_API_KEY=

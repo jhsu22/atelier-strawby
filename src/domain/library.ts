@@ -77,6 +77,7 @@ export interface LibraryData {
 export interface BrowseState {
   /** Manga vs light novel within volume-shaped entries; "" shows both. */
   type?: "" | "manga" | "light_novel";
+  section: "shelf" | "timeline" | "stats";
   year?: string;
   format?: string;
   media: "all" | "manga" | "book" | "cd";
@@ -89,6 +90,7 @@ export interface BrowseState {
   item: string;
 }
 export const defaultBrowseState: BrowseState = {
+  section: "shelf",
   type: "",
   year: "",
   format: "",
@@ -103,6 +105,7 @@ export const defaultBrowseState: BrowseState = {
 };
 export function parseBrowseState(params: URLSearchParams): BrowseState {
   return {
+    section: params.get("section") === "timeline" || params.get("section") === "stats" ? params.get("section") as "timeline" | "stats" : "shelf",
     type:
       params.get("type") === "manga" || params.get("type") === "light_novel"
         ? (params.get("type") as "manga" | "light_novel")
@@ -128,6 +131,7 @@ export function parseBrowseState(params: URLSearchParams): BrowseState {
 }
 export function browseParams(state: BrowseState): URLSearchParams {
   const params = new URLSearchParams();
+  if (state.section !== "shelf") params.set("section", state.section);
   if (state.media !== "all") params.set("media", state.media);
   if (state.view !== "grid") params.set("view", state.view);
   if (state.query) params.set("q", state.query);
@@ -253,44 +257,52 @@ export function browseEntries(
   });
 }
 export interface GapGroup {
+  key: string;
   editionRunId: string;
   title: string;
   language: Language;
   publisher: string;
+  format: string;
   missing: string[];
+  ranges: { start: number; end: number; count: number }[];
   uncertain: boolean;
+  reason: string | null;
 }
+/** Compare only compatible printed sequences, never infer a series' release extent. */
 export function seriesGaps(series: SeriesEntry): GapGroup[] {
   const groups = new Map<string, MangaCopy[]>();
   for (const copy of series.copies) {
-    const group = groups.get(copy.editionRunId) ?? [];
+    // Defensive separation also protects against inconsistent imported run metadata.
+    const key = JSON.stringify([copy.editionRunId, copy.editionTitle, copy.language,
+      copy.publisher, copy.format, copy.medium,
+      [...new Set(copy.tags.filter(tag => ["Omnibus", "Collector's Edition"].includes(tag)))].sort()]);
+    const group = groups.get(key) ?? [];
     group.push(copy);
-    groups.set(copy.editionRunId, group);
+    groups.set(key, group);
   }
-  return [...groups.entries()].map(([editionRunId, copies]) => {
+  return [...groups.entries()].map(([key, copies]) => {
     const first = copies[0]!;
-    const uncertain = copies.some(
-      (copy) => copy.numberingBasis !== "printed" || !/^\d+$/.test(copy.volume),
-    );
-    const numbers = [
-      ...new Set(copies.map((copy) => Number(copy.volume))),
-    ].sort((a, b) => a - b);
-    const missing: string[] = [];
-    if (!uncertain)
-      for (let index = 1; index < numbers.length; index++) {
-        const start = numbers[index - 1]! + 1,
-          end = numbers[index]! - 1;
-        if (end >= start)
-          missing.push(start === end ? String(start) : `${start}–${end}`);
-      }
-    return {
-      editionRunId,
-      title: first.editionTitle,
-      language: first.language,
-      publisher: first.publisher,
-      missing,
-      uncertain,
-    };
+    const incomplete = !first.editionRunId.trim() || !first.editionTitle.trim() ||
+      !first.publisher.trim() || /^unknown publisher$/i.test(first.publisher) ||
+      !["EN", "JP", "KR"].includes(first.language) ||
+      !["standard", "collectors", "omnibus", "artbook", "anthology"].includes(first.format);
+    // Numeric omnibus labels can be compared only when they explicitly represent
+    // printed omnibus numbers. Source-record numbers and content ranges cannot.
+    const ambiguous = copies.some(copy => copy.numberingBasis !== "printed" ||
+      !/^\d+$/.test(copy.volume) ||
+      (copy.format !== "omnibus" && (copy.tags.includes("Omnibus") || /omnibus/i.test(copy.notes ?? ""))) || !Number.isSafeInteger(Number(copy.volume)) || Number(copy.volume) < 1);
+    const reason = incomplete ? "Edition, language, publisher or format metadata needs confirmation."
+      : ambiguous ? "Numbering or omnibus packaging needs confirmation before gaps can be calculated." : null;
+    const ranges: GapGroup["ranges"] = [];
+    const numbers = [...new Set(copies.map(copy => Number(copy.volume)))].sort((a, b) => a - b);
+    if (!reason) for (let index = 1; index < numbers.length; index++) {
+      const start = numbers[index - 1]! + 1, end = numbers[index]! - 1;
+      if (end >= start) ranges.push({ start, end, count: end - start + 1 });
+    }
+    return { key, editionRunId: first.editionRunId, title: first.editionTitle,
+      language: first.language, publisher: first.publisher, format: first.format,
+      ranges, missing: ranges.map(({start, end}) => start === end ? String(start) : `${start}–${end}`),
+      uncertain: Boolean(reason), reason };
   });
 }
 

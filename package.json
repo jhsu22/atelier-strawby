@@ -17,7 +17,7 @@
     "test:d1": "node scripts/run-tests.ts d1",
     "test:schema": "node scripts/verify-schema.ts",
     "test:smoke": "node scripts/smoke-stage1.ts",
-    "validate": "npm run check && npm test && npm run build",
+    "validate": "npm run lint && npm run check && npm test && npm run test:schema && npm run build",
     "db:generate": "drizzle-kit generate",
     "db:types": "wrangler types src/worker-configuration.d.ts --env-interface CloudflareBindings --include-runtime false",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
@@ -26,11 +26,24 @@
     "seed:local": "node scripts/seed-from-csv.ts --target d1-local",
     "seed:sqlite": "node scripts/seed-from-csv.ts --target sqlite",
     "seed:sample-cds": "node scripts/seed-sample-cds.ts",
+    "metadata:google-check": "node scripts/check-google-books.ts",
     "covers:cache": "node scripts/cache-covers.ts",
     "verify:seed": "node scripts/verify-seed.ts",
+    "verify:insights": "node scripts/verify-insights.ts",
     "dev:offline": "node scripts/dev-offline.ts",
     "preview:offline": "node scripts/render-diagnostic.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "lint": "eslint . --max-warnings 0",
+    "test:csv": "node --test tests/unit/normalization.test.ts",
+    "deploy:check": "node scripts/deploy.ts check",
+    "deploy:preview": "node scripts/deploy.ts preview",
+    "deploy:production": "node scripts/deploy.ts production",
+    "db:migrate:preview": "wrangler d1 migrations apply DB --remote --config wrangler.hosted.json --env preview",
+    "db:migrate:production": "wrangler d1 migrations apply DB --remote --config wrangler.hosted.json",
+    "release:verify": "npm run validate && npm run test:d1 && npm run test:migrations && npm run test:e2e",
+    "test:migrations": "node scripts/verify-migrations.ts",
+    "deploy:prepare": "node scripts/deploy.ts prepare",
+    "release:zip": "python3 scripts/package-release.py"
   },
   "dependencies": {
     "@astrojs/cloudflare": "12.6.13",
@@ -49,12 +62,20 @@
     "@astrojs/check": "0.9.6",
     "@axe-core/playwright": "4.14.0",
     "@cloudflare/workers-types": "5.20261022.1",
+    "@eslint/js": "10.0.1",
     "@playwright/test": "1.64.1",
     "@types/node": "22.19.7",
     "@types/react": "19.2.9",
     "@types/react-dom": "19.2.3",
     "drizzle-kit": "0.31.8",
+    "eslint": "10.13.0",
+    "eslint-plugin-astro": "3.2.1",
     "typescript": "5.9.3",
+    "typescript-eslint": "8.72.0",
     "wrangler": "4.151.3"
+  },
+  "overrides": {
+    "undici": "7.30.1",
+    "ws": "8.21.0"
   }
 }

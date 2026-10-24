@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ImportKind, ImportPreview } from "../../domain/transfer.ts";
+import { CSV_IMPORT_BYTES, BACKUP_IMPORT_BYTES } from "../../domain/transfer.ts";
 import { request } from "./client.ts";
 export function TransferPanel({
   onChanged,
@@ -57,9 +58,9 @@ export function TransferPanel({
     setNotice("");
     setConfirmed(false);
     try {
-      if (file.size > 900000)
+      if (file.size > (kind === "json" ? BACKUP_IMPORT_BYTES : CSV_IMPORT_BYTES))
         throw new Error(
-          "Use a file smaller than 900 KB. Split large CSV imports into smaller files.",
+          kind === "json" ? "JSON backups must be at most 8 MiB. Use D1 database export/restore for larger collections." : "CSV files must be at most 900 KB. Split large CSV imports into smaller files.",
         );
       setPreview(
         await request<ImportPreview>("/api/imports", "POST", {

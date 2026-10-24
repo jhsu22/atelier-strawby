@@ -37,6 +37,9 @@ import { brand } from "../../config/brand.ts";
 import { EntryDetails } from "../details/EntryDetails.tsx";
 import { ItemEditor } from "../manage/ItemEditor.tsx";
 import { TransferPanel } from "../manage/TransferPanel.tsx";
+import { HaulTimeline } from "../timeline/HaulTimeline.tsx";
+import { CollectionAnalytics } from "../stats/CollectionAnalytics.tsx";
+import { emptyTimelineFilters } from "../../domain/collection-insights.ts";
 import type { ItemInput } from "../../domain/item.ts";
 
 type Panel = "filters" | "stats" | "timeline" | "add" | "transfer" | null;
@@ -146,7 +149,8 @@ export function LibraryIsland({
 }) {
   const [data, setData] = useState(initialData);
   const [state, setState] = useState(initialState);
-  const [panel, setPanel] = useState<Panel>(null);
+  const [panel, setPanel] = useState<Panel>(initialState.section === "shelf" ? null : initialState.section);
+  const [timelineFilters, setTimelineFilters] = useState(emptyTimelineFilters);
   const [theme, setTheme] = useState("light");
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -229,8 +233,9 @@ export function LibraryIsland({
     setReady(true);
     setTheme(document.documentElement.dataset.theme ?? "light");
     const pop = () => {
-      setState(parseBrowseState(new URLSearchParams(window.location.search)));
-      setPanel(null);
+      const next = parseBrowseState(new URLSearchParams(window.location.search));
+      setState(next);
+      setPanel(next.section === "shelf" ? null : next.section);
       setEditing(null);
     };
     window.addEventListener("popstate", pop);
@@ -262,8 +267,12 @@ export function LibraryIsland({
   }
   function showPanel(next: Panel) {
     setEditing(null);
-    if (state.item) navigate({ item: "" });
+    navigate({ item: "", section: next === "timeline" || next === "stats" ? next : "shelf" });
     setPanel(next);
+  }
+  function closeSection() {
+    setPanel(null);
+    navigate({ section: "shelf", item: "" });
   }
   function resetFilters() {
     navigate({
@@ -325,6 +334,7 @@ export function LibraryIsland({
       year: "",
       format: "",
       media: "all",
+      section: "shelf",
     });
   }
   async function refresh() {
@@ -348,9 +358,6 @@ export function LibraryIsland({
       setRefreshing(false);
     }
   }
-  const ownedDates = copies
-    .map((copy) => copy.acquiredOn)
-    .filter((date): date is string => date !== null);
   return (
     <div className="library-app" data-hydrated={ready ? "true" : "false"}>
       <header className="site-header">
@@ -359,20 +366,16 @@ export function LibraryIsland({
           <nav className="desktop-nav" aria-label="Main navigation">
             <button
               type="button"
-              className="nav-current"
-              onClick={() => {
-                setPanel(null);
-                navigate({ item: "" });
-              }}
-              aria-current="page"
+              className={!panel ? "nav-current" : undefined}
+              onClick={closeSection}
+              aria-current={!panel ? "page" : undefined}
             >
               Shelf
             </button>
-            <button type="button" onClick={() => showPanel("timeline")}>
-              Haul timeline{" "}
-              <span className="soon-dot" aria-label="Coming soon" />
+            <button type="button" className={panel === "timeline" ? "nav-current" : undefined} onClick={() => showPanel("timeline")}>
+              Haul timeline
             </button>
-            <button type="button" onClick={() => showPanel("stats")}>
+            <button type="button" className={panel === "stats" ? "nav-current" : undefined} onClick={() => showPanel("stats")}>
               Collection stats
             </button>
           </nav>
@@ -737,8 +740,7 @@ export function LibraryIsland({
           aria-label="Shelf"
           aria-current={!panel ? "page" : undefined}
           onClick={() => {
-            setPanel(null);
-            navigate({ item: "" });
+            closeSection();
             document.getElementById("shelf")?.scrollIntoView();
           }}
         >
@@ -917,64 +919,9 @@ export function LibraryIsland({
           </div>
         </Drawer>
       )}
-      {panel === "stats" && (
-        <Drawer title="Collection stats" onClose={() => setPanel(null)}>
-          <div className="stats-grid">
-            {[
-              [copies.length, "Manga copies"],
-              [manga.length, "Unique series"],
-              [lightNovels, "Light novels"],
-              [bookCopies.length, "Books"],
-              [new Set(ownedDates).size, "Acquisition dates"],
-              [copies.filter((copy) => copy.notes).length, "Acquisition notes"],
-            ].map(([value, label]) => (
-              <div key={label}>
-                <strong>{value}</strong>
-                <span>{label}</span>
-              </div>
-            ))}
-          </div>
-          <p className="panel-intro">
-            {sampleCds} sample CDs excluded from totals.
-          </p>
-          <h3 className="stats-heading">Languages</h3>
-          <div className="stats-languages">
-            {(["EN", "JP", "KR"] as const).map((language) => (
-              <div key={language}>
-                <span>{language}</span>
-                <strong className="mono">
-                  {copies.filter((copy) => copy.language === language).length}
-                </strong>
-              </div>
-            ))}
-          </div>
-          <h3 className="stats-heading">Publishers</h3>
-          <ul className="publisher-stats">
-            {publishers
-              .map((publisher) => ({
-                publisher,
-                count: copies.filter((copy) => copy.publisher === publisher)
-                  .length,
-              }))
-              .filter(({ count }) => count > 0)
-              .sort((a, b) => b.count - a.count)
-              .map(({ publisher, count }) => (
-                <li key={publisher}>
-                  <span>{publisher}</span>
-                  <span className="stat-bar">
-                    <i
-                      style={{
-                        width: `${copies.length ? (count / copies.length) * 100 : 0}%`,
-                      }}
-                    />
-                  </span>
-                  <strong className="mono">{count}</strong>
-                </li>
-              ))}
-          </ul>
-          <a className="text-button" href="/foundation">
-            Collection record <ArrowRight size={15} />
-          </a>
+      {panel === "stats" && !state.item && (
+        <Drawer title="Collection stats" onClose={closeSection} wide>
+          <CollectionAnalytics entries={data.entries} onOpen={entry => navigate({ item: entry.id })} onTimeline={() => showPanel("timeline")} />
         </Drawer>
       )}
       {(panel === "add" || editing) && (
@@ -1013,21 +960,9 @@ export function LibraryIsland({
           />
         </Drawer>
       )}
-      {panel === "timeline" && (
-        <Drawer title="Haul timeline" onClose={() => setPanel(null)}>
-          <div className="coming-soon">
-            <span>
-              <History size={34} />
-            </span>
-            <p>The haul timeline is not available yet.</p>
-            <button
-              type="button"
-              className="button button-primary"
-              onClick={() => setPanel(null)}
-            >
-              Back to the shelf <ArrowRight size={16} />
-            </button>
-          </div>
+      {panel === "timeline" && !state.item && (
+        <Drawer title="Haul timeline" onClose={closeSection} wide>
+          <HaulTimeline entries={data.entries} filters={timelineFilters} onFilters={setTimelineFilters} onOpen={entry => navigate({ item: entry.id })} />
         </Drawer>
       )}
     </div>

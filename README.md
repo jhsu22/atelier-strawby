@@ -1,18 +1,30 @@
 # Atelier Strawby · Strawby Stacks
 
-Stage 3 adds metadata/artwork lookup, fuzzy search and filters, persistent manga/CD editing, and previewed imports and backups to the established collection application. The architecture, database schema, visual design and original `initial_collection.csv` are preserved.
+Stage 5 completes local release QA, Cloudflare Pages deployment configuration, the requirements audit and source packaging. **This is a locally verified release candidate, not a production-ready hosted deployment.** No deployment occurred. Eleven dependency findings remain (4 moderate, 6 high, 1 critical), and hosted Access/D1/R2 and recovery require manual setup and verification.
 
-**Current stage:** Stage 3 is implemented and locally verified. Manga and CD add → edit → reload → delete flows persist in real D1. The baseline collection remains 177 manga copies across 38 series plus four labeled sample CDs. See [the Stage 3 guide](docs/STAGE3.md) for workflows, authentication, provider behavior, CSV templates and restoration, and [development status](docs/DEVELOPMENT_STATUS.md) for verification and remaining work.
+Start with the [Stage 5 testing and readiness report](docs/STAGE5.md), [complete requirements matrix](docs/REQUIREMENTS_MATRIX.md), [deployment and local setup guide](docs/DEPLOYMENT.md), [user guide](docs/USER_GUIDE.md), [directory structure](docs/DIRECTORY_STRUCTURE.md), and [security review](docs/SECURITY_REVIEW.md).
 
-Hosted deployment is not verified. Existing dependency advisories remain: 13 affected-package findings (6 moderate, 6 high, 1 critical). The application fails closed outside explicitly configured local or owner-authenticated environments.
+```bash
+npm ci
+# Fresh checkout only; preserve an existing .dev.vars and database.
+cp .dev.vars.example .dev.vars
+npm run db:migrate:local
+npm run seed:local
+npm run seed:sample-cds
+npm run dev
+```
+
+Release checks: `npm run release:verify`. Build the complete source archive: `npm run release:zip` (Python 3), producing `releases/atelier-strawby-stage5.zip` and its SHA-256 checksum. The archive includes source, tests, docs, migrations and the original CSV; it excludes secrets and the owner's edited live state. Hosted setup uses `wrangler.hosted.json.example`, never the local placeholder resources. Follow [DEPLOYMENT.md](docs/DEPLOYMENT.md) before using the deployment commands.
+
+The original baseline is 177 manga copies across 38 series and four labeled sample CDs. Existing owner edits, the original CSV and both reviewed migrations are preserved. Earlier-stage reports are historical; the Stage 5 report controls current verification status.
 
 ## Browse the application
 
 After the local D1 setup below, run `npm run dev` and open **http://127.0.0.1:4321**. The main page is the new shelf; **/foundation** retains the Stage 1 database diagnostic and its counts/distributions. Search, filters, media/view changes and open details are reflected in the URL. Theme preference is stored locally. Use the refresh button to query D1 again.
 
-Use **Add to collection** (mobile **Add**) to create a manga volume or CD; open a detail drawer to edit/delete a physical copy or add another. Optional metadata suggestions use MangaDex/Open Library and MusicBrainz/Cover Art Archive, with an explicitly digital iTunes fallback. Manual entry and artwork overrides remain available. Representative artwork is labeled and unresolved artwork retains the designed typographic fallback.
+Use **Add to collection** (mobile **Add**) to create a manga volume or CD; open a detail drawer to edit/delete a physical copy or add another. Optional metadata suggestions use MangaDex, optional [Google Books](docs/GOOGLE_BOOKS.md) ahead of Open Library, and MusicBrainz/Cover Art Archive, with an explicitly digital iTunes fallback. Manual entry and artwork overrides remain available. Representative artwork is labeled and unresolved artwork retains the designed typographic fallback. Open a manga or light-novel series to use **Released & missing volumes**: choose an edition, search released volumes, and compare its catalogued numbers with your current owned copies. [Release lookup rules](docs/RELEASED_VOLUMES.md).
 
-**Import / export** provides validated previews, duplicate choices, resumable CSV imports, full JSON backups/restoration and separate manga/CD CSV downloads. Search combines with media, publisher/label, language, year, memory tag and edition/format filters. The haul timeline remains a later-stage feature.
+**Import / export** provides validated previews, duplicate choices, resumable CSV imports, full JSON backups/restoration and separate manga/CD CSV downloads. Search combines with media, publisher/label, language, year, memory tag and edition/format filters. The **Haul timeline** combines exact acquisition dates, original memories and cover artwork; **Collection stats** shows distributions, yearly acquisitions and personal insights. Both are available from desktop and mobile navigation.
 
 `npm run test:e2e` builds the worker and provisions disposable seeded D1/R2 automatically, then runs Chromium desktop/mobile interactions and axe checks. It uses `/usr/bin/chromium` when available, or Playwright's installed Chromium; set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to select another executable. Only set `STRAWBY_TEST_URL` for an already-running **disposable seeded** Pages runtime: management tests perform real writes. See [TESTING.md](docs/TESTING.md).
 
@@ -44,6 +56,7 @@ npm run db:migrate:local
 npm run seed:local
 npm run seed:sample-cds
 npm run verify:seed
+npm run verify:insights
 npm run test:d1
 npm run test:schema
 npm run check
@@ -97,7 +110,7 @@ The baseline SQL was authored offline and has now been compared with Drizzle Kit
 
 Four deliberately unresolved CD definitions live in `data/sample-cds.json`; provenance points to the original specification. They carry `is_sample=1` and no invented acquisition dates, label/catalog numbers, media formats, or tracklists. An unspecified Hirasawa album is explicitly labeled unresolved. Personal counts exclude all four.
 
-Stages 1–3 retain the approved `src/{config,components,domain,layouts,pages,server,styles}`, `scripts`, `data`, `drizzle`, `tests`, and `docs` structure. Stage 3 adds server-side collection services and authenticated APIs within it. Timeline, remaining analytics and hosted deployment remain future work.
+Stages 1–3 retain the approved `src/{config,components,domain,layouts,pages,server,styles}`, `scripts`, `data`, `drizzle`, `tests`, and `docs` structure. Stage 3 adds server-side collection services and authenticated APIs within it. Stage 4 adds timeline and analytics within the existing architecture. Hosted deployment remains separate work.
 
 `wrangler.toml` uses local placeholders for `DB` and `COVERS`. Its preview/production environments are unprovisioned; create separate D1/R2 resources and bind them explicitly before any hosted verification. Hosted requests require a configured Cloudflare Access owner policy, verified JWT, exact origin and environment-specific bindings. Configuration is documented in [STAGE3.md](docs/STAGE3.md). Local access requires both `.dev.vars` flags and a localhost URL. No hosted deployment or remote collection writes have been attempted.
 

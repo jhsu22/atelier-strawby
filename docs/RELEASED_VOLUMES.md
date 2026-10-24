@@ -1,0 +1,41 @@
+# Released volumes and missing-copy comparison
+
+Open any manga or light-novel series from the shelf, timeline or stats. Its **Released & missing volumes** panel appears directly beneath the detail introduction. Select the edition/language, review the lookup title, then choose **Search released volumes**. Alternate recorded titles are available as input suggestions. The default source is **Google Books → Open Library**; either source can also be selected directly.
+
+The panel displays distinct released numbers found, how many of those numbers you own, and **Missing released volumes**, with publication evidence and a source link for every listed number. Expand **All catalogued release numbers** to inspect owned and unowned numbers together. A digital listing carries a separate label: it does not establish that a matching physical edition is available. Numbers not observed in the catalog are never manufactured from a maximum number or search-result count.
+
+Lookups are saved per edition and survive reloads. Missing numbers are recalculated from current ownership, so acquiring another copy updates the comparison without another provider query. Duplicate owned copies count once for this comparison and remain separate physical records elsewhere. A JP copy cannot satisfy an EN missing number; standard, collector, omnibus and manga/light-novel editions remain separate. The existing **Find missing volumes** switch still reports observable internal ownership gaps, without requiring a release catalog.
+
+## Catalog evidence and scope
+
+Automatic matching requires a compatible series/alternate title and integer number, the exact requested language, a compatible recorded publisher/imprint, compatible creator credits, and a publication date that establishes release by the lookup date. Unknown/missing language, publisher, author, date or numbering evidence excludes the listing rather than inventing facts. Collector and omnibus titles require their explicit edition marker; standard editions reject those markers. An omnibus package number is compared to owned package numbers, never expanded into standard-volume numbers. Light novels require explicit novel/part numbering evidence.
+
+The owned edition must have comparable positive integer printed numbering and consistent edition/language/publisher/format/medium metadata. Unknown packaging, source-record numbering and other ambiguous groups show a reason and do not offer lookup. Artbooks and anthologies are outside this numbered release comparison. Assumed owned languages remain visibly marked for review.
+
+Publication dates are calendar values. Full dates are validated; year-only dates use December 31 and month-only dates use the month's last valid day, so an imprecise current-year/month listing is not prematurely called released. Open Library's ordinary English month/day/year dates are also accepted. Unknown and future dates are excluded, even though the Google query also disables preorders. An undated owned copy still satisfies its known volume number: acquisition dates do not determine ownership.
+
+Both providers are incomplete catalogs. Exhausting their search pages does **not** prove that all published releases are represented, that the series has ended, or that a collection is complete. “You own every number found” refers only to the retrieved catalog evidence. Google Books may describe a digital listing or a different physical printing; physical availability still needs source review. No release count is copied from `totalItems`, `numFound`, cover counts or the largest owned number.
+
+## Pagination, caching and fallback order
+
+Each lookup reads up to four pages: Google Books requests up to 40 listings per page, Open Library up to 100. **Load more catalog results** continues the persisted scan until the provider's pages finish. Paging uses source totals only as pagination hints, not as release counts. A repeated-page guard prevents loops; a 2,000-listing ceiling stops overly broad searches with an explicit warning. Narrow the lookup title if that ceiling is reached.
+
+Google Books is preferred when its server key is configured. Missing credentials, unavailable Google access or an exhausted Google scan without compatible released numbers allow Open Library fallback. If Google still has more pages, the result stays partial and can continue. Open Library exposes a selected matching edition per work; other editions of that work can be absent, which the UI discloses. Per-source manual selection supports cross-checking or an alternate/native title.
+
+Provider JSON uses the existing seven-day D1 cache, shared spacing, timeout, response limits and quota/Retry-After handling. A new search refreshes the provider pages it visits. Continuations reuse provider JSON until it expires; the metadata form's forced retry and a fresh search remain available. Partial network failures keep previously retrieved evidence and provide a continuation. A failed refresh leaves the previous saved comparison intact.
+
+Derived catalog snapshots use `metadata_cache` with an edition metadata fingerprint and a versioned key. Changing catalog title/aliases, authors, publisher, language, format or medium invalidates that lookup. Ownership additions/deletions do not invalidate evidence and are recomputed immediately. Snapshot dates and an update recommendation after seven days are shown. Snapshots are rebuildable operational data and are excluded from portable collection backups, along with existing provider caches. No schema migration, acquisition edits, invented copies or changes to physical collection totals are required.
+
+The metadata editor's automatic order also changed: manga uses MangaDex with **Google Books before Open Library** for volume suggestions; light novels and books prefer Google Books then Open Library. A missing Google key or incompatible results allow Open Library. Google's result order is retained. Explicit source selection still uses that source. The unattended cover utility retains its established edition-art safeguards; Google representative covers remain a reviewed editor selection.
+
+## API and verification
+
+`GET /api/releases?editionRunId=…` reads the saved snapshot without external requests. `POST /api/releases` accepts `editionRunId`, optional `query`, `provider` (`auto`, `googlebooks`, `openlibrary`), `continuation`, and `retry`. The server derives edition scope from visible personal D1 ownership. It rejects unowned IDs and uncertain groups. Existing owner authentication, same-origin mutation checks and private response headers apply; the Google key stays on the server.
+
+Unit tests cover calendar boundaries, future/partial dates, standard/special/omnibus/novel numbering, duplicate ownership, language/run separation and observed catalog holes. Shared SQLite and real workerd D1 tests verify persistent snapshots, metadata invalidation and comparison after acquiring a missing number. Integration tests exercise paging/continuation, repeated pages, access fallback, quota errors, partial failure retention and provider priority. Browser tests cover the series panel, missing/source lists, reload, partial pages, failure recovery, three-language selection, unavailable numbering, narrow screens and light/dark axe scans.
+
+Verification passed: **68 unit tests, 42 SQLite integration tests, seven real workerd D1/R2 tests and all 48 full-suite desktop/mobile browser scenarios**, plus Astro/TypeScript and the production Pages build. New panel screenshots and axe results stay in private generated artifacts.
+
+A live lookup using the configured owner key on 2026-10-24 returned 20 Google catalog listings for the English *Girls' Last Tour* edition, reduced to released numbers **1–6**. The collection owns **1 and 6** in that edition, so the displayed missing numbers are **2–5**. The lookup wrote only derived provider/snapshot caches; original collection records and notes were preserved.
+
+Primary API documentation: [Google Books volumes and pagination](https://developers.google.com/books/docs/v1/reference/volumes/list), [Open Library search and selected editions](https://openlibrary.org/dev/docs/api/search). Credential setup remains in [GOOGLE_BOOKS.md](GOOGLE_BOOKS.md).

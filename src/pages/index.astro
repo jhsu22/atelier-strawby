@@ -1,6 +1,6 @@
 ---
 import AppLayout from '../layouts/AppLayout.astro';
-import { LibraryIsland } from '../components/shelf/LibraryIsland.tsx';
+import { LibraryBoundary } from '../components/ui/LibraryBoundary.tsx';
 import { readLibrary } from '../server/repositories/library.ts';
 import { parseBrowseState } from '../domain/library.ts';
 import type { LibraryData } from '../domain/library.ts';
@@ -9,7 +9,7 @@ try { data = await readLibrary(Astro.locals.runtime.env.DB); }
 catch { Astro.response.status = 503; }
 ---
 <AppLayout>
-  {data ? <LibraryIsland initialData={data} initialState={parseBrowseState(Astro.url.searchParams)} client:load />
+  {data ? <LibraryBoundary initialData={data} initialState={parseBrowseState(Astro.url.searchParams)} client:load />
     : <main id="main" class="unavailable-page">
       <h1>Collection unavailable</h1><p role="alert">Check the database connection and setup.</p>
       <a href="/" class="button button-primary">Try the shelf again</a><a href="/foundation" class="text-button">Open the collection record</a>

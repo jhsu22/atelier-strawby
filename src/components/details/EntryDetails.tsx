@@ -7,6 +7,7 @@ import type {
   CdAlbum,
 } from "../../domain/library.ts";
 import { seriesGaps } from "../../domain/library.ts";
+import { ReleasedVolumes } from "../releases/ReleasedVolumes.tsx";
 import { MediaArtwork } from "../covers/MediaArtwork.tsx";
 
 export function DateLabel({ value }: { value: string | null }) {
@@ -63,6 +64,7 @@ function MangaDetails({
           </div>
         </div>
       </div>
+      {entry.kind === "manga" && <ReleasedVolumes entry={entry} />}
       <div className="section-heading detail-section-heading">
         <h3>
           {book ? (numbered ? "Books in this series" : "Copies") : "Volumes"}
@@ -102,15 +104,15 @@ function MangaDetails({
               (group) => language === "all" || group.language === language,
             )
             .map((group) => (
-              <p key={group.editionRunId}>
+              <p key={group.key}>
                 <strong>
                   {group.language} · {group.publisher}
                 </strong>
                 <br />
                 {group.uncertain
-                  ? "Numbering or omnibus packaging needs confirmation before gaps can be calculated."
+                  ? group.reason
                   : group.missing.length
-                    ? `Missing between owned volumes: ${group.missing.join(", ")}.`
+                    ? `Observable gaps between owned volumes: ${group.missing.join(", ")}.`
                     : "No gaps between your owned volumes."}
               </p>
             ))}

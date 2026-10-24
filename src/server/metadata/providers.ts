@@ -29,7 +29,7 @@ export const lookupSchema = z.object({
   publisher: z.string().max(200).default(""),
   aliases: z.array(z.string().max(200)).max(10).default([]),
   provider: z
-    .enum(["auto", "mangadex", "openlibrary", "musicbrainz", "itunes"])
+    .enum(["auto", "mangadex", "openlibrary", "googlebooks", "musicbrainz", "itunes"])
     .default("auto"),
   id: z.string().max(100).optional(),
   retry: z.boolean().default(false),
@@ -55,7 +55,7 @@ const art = (
 export async function lookupMetadata(
   db: Store,
   raw: unknown,
-  options: { contact?: string; fetcher?: Fetcher } = {},
+  options: { contact?: string; fetcher?: Fetcher; googleBooksKey?: string } = {},
 ): Promise<MetadataResult> {
   const input = lookupSchema.parse(raw),
     warnings: string[] = [],
@@ -295,7 +295,7 @@ export async function lookupMetadata(
       ];
     }
     const escape = (value: string) =>
-      value.replace(/[+\-!(){}\[\]^"~*?:\\/]/g, " ");
+      value.replace(/[+\-!(){}[\]^"~*?:\\/]/g, " ");
     const query = `release:"${escape(input.query)}"${input.artist ? ` AND artist:"${escape(input.artist)}"` : ""}`;
     const payload = record(
       await json(
@@ -343,8 +343,18 @@ export async function lookupMetadata(
     }));
   };
   let candidates: MetadataCandidate[] = [];
-  if (input.kind === "manga" && input.medium === "book") {
-    if (!input.id)
+  let googleMatched = false;
+  const googleFirst = async () => {
+    if (!options.googleBooksKey?.trim()) return [];
+    const found = await attempt(() => googleBooksMetadata(db, input, options));
+    googleMatched = found.some(candidate => candidate.applicable !== false);
+    return googleMatched ? found : [];
+  };
+  if (input.kind === "manga" && input.provider === "googlebooks") {
+    candidates = await attempt(() => googleBooksMetadata(db, input, options));
+  } else if (input.kind === "manga" && input.medium === "book") {
+    if (input.provider === "auto" && !input.id) candidates = await googleFirst();
+    if (!candidates.length && !input.id)
       candidates = await attempt(() =>
         openLibraryBookCovers(
           db,
@@ -361,7 +371,7 @@ export async function lookupMetadata(
     if (!candidates.length && !input.id)
       candidates = await attempt(openLibrary);
   } else if (input.kind === "manga") {
-    // MangaDex is comics only; light novels go straight to Open Library.
+    // MangaDex is comics only; prose editions start with Google Books, then Open Library.
     if (input.provider !== "openlibrary" && input.medium === "manga")
       candidates = await attempt(mangaDex);
     if (
@@ -380,8 +390,9 @@ export async function lookupMetadata(
         if (candidates.length) break;
       }
     }
-    // MangaDex rarely has English volume covers; Open Library editions do.
-    if (!input.id && ["auto", "openlibrary"].includes(input.provider))
+    // Prefer Google Books before the Open Library edition fallback.
+    if (!input.id && input.provider === "auto") candidates = [...(await googleFirst()), ...candidates];
+    if (!input.id && !googleMatched && ["auto", "openlibrary"].includes(input.provider))
       candidates = [
         ...(await attempt(() =>
           openLibraryVolumeCovers(
@@ -434,9 +445,10 @@ export async function lookupMetadata(
             : 0,
       ),
     );
-  candidates = candidates
-    .filter((candidate) => publicImageUrl(candidate.sourceUrl))
-    .sort((a, b) => score(b) - score(a));
+  candidates = candidates.filter(candidate => publicImageUrl(candidate.sourceUrl));
+  // Keep Google search order and its preferred position ahead of fallback sources.
+  if (!candidates.some(candidate => candidate.provider === "googlebooks"))
+    candidates.sort((a, b) => score(b) - score(a));
   return { candidates, warnings, failures };
 }
 
@@ -580,7 +592,7 @@ export async function openLibraryVolumeCovers(
   const titles = [...new Set(query.titles.filter(Boolean))].slice(0, 2);
   const found = new Map<number, MetadataCandidate & { rank: number }>();
   for (const title of titles) {
-    const q = `title:(${title.replace(/[():"\\[\]{}^~*?!+\-/&|]/g, " ")}) language:${language}`;
+    const q = `title:(${title.replace(/[():"[\]{}^~*?!+\-/&|]/g, " ")}) language:${language}`;
     const payload = record(
       await providerJson(
         db,
@@ -695,7 +707,7 @@ const derivative = new Set([
   "calendar",
 ]);
 const clean = (value: string) =>
-  value.replace(/[():"\\[\]{}^~*?!+\-/&|]/g, " ");
+  value.replace(/[():"[\]{}^~*?!+\-/&|]/g, " ");
 
 /**
  * Edition-level Open Library search for a prose book. The edition title must
@@ -787,4 +799,79 @@ export async function openLibraryBookCovers(
   return [...found.values()]
     .sort((a, b) => b.rank - a.rank)
     .map(({ rank: _rank, ...candidate }) => candidate);
+}
+
+/** Optional, user-reviewed third source. Google search totals are never series volume counts. */
+export async function googleBooksMetadata(
+  db: Store,
+  input: z.infer<typeof lookupSchema>,
+  options: { googleBooksKey?: string; contact?: string; fetcher?: Fetcher } = {},
+): Promise<MetadataCandidate[]> {
+  if (!options.googleBooksKey?.trim())
+    throw new ApiError(422, "Google Books is not configured. Add GOOGLE_BOOKS_API_KEY to the server's .dev.vars, then restart the app. Setup: docs/GOOGLE_BOOKS.md.");
+  const isbn = input.query.replace(/[\s-]/g, "");
+  const byIsbn = /^(\d{13}|\d{9}[\dXx])$/.test(isbn);
+  const query = byIsbn ? `isbn:${isbn}` : `intitle:${clean(input.query)}${input.artist ? ` inauthor:${clean(input.artist)}` : ""}${input.medium !== "book" ? ` ${input.volume}` : ""}`;
+  const params = new URLSearchParams({ q: query, langRestrict: lang[input.language], printType: "books", maxResults: "12" });
+  const payload = record(await providerJson(db, "googlebooks", `https://www.googleapis.com/books/v1/volumes?${params}`, {
+    ...options, retry: input.retry,
+  }));
+  const candidates: MetadataCandidate[] = [];
+  for (const item of arr(payload.items)) {
+    const id = str(item.id);
+    if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) continue;
+    const info = record(item.volumeInfo);
+    const title = str(info.title), subtitle = str(info.subtitle);
+    const fullTitle = [title, subtitle].filter(Boolean).join(": ");
+    if (!title) continue;
+    const languageMatch = info.language === lang[input.language];
+    const authors = strings(info.authors).slice(0, 30);
+    const authorMatch = creditsCompatible(authors, input.artist ? [input.artist] : []);
+    const publisher = str(info.publisher);
+    const titles = [input.query, ...input.aliases];
+    const volume = input.medium === "book" ? null : editionVolume(fullTitle, titles, input.medium);
+    const sameTitle = input.medium === "book" && titles.some(name => {
+      const prefix = words(name), tokens = words(fullTitle);
+      return prefix.length > 0 && prefix.every((word, i) => tokens[i] === word) && !tokens.slice(prefix.length).some(word => derivative.has(word));
+    });
+    const titleMatch = byIsbn || (input.medium === "book" ? sameTitle : volume === String(Number(input.volume)));
+    const publisherMatch = input.publisher && publisher ? samePublisher(input.publisher, [publisher], input.medium) : undefined;
+    // A Google volume can describe a digital edition. Neither its ISBN nor its
+    // title establishes the physical format, so art always starts representative.
+    let image: string | null = null;
+    const images = record(info.imageLinks);
+    const rawImage = str(images.thumbnail) || str(images.smallThumbnail);
+    try {
+      const url = new URL(rawImage);
+      if (["books.google.com", "books.googleusercontent.com"].includes(url.hostname) && ["http:", "https:"].includes(url.protocol) && !url.username && !url.password && !url.port) {
+        url.protocol = "https:";
+        url.searchParams.delete("key");
+        image = url.href;
+      }
+    } catch { /* Missing images do not prevent useful metadata suggestions. */ }
+    const sourceUrl = `https://books.google.com/books?id=${encodeURIComponent(id)}`;
+    const identifiers = arr(info.industryIdentifiers).filter(value => ["ISBN_10", "ISBN_13"].includes(str(value.type))).map(value => str(value.identifier)).filter(Boolean);
+    const isbnMatch = !byIsbn || identifiers.some(value => value.replace(/[\s-]/g, "").toUpperCase() === isbn.toUpperCase());
+    const applicable = languageMatch && authorMatch && titleMatch && isbnMatch;
+    const warning = [
+      !applicable ? "This result does not match the requested title/volume, language, author or ISBN. It cannot be applied to this copy." : "",
+      "Google Books metadata; physical format and edition need review. No acquisition data is changed.",
+      publisherMatch === false ? "Publisher differs from your copy." : "",
+      item.saleInfo && record(item.saleInfo).isEbook === true ? "Google identifies this listing as an eBook." : "",
+      str(info.publishedDate) ? `Catalog publication date: ${str(info.publishedDate)} (not your acquisition date).` : "",
+    ].filter(Boolean).join(" ");
+    candidates.push({
+      id, provider: "googlebooks", title: fullTitle,
+      subtitle: [authors.join(" · "), publisher, identifiers.join(" / ")].filter(Boolean).join(" · "),
+      sourceUrl, detail: false, warning, credits: authors, applicable,
+      ...(publisherMatch === undefined ? {} : { publisherMatch }),
+      patch: {
+        ...(input.medium === "book" ? { title } : {}),
+        ...(authors.length ? { authors } : {}),
+        ...(publisher ? { publisher } : {}),
+        ...(image ? { artwork: { ...art(image, "googlebooks", id, "representative", input.language), attribution: "Google Books · representative cover; physical edition unverified" } } : {}),
+      },
+    });
+  }
+  return candidates;
 }

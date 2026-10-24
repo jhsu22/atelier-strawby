@@ -306,7 +306,7 @@ test("dialogs trap keyboard focus, Escape restores it, and all navigation action
     await nav
       .getByRole("button", { name: "Haul Timeline", exact: true })
       .click();
-    await expect(page.getByRole("dialog")).toContainText("not available yet");
+    await expect(page.locator(".haul-card")).toHaveCount(56);
     await page.keyboard.press("Escape");
     await nav.getByRole("button", { name: "Stats", exact: true }).click();
     await expect(page.getByRole("dialog")).toContainText("177");

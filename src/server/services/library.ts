@@ -60,8 +60,26 @@ export async function libraryData(read: ReadRows): Promise<LibraryData> {
   ] = await Promise.all(
     Object.values(LIBRARY_QUERIES).map((query) => read(query)),
   );
+  // Index joined rows once; filtering every relationship per copy grows quadratically.
+  const group = (rows: Record<string, unknown>[], key: string) => {
+    const index = new Map<unknown, Record<string, unknown>[]>();
+    for (const row of rows) {
+      const values = index.get(row[key]) ?? [];
+      values.push(row);
+      index.set(row[key], values);
+    }
+    return (id: string) => index.get(id) ?? [];
+  };
+  const authorRows = group(authors!, "series_id");
+  const aliasRows = group(aliases!, "series_id");
+  const tagRows = group(tags!, "item_id");
+  const artistRows = group(artists!, "album_id");
+  const labelRows = group(labels!, "release_id");
+  const mediumRows = group(media!, "release_id");
+  const trackRows = group(tracks!, "release_id");
+  const covers = new Map(artwork!.map(row => [row.id, row]));
   const cover = (id: string | null): Artwork | null => {
-    const value = artwork!.find((row) => row.id === id);
+    const value = covers.get(id);
     return value
       ? {
           url:
@@ -103,13 +121,11 @@ export async function libraryData(read: ReadRows): Promise<LibraryData> {
         title: row.canonical_title,
         authors: [
           ...new Set(
-            authors!
-              .filter((author) => author.series_id === row.series_id)
+            authorRows(row.series_id)
               .map((author) => credit.parse(author).display_name),
           ),
         ],
-        aliases: aliases!
-          .filter((alias) => alias.series_id === row.series_id)
+        aliases: aliasRows(row.series_id)
           .map((alias) => string.parse(alias.title)),
         copies: [],
       } as MangaSeries | BookSeries;
@@ -133,8 +149,7 @@ export async function libraryData(read: ReadRows): Promise<LibraryData> {
       notes: row.notes,
       tags: [
         ...new Set(
-          tags!
-            .filter((tag) => tag.item_id === row.id)
+          tagRows(row.id)
             .map((tag) => string.parse(tag.label)),
         ),
       ],
@@ -155,15 +170,13 @@ export async function libraryData(read: ReadRows): Promise<LibraryData> {
         releaseDate: row.release_date,
         artists: [
           ...new Set(
-            artists!
-              .filter((artist) => artist.album_id === row.album_id)
+            artistRows(row.album_id)
               .map((artist) => credit.parse(artist).display_name),
           ),
         ],
-        labels: labels!
-          .filter((label) => label.release_id === row.release_id)
+        labels: labelRows(row.release_id)
           .map((label) => string.parse(label.name)),
-        catalogNumbers: labels!
+        catalogNumbers: labelRows(row.release_id)
           .filter(
             (label) =>
               label.release_id === row.release_id &&
@@ -172,13 +185,11 @@ export async function libraryData(read: ReadRows): Promise<LibraryData> {
           .map((label) => string.parse(label.catalog_number)),
         formats: [
           ...new Set(
-            media!
-              .filter((medium) => medium.release_id === row.release_id)
+            mediumRows(row.release_id)
               .map((medium) => string.parse(medium.format)),
           ),
         ],
-        tracks: tracks!
-          .filter((track) => track.release_id === row.release_id)
+        tracks: trackRows(row.release_id)
           .map((track) => ({
             medium: z.number().int().parse(track.medium),
             position: z.number().int().parse(track.position),
@@ -197,8 +208,7 @@ export async function libraryData(read: ReadRows): Promise<LibraryData> {
       version: row.version,
       tags: [
         ...new Set(
-          tags!
-            .filter((tag) => tag.item_id === row.id)
+          tagRows(row.id)
             .map((tag) => string.parse(tag.label)),
         ),
       ],
