@@ -246,7 +246,7 @@ Use normal links for series/album cards with direct detail routes. Enhanced clic
 ### Layout and visual system
 
 - Preserve the PRD palette: paper `#FAF8F5`, dark espresso `#141413`, strawberry `#D9383A`, sage `#6B8E78`. Choose darker text variants where the decorative accent fails text contrast; sage is not automatically suitable for small white text.
-- Use Newsreader for editorial headings, Inter for body text, and JetBrains Mono for metadata. Self-host licensed WOFF2 subsets, use `font-display: swap`, and provide serif/sans/monospace plus Japanese/Korean system fallbacks. Do not download an entire CJK font family for a few titles.
+- Use Geist for headings and the wordmark, Inter for body text, JetBrains Mono for metadata, and Newsreader italic for personal notes. Self-host licensed WOFF2 subsets, use `font-display: swap`, and provide serif/sans/monospace plus Japanese/Korean system fallbacks. Do not download an entire CJK font family for a few titles.
 - Mobile: 2 columns by default, optional 3-column compact density when usable; horizontal filter pills; safe-area-aware bottom navigation with Shelf, Search & Filter, Haul Timeline, Stats, and Add. Bottom navigation must not cover the last row or dialog buttons.
 - Desktop: centered shelf width, 5–7 cover columns as space permits, visible filter/sidebar controls, and a side dialog. Manga cards retain portrait art; CDs use square art with CSS jewel-case hinge/spine details.
 - Spine view shows each owned manga/CD copy, including duplicates, in bounded horizontally scrollable shelf rows. Stable publisher/series colors supplement text. Every spine has an accessible title/number label and keyboard selection; a selected spine reveals a full-size control/card instead of relying on tiny touch targets.

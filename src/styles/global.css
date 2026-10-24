@@ -69,6 +69,8 @@ h3 {
 h1,
 h2 {
   font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: -0.03em;
 }
 :focus-visible {
   outline: 2px solid var(--accent-text);
@@ -191,19 +193,72 @@ a {
 .brand-lockup {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font: 500 25px/1 var(--font-heading);
+  gap: 10px;
+  font: 600 25px/1 var(--font-heading);
   white-space: nowrap;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.045em;
 }
 .brand-mark {
-  width: 29px;
-  height: 37px;
-  color: var(--accent);
+  width: 34px;
+  height: 34px;
+  flex: none;
+  color: var(--text);
 }
-.brand-mark svg {
-  width: 100%;
-  height: 100%;
+.brand-berry-body {
+  fill: var(--accent);
+}
+.brand-berry-seeds {
+  fill: var(--page);
+}
+.brand-berry-crown {
+  fill: var(--brand-leaf);
+  stroke: var(--brand-leaf);
+}
+.brand-spine {
+  fill: currentColor;
+}
+.brand-berry,
+.brand-spine,
+.brand-word {
+  animation: brand-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.brand-berry {
+  animation-name: brand-drop;
+  animation-delay: 0.2s;
+  animation-timing-function: cubic-bezier(0.2, 1.4, 0.35, 1);
+}
+.brand-spine + .brand-spine {
+  animation-delay: 0.1s;
+}
+.brand-word {
+  animation-name: brand-word-in;
+  animation-delay: 0.25s;
+}
+.brand-berry-crown {
+  transform-origin: 24px 14px;
+  transition: transform 0.5s cubic-bezier(0.2, 1.4, 0.35, 1);
+}
+.brand-lockup:hover .brand-berry-crown,
+.brand-lockup:focus-visible .brand-berry-crown {
+  transform: rotate(-12deg);
+}
+@keyframes brand-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+@keyframes brand-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+@keyframes brand-word-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
 }
 .header-actions {
   display: flex;
@@ -1158,7 +1213,7 @@ a {
   display: flex;
   gap: 6px;
   align-items: flex-start;
-  font: italic 16px/1.5 var(--font-heading);
+  font: italic 16px/1.5 var(--font-note);
   margin-top: 9px;
   overflow-wrap: anywhere;
 }
@@ -1314,7 +1369,7 @@ a {
   margin-bottom: 10px;
 }
 .acquisition-note p + p {
-  font: italic 18px/1.5 var(--font-heading);
+  font: italic 18px/1.5 var(--font-note);
 }
 .filter-field {
   display: block;
@@ -1644,8 +1699,8 @@ a {
     gap: 10px;
   }
   .brand-mark {
-    width: 25px;
-    height: 33px;
+    width: 30px;
+    height: 30px;
   }
   .desktop-add {
     display: none;
@@ -1984,7 +2039,9 @@ a {
   }
   .entry-open:hover .media-art,
   .entry-open:focus-visible .media-art,
-  .media-spine:hover {
+  .media-spine:hover,
+  .brand-lockup:hover .brand-berry-crown,
+  .brand-lockup:focus-visible .brand-berry-crown {
     transform: none;
   }
 }

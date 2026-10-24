@@ -23,7 +23,9 @@
   --sage-text: #3e624b;
   --sage-surface: #e8ede4;
   --shadow: 0 12px 28px -16px #33281d55;
-  --font-heading: "Newsreader", Georgia, serif;
+  --font-heading: "Geist", "Inter", system-ui, sans-serif;
+  --brand-leaf: #5f8a6c;
+  --font-note: "Newsreader", Georgia, serif;
   --font-ui: "Inter", system-ui, sans-serif;
   --font-data: "JetBrains Mono", ui-monospace, monospace;
   --content-width: 1320px;
@@ -41,5 +43,6 @@
   --accent-text: #ff8f86;
   --sage-text: #b2c9b5;
   --sage-surface: #29372d;
+  --brand-leaf: #86b394;
   --shadow: 0 14px 30px -12px #0009;
 }
