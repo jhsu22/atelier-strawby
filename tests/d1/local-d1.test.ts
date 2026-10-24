@@ -10,14 +10,14 @@ import { seedSampleCds } from '../../scripts/lib/sample-cds.ts';
 import type { Database } from '../../scripts/lib/types.ts';
 import { verifySeed } from '../../scripts/lib/verify.ts';
 import { collectionSummary } from '../../src/server/services/collection-summary.ts';
+import { migrationStatements } from '../../scripts/lib/migrations.ts';
 
 test('real local workerd D1: migration, import, repeat, owner edits, rollback, constraints and visibility', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'strawby-d1-'));
   try {
     const db = await openLocalD1(directory);
     try {
-      const migration = await readFile('drizzle/0000_foundation.sql', 'utf8');
-      const statements = migration.split('--> statement-breakpoint').map(s => s.replace(/^--.*$/gm, '').trim()).filter(Boolean).map(sql => ({ sql, params: [] }));
+      const statements = await migrationStatements();
       for (let i = 0; i < statements.length; i += 40) await db.batch(statements.slice(i, i + 40));
       const plan = normalizeCsv(await readFile('initial_collection.csv', 'utf8'));
       await persistPlan(db, plan); await verifySeed(db);
@@ -53,8 +53,7 @@ test('real local workerd D1: interrupted imports stay hidden, resume and refuse 
   try {
     const db = await openLocalD1(directory);
     try {
-      const migration = await readFile('drizzle/0000_foundation.sql', 'utf8');
-      const statements = migration.split('--> statement-breakpoint').map(s => s.replace(/^--.*$/gm, '').trim()).filter(Boolean).map(sql => ({ sql, params: [] }));
+      const statements = await migrationStatements();
       for (let i = 0; i < statements.length; i += 40) await db.batch(statements.slice(i, i + 40));
       const csv = await readFile('initial_collection.csv', 'utf8');
       const plan = normalizeCsv(csv);

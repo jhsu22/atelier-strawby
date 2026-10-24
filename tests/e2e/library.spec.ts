@@ -36,7 +36,9 @@ test("real seeded shelf, grid densities, media switching and zero horizontal ove
     await page.setViewportSize({ width, height: 1000 });
     expect(
       await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
+        () =>
+        document.documentElement.scrollWidth <=
+        (visualViewport?.width ?? innerWidth),
       ),
     ).toBe(true);
     const count = await page
@@ -164,6 +166,23 @@ test("individual spine view preserves browsing state and opens detail", async ({
     .click();
   await expect(page.locator(".media-spine")).toHaveCount(181);
   await expect(page.locator(".cd-spine")).toHaveCount(4);
+  // CDs share one shelf ordered by artist; unknown artists come last.
+  const cdShelf = page.getByRole("region", { name: "CDs by artist" });
+  await expect(cdShelf).toHaveCount(1);
+  await expect(cdShelf.locator(".cd-spine")).toHaveCount(4);
+  expect(
+    await cdShelf
+      .locator(".cd-spine")
+      .evaluateAll((spines) =>
+        spines.map((spine) => spine.getAttribute("aria-label")),
+      ),
+  ).toEqual([
+    "Open Kessoku Band by Kessoku Band, CD",
+    "Open Your Name OST by RADWIMPS, CD",
+    "Open Susumu Hirasawa sample (album unresolved) by Susumu Hirasawa, CD",
+    "Open Evangelion Finally, CD",
+  ]);
+  await expect(page.locator(".spine-shelf")).toHaveCount(39);
   expect(
     await page
       .locator(".media-spine:not(.cd-spine)")
@@ -173,7 +192,9 @@ test("individual spine view preserves browsing state and opens detail", async ({
   ).toEqual([235]);
   expect(
     await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
+      () =>
+        document.documentElement.scrollWidth <=
+        (visualViewport?.width ?? innerWidth),
     ),
   ).toBe(true);
   const audit = await new AxeBuilder({ page })
@@ -287,7 +308,9 @@ test("dialogs trap keyboard focus, Escape restores it, and all navigation action
     await expect(page.getByRole("dialog")).toContainText("177");
     await page.keyboard.press("Escape");
     await nav.getByRole("button", { name: "Add", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Add copy", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Add copy", exact: true }),
+    ).toBeVisible();
   } else {
     await page
       .getByRole("button", { name: "Collection stats", exact: true })
@@ -297,7 +320,9 @@ test("dialogs trap keyboard focus, Escape restores it, and all navigation action
     await page
       .getByRole("button", { name: "Add to collection", exact: true })
       .click();
-    await expect(page.getByRole("button", { name: "Add copy", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Add copy", exact: true }),
+    ).toBeVisible();
   }
 });
 

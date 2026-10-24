@@ -1,6 +1,10 @@
 import { defineConfig } from "@playwright/test";
 import { existsSync } from "node:fs";
 
+// The disposable test server defaults to the dev port; set STRAWBY_TEST_PORT to
+// run browser tests while `npm run dev` is using 4321.
+const port = process.env.STRAWBY_TEST_PORT ?? "4321";
+
 export default defineConfig({
   testDir: "./tests/e2e",
   outputDir: "data/generated/stage2-playwright",
@@ -13,7 +17,7 @@ export default defineConfig({
     ["json", { outputFile: "data/generated/stage2-browser-results.json" }],
   ],
   use: {
-    baseURL: process.env.STRAWBY_TEST_URL ?? "http://127.0.0.1:4321",
+    baseURL: process.env.STRAWBY_TEST_URL ?? `http://127.0.0.1:${port}`,
     launchOptions: {
       executablePath:
         process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ??
@@ -37,7 +41,7 @@ export default defineConfig({
     ? undefined
     : {
         command: "node scripts/browser-server.ts",
-        url: "http://127.0.0.1:4321",
+        url: `http://127.0.0.1:${port}`,
         reuseExistingServer: false,
         timeout: 120_000,
       },

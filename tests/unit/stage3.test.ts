@@ -10,7 +10,12 @@ import {
   memoryTags,
   publicImageUrl,
 } from "../../src/domain/item.ts";
-import { browseEntries, defaultBrowseState } from "../../src/domain/library.ts";
+import {
+  browseEntries,
+  browseParams,
+  defaultBrowseState,
+  parseBrowseState,
+} from "../../src/domain/library.ts";
 import type { LibraryEntry } from "../../src/domain/library.ts";
 import { readJson } from "../../src/server/http/api.ts";
 import {
@@ -18,6 +23,10 @@ import {
   boundedFetch,
 } from "../../src/server/metadata/http.ts";
 import { imageMime } from "../../src/server/metadata/artwork.ts";
+import {
+  editionVolume,
+  samePublisher,
+} from "../../src/server/metadata/providers.ts";
 
 test("Stage 3 search combines fuzzy titles, edition, publisher/label, acquisition year, language and manual memory tags on the same copy", () => {
   const entries: LibraryEntry[] = [
@@ -38,6 +47,7 @@ test("Stage 3 search combines fuzzy titles, edition, publisher/label, acquisitio
           volume: "1",
           volumeSort: 1000,
           numberingBasis: "printed",
+          medium: "manga",
           format: "collectors",
           acquiredOn: "2025-01-02",
           notes: "Trip",
@@ -53,6 +63,7 @@ test("Stage 3 search combines fuzzy titles, edition, publisher/label, acquisitio
           volume: "1",
           volumeSort: 1000,
           numberingBasis: "printed",
+          medium: "manga",
           format: "standard",
           acquiredOn: "2024-01-02",
           notes: null,
@@ -330,4 +341,85 @@ test("provider image fetching validates redirects, byte limits and signatures", 
     null,
   );
   assert.equal(imageMime(new Uint8Array([255, 216, 255, 0])), "image/jpeg");
+});
+
+test("Open Library edition titles yield a volume only for the series itself, and publishers match across legal suffixes", () => {
+  const cases: [string, string[], string | null][] = [
+    ["Spy x Family, Vol. 4", ["SPY x FAMILY"], "4"],
+    ["Spy X Family, Vol. 12", ["SPY x FAMILY"], "12"],
+    ["Laid-Back Camp, Vol. 5", ["Laid Back Camp"], "5"],
+    [
+      "Summertime Rendering Volume 2 (Paperback)",
+      ["Summertime Rendering"],
+      "2",
+    ],
+    ["Shikimori's Not Just a Cutie 7", ["Shikimori's not Just a Cutie"], "7"],
+    ["A Silent Voice 03", ["A Silent Voice"], "3"],
+    [
+      "Kaoru Hana wa Rin to Saku 1",
+      ["The Fragrant Flower", "Kaoru Hana wa Rin to Saku"],
+      "1",
+    ],
+    ["BAKEMONOGATARI (manga), Volume 3", ["Bakemonogatari"], "3"],
+    ["A Silent Voice Special Movie Book", ["A Silent Voice"], null],
+    ["86--Eighty-Six, Vol. 1 (light novel)", ["86: EIGHTY-SIX"], null],
+    ["Story: Box Set 1-3", ["Story"], null],
+    ["Wotakoi", ["Wotakoi: Love is Hard for Otaku"], null],
+    ["Spy x Family: Family Portrait", ["SPY x FAMILY"], null],
+  ];
+  for (const [title, series, volume] of cases)
+    assert.equal(editionVolume(title, series), volume, title);
+  assert.ok(samePublisher("Kodansha", ["Kodansha America, Incorporated"]));
+  assert.ok(samePublisher("Yen Press", ["Yen Press LLC"]));
+  assert.ok(samePublisher("VIZ Media", ["Viz Media"]));
+  assert.ok(samePublisher("VIZ Media", ["SHONEN JUMP"]));
+  assert.ok(samePublisher("Kodansha", ["Vertical, Incorporated"]));
+  assert.ok(samePublisher("VIZ Media", ["Viz Communications"]));
+  assert.ok(
+    samePublisher("Udon Entertainment", ["UDON Entertainment Corporation"]),
+  );
+  assert.ok(!samePublisher("VIZ Media", ["Ivrea"]));
+  assert.ok(!samePublisher("Yen Press", ["Yen On"]));
+  assert.ok(!samePublisher("Square Enix", ["Yen On"]));
+  assert.ok(!samePublisher("", ["Yen Press"]));
+});
+
+test("light-novel edition titles and imprints match only the light-novel medium", () => {
+  const ln = (title: string, series: string[]) =>
+    editionVolume(title, series, "light_novel");
+  assert.equal(
+    ln("86—EIGHTY-SIX, Vol. 4 (light novel)", ["86: EIGHTY-SIX"]),
+    "4",
+  );
+  assert.equal(
+    editionVolume("86—EIGHTY-SIX, Vol. 4 (light novel)", ["86: EIGHTY-SIX"]),
+    null,
+  );
+  assert.equal(ln("BAKEMONOGATARI, Part 02", ["Bakemonogatari"]), "2");
+  assert.equal(
+    editionVolume("BAKEMONOGATARI, Part 02", ["Bakemonogatari"]),
+    null,
+  );
+  assert.equal(
+    ln("BAKEMONOGATARI (manga), Volume 3", ["Bakemonogatari"]),
+    null,
+  );
+  // Standalone novels are unnumbered; unnumbered manga may be an omnibus.
+  assert.equal(ln("Three Days of Happiness", ["Three Days of Happiness"]), "1");
+  assert.equal(editionVolume("Wotakoi", ["Wotakoi"]), null);
+  assert.ok(samePublisher("Yen Press", ["Yen On"], "light_novel"));
+  assert.ok(!samePublisher("Yen Press", ["Yen On"], "manga"));
+  assert.ok(
+    samePublisher("Kodansha", ["Vertical, Incorporated"], "light_novel"),
+  );
+});
+
+test("browse URL state keeps the Books tab and manga type filter", () => {
+  const state = parseBrowseState(
+    new URLSearchParams("media=book&type=light_novel"),
+  );
+  assert.equal(state.media, "book");
+  assert.equal(state.type, "light_novel");
+  assert.equal(browseParams(state).toString(), "media=book&type=light_novel");
+  assert.equal(parseBrowseState(new URLSearchParams("type=comic")).type, "");
 });

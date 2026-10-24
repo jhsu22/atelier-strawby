@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   browseEntries,
   browseParams,
+  cdShelf,
   defaultBrowseState,
   matchingCopies,
   parseBrowseState,
@@ -12,6 +13,7 @@ import type {
   MangaSeries,
   MangaCopy,
   CdAlbum,
+  LibraryEntry,
 } from "../../src/domain/library.ts";
 import { librarySchema } from "../../src/domain/library-schema.ts";
 
@@ -26,6 +28,7 @@ function copy(volume: string, extra: Partial<MangaCopy> = {}): MangaCopy {
     volume,
     volumeSort: Number(volume) * 1000,
     numberingBasis: "printed",
+    medium: "manga",
     format: "standard",
     acquiredOn: "2024-01-02",
     notes: null,
@@ -223,4 +226,41 @@ test("library response schema rejects malformed media and incomplete copy payloa
   ]) {
     assert.equal(librarySchema.safeParse({ entries }).success, false);
   }
+});
+
+test("CD shelf view puts every visible CD copy on one shelf, alphabetical by artist then title, unknown artists last", () => {
+  const cd = (id: string, title: string, artists: string[], copies = 1) => ({
+    kind: "cd" as const,
+    id,
+    title,
+    artists,
+    releaseId: `${id}-release`,
+    releaseDate: null,
+    formats: [],
+    labels: [],
+    catalogNumbers: [],
+    tracks: [],
+    copies: Array.from({ length: copies }, (_, i) => ({
+      id: `${id}-${i}`,
+      acquiredOn: null,
+      notes: null,
+      isSample: false,
+    })),
+  });
+  const entries = [
+    cd("u", "Unknown album", []),
+    cd("r", "Your Name OST", ["RADWIMPS"]),
+    cd("k2", "We Will", ["Kessoku Band"]),
+    cd("s", "Sample", ["susumu Hirasawa"]),
+    cd("k1", "Kessoku Band", ["kessoku band"], 2),
+  ] as LibraryEntry[];
+  const shelf = cdShelf(entries, { ...defaultBrowseState, view: "spines" });
+  assert.deepEqual(
+    shelf.map(({ copy }) => copy.id),
+    ["k1-0", "k1-1", "k2-0", "r-0", "s-0", "u-0"],
+  );
+  assert.deepEqual(
+    cdShelf(entries, { ...defaultBrowseState, media: "manga" }),
+    [],
+  );
 });

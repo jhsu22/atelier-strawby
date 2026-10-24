@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { itemSchema, memoryTags } from "../../domain/item.ts";
 import type { ItemInput } from "../../domain/item.ts";
+import type { Medium } from "../../domain/types.ts";
 import type { LibraryEntry } from "../../domain/library.ts";
 import type {
   MetadataCandidate,
@@ -82,11 +83,13 @@ export function ItemEditor({
     try {
       const next = await request<MetadataResult>("/api/metadata", "POST", {
         kind: item.kind,
+        medium: item.medium,
         query: candidate?.title ?? (query || title),
-        artist: artistQuery,
+        artist: item.kind === "cd" ? artistQuery : item.authors.join(" "),
         aliases: item.aliases,
         language: item.language,
         volume: item.volume,
+        publisher: item.publisher,
         provider: candidate?.provider ?? provider,
         ...(candidate ? { id: candidate.id } : {}),
         retry,
@@ -192,17 +195,26 @@ export function ItemEditor({
         </p>
       )}
       <fieldset disabled={busy || confirmDelete}>
-        {!id && (
+        {(!id || item.kind === "manga") && (
           <label className="filter-field">
             Media type
             <select
               aria-label="Copy media type"
-              value={item.kind}
+              value={item.kind === "cd" ? "cd" : item.medium}
               onChange={(e) => {
-                const kind = e.target.value as "manga" | "cd";
+                const value = e.target.value as Medium | "cd";
+                const kind = value === "cd" ? "cd" : "manga";
+                const category = (medium: Medium) =>
+                  medium === "book" ? "book" : "manga";
                 update({
                   kind,
-                  seriesId: undefined,
+                  ...(value === "cd" ? {} : { medium: value }),
+                  // Changing an existing copy's type keeps its series.
+                  ...(id &&
+                  value !== "cd" &&
+                  category(value) === category(item.medium)
+                    ? {}
+                    : { seriesId: undefined }),
                   media:
                     kind === "cd"
                       ? [{ position: 1, format: "CD", title: "" }]
@@ -216,8 +228,16 @@ export function ItemEditor({
               }}
             >
               <option value="manga">Manga</option>
-              <option value="cd">CD</option>
+              <option value="light_novel">Light novel</option>
+              <option value="book">Book (not manga)</option>
+              {!id && <option value="cd">CD</option>}
             </select>
+            {id && item.kind === "manga" && (
+              <small>
+                The type applies to every copy in this edition. Automatic
+                artwork matched for the previous type is cleared.
+              </small>
+            )}
           </label>
         )}
         {item.kind === "manga" && (
@@ -229,7 +249,7 @@ export function ItemEditor({
                 const entry = entries.find(
                   (entry) => entry.id === e.target.value,
                 );
-                if (entry?.kind === "manga") {
+                if (entry && entry.kind !== "cd") {
                   update({
                     seriesId: entry.id,
                     authors: entry.authors,
@@ -241,9 +261,13 @@ export function ItemEditor({
                 } else update({ seriesId: undefined });
               }}
             >
-              <option value="">New series</option>
+              <option value="">
+                {item.medium === "book" ? "New book or series" : "New series"}
+              </option>
               {entries
-                .filter((e) => e.kind === "manga")
+                .filter(
+                  (e) => e.kind === (item.medium === "book" ? "book" : "manga"),
+                )
                 .map((e) => (
                   <option value={e.id} key={e.id}>
                     {e.title}
@@ -253,7 +277,11 @@ export function ItemEditor({
           </label>
         )}
         <label className="filter-field">
-          {item.kind === "manga" ? "Series title" : "Album title"}
+          {item.kind === "cd"
+            ? "Album title"
+            : item.medium === "book"
+              ? "Title"
+              : "Series title"}
           <input
             required
             maxLength={300}
@@ -299,7 +327,7 @@ export function ItemEditor({
           <>
             <div className="form-grid">
               <label className="filter-field">
-                Volume
+                {item.medium === "book" ? "Number in series" : "Volume"}
                 <input
                   required
                   maxLength={40}
@@ -632,9 +660,11 @@ export function ItemEditor({
               }}
             >
               <option value="auto">Automatic fallback</option>
-              {(item.kind === "manga"
-                ? ["mangadex", "openlibrary"]
-                : ["musicbrainz", "itunes"]
+              {(item.kind === "cd"
+                ? ["musicbrainz", "itunes"]
+                : item.medium === "manga"
+                  ? ["mangadex", "openlibrary"]
+                  : ["openlibrary"]
               ).map((p) => (
                 <option key={p}>{p}</option>
               ))}

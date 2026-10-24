@@ -1,2 +1,4 @@
-Title,Volume,Author,Publisher,Date Acquired,Notes,Language,Edition Title,Format
-Example Manga,1,Example Author,Example Publisher,2026-10-23,Gift,EN,Example Manga,standard
+Title,Volume,Author,Publisher,Date Acquired,Notes,Language,Edition Title,Format,Medium
+Example Manga,1,Example Author,Example Publisher,2026-10-23,Gift,EN,Example Manga,standard,Manga
+Example Light Novel,1,Example Author,Example Publisher,2026-10-23,,EN,Example Light Novel,standard,Light novel
+Example Book,1,Example Author,Example Publisher,2026-10-23,,EN,Example Book,standard,Book

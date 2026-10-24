@@ -57,6 +57,8 @@ npm run build
 npm run preview:pages
 ```
 
+To fill in missing artwork for the existing collection, run `npm run covers:cache -- --dry-run` to preview, then `npm run covers:cache`. The utility tries an unambiguous MangaDex match, then an Open Library edition with the same series, volume number, language and publisher/imprint. It caches the image in local R2, and writes a private report to `data/generated/cover-cache-report.json`. Rerun it to resume after interruption or rate limiting; `--limit N` bounds the series looked up per run and `--retry` bypasses cached failures. It only targets local Wrangler state. See [the Stage 3 guide](docs/STAGE3.md#automated-cover-caching-utility).
+
 With that local Pages server running, use `npm run test:smoke` in another terminal. It checks the seeded D1 totals, React-rendered counts, sample exclusion, private response headers, CSS delivery, and nonlocal Host rejection. Use `npm run test:smoke -- --url http://127.0.0.1:4321` to check the Astro development server, which supplies inline layout CSS. These are HTTP runtime checks; later-stage browser/device tests remain separate.
 
 The build is configured for **Astro 5 / `@astrojs/cloudflare` 12 / Cloudflare Pages**. Do not upgrade to a newer adapter major without revisiting the platform choice. See [Astro 5 Cloudflare documentation](https://v5.docs.astro.build/en/guides/integrations-guide/cloudflare/), [Tailwind's Vite setup](https://tailwindcss.com/docs/installation/framework-guides/astro), and [Drizzle D1](https://orm.drizzle.team/docs/sqlite/connect-cloudflare-d1).
@@ -85,7 +87,7 @@ Identical imports are no-ops, including after owner edits. Catalog rows use expl
 
 ## Schema and migrations
 
-The typed schema is `src/server/db/schema/index.ts`; the reviewed initial SQL is `drizzle/0000_foundation.sql`. There are 27 tables for catalog entities, manga edition runs and volume editions, owned items, CDs/releases/media/tracks, credits, tags, provenance, optional artwork references, metadata cache, and import state. No artwork is fetched in Stage 1.
+The typed schema is `src/server/db/schema/index.ts`; the reviewed SQL is `drizzle/0000_foundation.sql` plus the additive `drizzle/0001_edition_medium.sql` (the manga / light novel / book medium of an edition). Existing local databases need `npm run db:migrate:local` once; `npm run test:schema` checks every migration against the latest Drizzle snapshot. There are 27 tables for catalog entities, manga edition runs and volume editions, owned items, CDs/releases/media/tracks, credits, tags, provenance, optional artwork references, metadata cache, and import state. No artwork is fetched in Stage 1.
 
 Multiple owned records can reference the same volume edition or CD release. Composite foreign keys enforce matching manga/CD subtypes. Application batches and finalization ensure each committed item has its required subtype; a parent-only SQL insert is not a supported mutation. Foreign-key, enum, uniqueness, calendar-date, and positive-position checks live in SQL as well as domain validation.
 

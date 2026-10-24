@@ -4,6 +4,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { generateSQLiteDrizzleJson, generateSQLiteMigration } from 'drizzle-kit/api';
 import type { DrizzleSQLiteSnapshotJSON } from 'drizzle-kit/api';
 import * as schema from '../src/server/db/schema/index.ts';
+import { migrationFiles } from './lib/migrations.ts';
 
 // Ignore SQL formatting/identifier quotes, while preserving string literals.
 function canonicalSql(sql: string) {
@@ -57,7 +58,12 @@ function describe(db: DatabaseSync) {
   });
 }
 
-const snapshot: DrizzleSQLiteSnapshotJSON = JSON.parse(await readFile('drizzle/meta/0000_snapshot.json', 'utf8'));
+// The latest snapshot describes the typed schema after every reviewed migration.
+const journal = JSON.parse(await readFile('drizzle/meta/_journal.json', 'utf8')) as { entries: { idx: number; tag: string }[] };
+const latest = journal.entries.at(-1)!;
+const migrations = await migrationFiles();
+assert.deepEqual(migrations.map(m => m.name), journal.entries.map(e => `${e.tag}.sql`), 'Migration files differ from the Drizzle journal');
+const snapshot: DrizzleSQLiteSnapshotJSON = JSON.parse(await readFile(`drizzle/meta/${String(latest.idx).padStart(4, '0')}_snapshot.json`, 'utf8'));
 const current = await generateSQLiteDrizzleJson(schema, snapshot.id);
 assert.deepEqual(JSON.parse(JSON.stringify(current.tables)), snapshot.tables, 'Typed schema differs from the established baseline snapshot');
 assert.deepEqual(JSON.parse(JSON.stringify(current.views)), snapshot.views, 'Views differ from the baseline snapshot');
@@ -65,13 +71,13 @@ const statements = await generateSQLiteMigration({ ...snapshot, tables: {}, view
 const reviewed = new DatabaseSync(':memory:');
 const generated = new DatabaseSync(':memory:');
 try {
-  reviewed.exec(await readFile('drizzle/0000_foundation.sql', 'utf8'));
+  for (const { sql } of migrations) reviewed.exec(sql);
   for (const statement of statements) generated.exec(statement);
   const actual = describe(reviewed);
   assert.equal(actual.length, 27);
-  assert.deepEqual(actual, describe(generated), 'Reviewed migration differs from Drizzle-generated SQL');
+  assert.deepEqual(actual, describe(generated), 'Reviewed migrations differ from Drizzle-generated SQL');
   assert.deepEqual(reviewed.prepare('SELECT * FROM collection_state').all().map(row => ({ ...row })), [{ id: 1, revision: 0 }]);
-  console.log('Schema parity passed: 27 tables; columns, defaults, keys, indexes, CHECK constraints and baseline snapshot agree.');
+  console.log(`Schema parity passed: 27 tables after ${migrations.length} reviewed migrations; columns, defaults, keys, indexes, CHECK constraints and the ${latest.tag} snapshot agree.`);
   console.log('The reviewed baseline additionally initializes collection_state to revision 0.');
 } finally {
   reviewed.close();

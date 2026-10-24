@@ -1,6 +1,6 @@
 import type { Store } from "../db/store.ts";
 import { statement as s } from "../db/store.ts";
-import { artworkStatements, getItem } from "../services/items.ts";
+import { getItem } from "../services/items.ts";
 import { boundedFetch, reserveProvider } from "./http.ts";
 import type { Fetcher } from "./http.ts";
 import { ApiError } from "../http/api.ts";
@@ -26,7 +26,9 @@ export async function cacheItemArtwork(
   const { item } = await getItem(db, itemId),
     art = item.artwork;
   if (!art) return { cached: false, message: "No artwork selected." };
-  if (!["mangadex", "coverartarchive"].includes(art.provider))
+  // Open Library covers are served from archive.org storage that is sometimes
+  // unavailable, so the owner's selected covers are kept in private R2 too.
+  if (!["mangadex", "coverartarchive", "openlibrary"].includes(art.provider))
     return {
       cached: false,
       message: "This artwork is served directly from its source.",
@@ -40,7 +42,10 @@ export async function cacheItemArtwork(
       (source.hostname !== "coverartarchive.org" ||
         !/^\/release(?:-group)?\/[0-9a-f-]{36}\/front-500$/.test(
           source.pathname,
-        )))
+        ))) ||
+    (art.provider === "openlibrary" &&
+      (source.hostname !== "covers.openlibrary.org" ||
+        !/^\/b\/id\/\d+-L\.jpg$/.test(source.pathname)))
   )
     throw new ApiError(422, "Artwork URL does not match its provider.");
   if (!bucket)
@@ -49,7 +54,16 @@ export async function cacheItemArtwork(
       message:
         "Artwork reference saved. Configure COVERS to cache image bytes.",
     };
-  const { id } = await artworkStatements(art);
+  // Use the stored reference rather than re-deriving it from the artwork fields.
+  const id = String(
+    (
+      await db.all(
+        `SELECT e.cover_asset_id AS id FROM volumes v JOIN volume_editions e ON e.id=v.volume_edition_id WHERE v.item_id=?
+      UNION ALL SELECT r.cover_asset_id FROM cds c JOIN album_releases r ON r.id=c.release_id WHERE c.item_id=?`,
+        [itemId, itemId],
+      )
+    )[0]?.id,
+  );
   const variant = (
     await db.all(
       "SELECT object_key FROM cover_variants WHERE cover_asset_id=? AND variant=?",
@@ -75,7 +89,7 @@ export async function cacheItemArtwork(
     if (!response.ok)
       throw new ApiError(
         502,
-        "Artwork is unavailable. The saved source can be retried later.",
+        "Artwork is unavailable from its source.",
       );
     const mime = imageMime(bytes);
     if (

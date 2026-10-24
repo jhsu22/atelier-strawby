@@ -116,12 +116,15 @@ export const editionRuns = sqliteTable("edition_runs", {
   format: text("format", { enum: ['standard', 'omnibus', 'collectors', 'artbook', 'anthology', 'unknown'] }).notNull(),
   numberingBasis: text("numbering_basis", { enum: ['printed', 'source_record', 'unknown'] }).notNull(),
   numberingVerified: integer("numbering_verified").notNull().default(sql`0`),
+  // Added by 0001_edition_medium: manga, light novel or prose book edition.
+  medium: text("medium", { enum: ['manga', 'light_novel', 'book'] }).notNull().default(sql`'manga'`),
 }, (t) => [
   check("edition_runs_check_1", sql`language IN ('EN','JP','KR')`),
   check("edition_runs_check_2", sql`language_basis IN ('specified','assumed','confirmed')`),
   check("edition_runs_check_3", sql`format IN ('standard','omnibus','collectors','artbook','anthology','unknown')`),
   check("edition_runs_check_4", sql`numbering_basis IN ('printed','source_record','unknown')`),
   check("edition_runs_check_5", sql`numbering_verified IN (0,1)`),
+  check("edition_runs_check_6", sql`medium IN ('manga','light_novel','book')`),
   index("edition_runs_series_id_language_publisher_id_idx").on(t.seriesId, t.language, t.publisherId),
   index("edition_runs_publisher_id_idx").on(t.publisherId)
 ]);

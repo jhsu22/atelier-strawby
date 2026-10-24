@@ -144,7 +144,7 @@ export function TransferPanel({
           href={`/api/export?kind=manga&samples=${samples}`}
           download
         >
-          Manga CSV
+          Manga & books CSV
         </a>
         <a
           className="button"
@@ -223,7 +223,7 @@ export function TransferPanel({
               setPreview(null);
             }}
           >
-            <option value="manga">Manga CSV</option>
+            <option value="manga">Manga & books CSV</option>
             <option value="cd">CD CSV</option>
             <option value="discogs">Discogs collection CSV</option>
             <option value="json">Full JSON backup</option>
@@ -265,9 +265,10 @@ export function TransferPanel({
         <details className="editor-section">
           <summary>CSV templates</summary>
           <p>
-            Manga: Title, Volume, Author, Publisher, Date Acquired, Notes.
-            Optional Language, Edition Title, Format, Canonical Title, Alternate
-            Titles, Tags and Copy ID.
+            Manga & books: Title, Volume, Author, Publisher, Date Acquired,
+            Notes. Optional Medium (Manga, Light novel or Book; blank is manga),
+            Language, Edition Title, Format, Canonical Title, Alternate Titles,
+            Tags and Copy ID.
           </p>
           <p>
             CD: Title, Artist. Optional Label, Catalog Number, Release Date,

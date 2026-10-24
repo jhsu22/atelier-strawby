@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { LibraryEntry, MangaCopy } from "../../domain/library.ts";
 
 const palettes = [
@@ -41,28 +41,41 @@ export function MediaArtwork({
     ? entry.artwork
     : entry.copies.find((copy) => copy.artwork)?.artwork;
   const [failedUrl, setFailedUrl] = useState("");
+  const [loadedUrl, setLoadedUrl] = useState("");
+  const image = useRef<HTMLImageElement>(null);
+  const shown = artwork && artwork.url !== failedUrl ? artwork : null;
+  // An image can finish loading or fail before hydration attaches handlers.
+  useEffect(() => {
+    const node = image.current;
+    if (!shown || !node?.complete) return;
+    if (node.naturalWidth > 0) setLoadedUrl(shown.url);
+    else setFailedUrl(shown.url);
+  }, [shown?.url]);
+  const loaded = Boolean(shown && loadedUrl === shown.url);
   const names = cd ? entry.artists : entry.authors;
+  // The typographic cover is only a placeholder: once real artwork loads it
+  // fills the same space on its own.
   return (
     <div
       aria-hidden="true"
       style={mediaStyle(entry.title)}
-      className={`media-art ${cd ? "jewel-case" : "book-cover"} ${compact ? "art-compact" : ""}`}
+      className={`media-art ${cd ? "jewel-case" : "book-cover"} ${compact ? "art-compact" : ""} ${loaded ? "has-artwork" : ""}`}
     >
-      {artwork && artwork.url !== failedUrl && (
+      {shown && (
         <img
+          ref={image}
           className="resolved-artwork"
-          src={artwork.url}
+          src={shown.url}
           alt=""
           loading="lazy"
           referrerPolicy="no-referrer"
-          onError={() => setFailedUrl(artwork.url)}
+          onLoad={() => setLoadedUrl(shown.url)}
+          onError={() => setFailedUrl(shown.url)}
         />
       )}
-      {artwork &&
-        artwork.url !== failedUrl &&
-        artwork.scope === "representative" && (
-          <span className="artwork-fallback-label">Representative</span>
-        )}
+      {loaded && shown?.scope === "representative" && (
+        <span className="artwork-fallback-label">Representative</span>
+      )}
       <div className="cover-print">
         <span
           className={`cover-title ${entry.title.length > 34 ? "cover-title-long" : ""}`}
@@ -98,26 +111,47 @@ export function Spine({
   onOpen: () => void;
 }) {
   const cd = entry.kind === "cd";
+  const by = (names: string[]) =>
+    names.length ? ` by ${names.join(", ")}` : "";
+  // Standalone books (a single "1") show no series number.
+  const numbered =
+    entry.kind !== "book" || entry.copies.some((c) => c.volume !== "1");
   return (
     <button
       type="button"
-      className={`media-spine ${cd ? "cd-spine" : ""}`}
+      className={`media-spine ${cd ? "cd-spine" : entry.kind === "book" ? "book-spine" : ""}`}
       style={mediaStyle(entry.title)}
       onClick={onOpen}
-      aria-label={`Open ${entry.title}${copy.volume ? `, volume ${copy.volume}, ${copy.language}` : ", CD"}`}
+      aria-label={`Open ${entry.title}${
+        entry.kind === "cd"
+          ? `${by(entry.artists)}, CD`
+          : entry.kind === "book"
+            ? `${by(entry.authors)}, book${numbered ? ` ${copy.volume}` : ""}, ${copy.language}`
+            : `, volume ${copy.volume}, ${copy.language}${copy.medium === "light_novel" ? ", light novel" : ""}`
+      }`}
       data-copy-id={copy.id}
     >
-      <span className="spine-top">{cd ? "CD" : copy.language}</span>
+      <span className="spine-top">
+        {cd ? "CD" : copy.language}
+        {copy.medium === "light_novel" && (
+          <span className="spine-medium">LN</span>
+        )}
+      </span>
       <span className="spine-title">{entry.title}</span>
       <span className="spine-publisher">
-        {cd
-          ? entry.kind === "cd" && entry.copies.every((c) => c.isSample)
-            ? "SAMPLE"
-            : entry.labels.join(" · ") || "CD"
-          : copy.publisher}
+        {entry.kind === "cd"
+          ? [
+              entry.copies.every((c) => c.isSample) && "SAMPLE",
+              entry.artists.join(" · ") || entry.labels.join(" · "),
+            ]
+              .filter(Boolean)
+              .join(" · ") || "CD"
+          : entry.kind === "book"
+            ? entry.authors.join(" · ") || copy.publisher
+            : copy.publisher}
       </span>
       <span className="spine-number">
-        {cd ? "◉" : copy.volume?.padStart(2, "0")}
+        {cd ? "◉" : numbered ? copy.volume?.padStart(2, "0") : "◆"}
       </span>
     </button>
   );

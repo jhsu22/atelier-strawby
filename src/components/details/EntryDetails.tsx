@@ -3,6 +3,7 @@ import { BookOpen, CalendarDays, Disc3, Heart, Layers3 } from "lucide-react";
 import type {
   LibraryEntry,
   MangaSeries,
+  BookSeries,
   CdAlbum,
 } from "../../domain/library.ts";
 import { seriesGaps } from "../../domain/library.ts";
@@ -19,9 +20,12 @@ function MangaDetails({
   entry,
   onEdit,
 }: {
-  entry: MangaSeries;
+  entry: MangaSeries | BookSeries;
   onEdit?: (id: string) => void;
 }) {
+  const book = entry.kind === "book";
+  // A standalone book has no meaningful volume number to show or gap-check.
+  const numbered = !book || entry.copies.some((copy) => copy.volume !== "1");
   const [showGaps, setShowGaps] = useState(false);
   const [language, setLanguage] = useState("all");
   const languages = [...new Set(entry.copies.map((copy) => copy.language))];
@@ -60,7 +64,9 @@ function MangaDetails({
         </div>
       </div>
       <div className="section-heading detail-section-heading">
-        <h3>Volumes</h3>
+        <h3>
+          {book ? (numbered ? "Books in this series" : "Copies") : "Volumes"}
+        </h3>
       </div>
       <div className="detail-controls">
         {languages.length > 1 && (
@@ -77,15 +83,17 @@ function MangaDetails({
             </select>
           </label>
         )}
-        <label className="switch-label">
-          <input
-            type="checkbox"
-            checked={showGaps}
-            onChange={(event) => setShowGaps(event.target.checked)}
-          />
-          <span className="switch-track" aria-hidden="true" />
-          Find missing volumes
-        </label>
+        {numbered && (
+          <label className="switch-label">
+            <input
+              type="checkbox"
+              checked={showGaps}
+              onChange={(event) => setShowGaps(event.target.checked)}
+            />
+            <span className="switch-track" aria-hidden="true" />
+            Find missing volumes
+          </label>
+        )}
       </div>
       {showGaps && (
         <div className="gap-report" role="status">
@@ -125,13 +133,18 @@ function MangaDetails({
                 </small>
               </div>
             )}
-            <div className="volume-number">
-              <span>VOL.</span>
-              <strong>{copy.volume.padStart(2, "0")}</strong>
-            </div>
+            {numbered && (
+              <div className="volume-number">
+                <span>{book ? "NO." : "VOL."}</span>
+                <strong>{copy.volume.padStart(2, "0")}</strong>
+              </div>
+            )}
             <div className="volume-info">
               <div className="volume-heading">
                 <strong>{copy.editionTitle}</strong>
+                {copy.medium === "light_novel" && (
+                  <span className="badge badge-medium">Light novel</span>
+                )}
                 <span className="badge badge-language">{copy.language}</span>
               </div>
               <p className="volume-edition">
@@ -168,7 +181,9 @@ function MangaDetails({
                   className="text-button"
                   onClick={() => onEdit(copy.id)}
                 >
-                  Edit volume {copy.volume} · {copy.language}
+                  {numbered
+                    ? `Edit ${book ? "book" : "volume"} ${copy.volume} · ${copy.language}`
+                    : `Edit copy · ${copy.language}`}
                 </button>
               )}
             </div>
@@ -309,10 +324,10 @@ export function EntryDetails({
           </a>
         </p>
       )}
-      {entry.kind === "manga" ? (
-        <MangaDetails entry={entry} onEdit={onEdit} />
-      ) : (
+      {entry.kind === "cd" ? (
         <CdDetails entry={entry} onEdit={onEdit} />
+      ) : (
+        <MangaDetails entry={entry} onEdit={onEdit} />
       )}
       {onAdd && (
         <button type="button" className="button detail-add" onClick={onAdd}>

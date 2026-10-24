@@ -48,7 +48,7 @@ export async function getItem(
     const r = (
       await db.all(
         `SELECT s.id AS seriesId,s.canonical_title AS title,r.edition_title AS editionTitle,
-      r.language,r.language_basis AS languageBasis,r.format,r.numbering_basis AS numberingBasis,
+      r.language,r.language_basis AS languageBasis,r.format,r.numbering_basis AS numberingBasis,r.medium,
       COALESCE(p.name,'') AS publisher,e.volume_label AS volume,e.cover_asset_id AS cover
       FROM volumes v JOIN volume_editions e ON e.id=v.volume_edition_id JOIN edition_runs r ON r.id=e.edition_run_id
       JOIN series s ON s.id=r.series_id LEFT JOIN publishers p ON p.id=r.publisher_id WHERE v.item_id=?`,
@@ -183,6 +183,7 @@ async function credits(
 }
 export async function artworkStatements(
   art: ArtworkInput | null,
+  ownerSelected = true,
 ): Promise<{ id: string | null; statements: Statement[] }> {
   if (!art) return { id: null, statements: [] };
   const id = await idFor("cover", art);
@@ -191,7 +192,7 @@ export async function artworkStatements(
     statements: [
       s(
         `INSERT INTO cover_assets(id,provider,source_url,source_record_id,storage_mode,status,match_scope,source_language,fetched_at,policy_version,attribution,is_owner_selected)
-      VALUES (?,?,?,?,'external','ready',?,?,?,'stage3-v1',?,1) ON CONFLICT(id) DO NOTHING`,
+      VALUES (?,?,?,?,'external','ready',?,?,?,'stage3-v1',?,?) ON CONFLICT(id) DO NOTHING`,
         id,
         art.provider,
         art.url,
@@ -200,6 +201,7 @@ export async function artworkStatements(
         art.language,
         new Date().toISOString(),
         art.attribution,
+        ownerSelected ? 1 : 0,
       ),
       s(
         `INSERT INTO cover_variants(id,cover_asset_id,variant,external_url,mime_type) VALUES (?,?,'original',?,'image/jpeg') ON CONFLICT(cover_asset_id,variant) DO NOTHING`,
@@ -226,6 +228,7 @@ export async function planItem(
   const statements: Statement[] = [];
   const cover = await artworkStatements(item.artwork);
   statements.push(...cover.statements);
+  let coverId = cover.id;
   let target: string;
   if (item.kind === "manga") {
     let seriesId = item.seriesId;
@@ -305,9 +308,32 @@ export async function planItem(
       );
     const publisher = await named(db, statements, "publishers", item.publisher);
     const editionTitle = item.editionTitle || item.title;
+    // Medium belongs to the edition. Changing only the medium of a copy
+    // reclassifies its whole edition in place, like a shared series edit.
+    const current = options.update
+      ? (
+          await db.all(
+            `SELECT r.* FROM volumes v JOIN volume_editions e ON e.id=v.volume_edition_id
+          JOIN edition_runs r ON r.id=e.edition_run_id WHERE v.item_id=?`,
+            [id],
+          )
+        )[0]
+      : undefined;
+    const reclassify =
+      current &&
+      current.medium !== item.medium &&
+      current.series_id === seriesId &&
+      current.edition_title === editionTitle &&
+      current.language === item.language &&
+      current.publisher_id === publisher &&
+      current.format === item.format &&
+      current.numbering_basis === item.numberingBasis &&
+      current.language_basis === item.languageBasis
+        ? String(current.id)
+        : null;
     const existingRun = (
       await db.all(
-        `SELECT id FROM edition_runs WHERE series_id=? AND edition_title=? AND language=? AND publisher_id IS ? AND format=? AND numbering_basis=? AND language_basis=? LIMIT 1`,
+        `SELECT id FROM edition_runs WHERE series_id=? AND edition_title=? AND language=? AND publisher_id IS ? AND format=? AND numbering_basis=? AND language_basis=? AND medium=? LIMIT 1`,
         [
           seriesId,
           editionTitle,
@@ -316,11 +342,13 @@ export async function planItem(
           item.format,
           item.numberingBasis,
           item.languageBasis,
+          item.medium,
         ],
       )
     )[0];
     const run = String(
-      existingRun?.id ??
+      reclassify ??
+        existingRun?.id ??
         (await idFor("run", [
           seriesId,
           editionTitle,
@@ -329,12 +357,14 @@ export async function planItem(
           item.format,
           item.numberingBasis,
           item.languageBasis,
+          // Manga identities predate the medium column and stay unchanged.
+          ...(item.medium === "manga" ? [] : [item.medium]),
         ])),
     );
     statements.push(
       s(
-        `INSERT INTO edition_runs(id,series_id,edition_title,language,language_basis,publisher_id,format,numbering_basis,numbering_verified)
-      VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING`,
+        `INSERT INTO edition_runs(id,series_id,edition_title,language,language_basis,publisher_id,format,numbering_basis,numbering_verified,medium)
+      VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING`,
         run,
         seriesId,
         editionTitle,
@@ -344,8 +374,41 @@ export async function planItem(
         item.format,
         item.numberingBasis,
         item.numberingBasis === "printed" ? 1 : 0,
+        item.medium,
       ),
     );
+    if (reclassify) {
+      // Unattended covers were matched for the old medium (for example a manga
+      // cover on a light novel), so they are cleared; owner choices remain.
+      // Compare with the copy's stored cover rather than a re-derived id.
+      const stored = (
+        await db.all(
+          `SELECT a.source_url,a.is_owner_selected FROM volumes v JOIN volume_editions e ON e.id=v.volume_edition_id
+          JOIN cover_assets a ON a.id=e.cover_asset_id WHERE v.item_id=?`,
+          [id],
+        )
+      )[0];
+      if (
+        stored?.is_owner_selected === 0 &&
+        item.artwork?.url === stored.source_url
+      )
+        coverId = null;
+      statements.push(
+        s("UPDATE edition_runs SET medium=? WHERE id=?", item.medium, run),
+        s(
+          `UPDATE volume_editions SET cover_asset_id=NULL WHERE edition_run_id=?
+        AND cover_asset_id IN (SELECT id FROM cover_assets WHERE is_owner_selected=0)`,
+          run,
+        ),
+        s(
+          `UPDATE collection_items SET version=version+1,updated_at=? WHERE id<>? AND id IN
+        (SELECT v.item_id FROM volumes v JOIN volume_editions e ON e.id=v.volume_edition_id WHERE e.edition_run_id=?)`,
+          new Date().toISOString(),
+          id,
+          run,
+        ),
+      );
+    }
     const existingEdition = (
       await db.all(
         "SELECT id,cover_asset_id FROM volume_editions WHERE edition_run_id=? AND volume_label=? LIMIT 1",
@@ -358,7 +421,7 @@ export async function planItem(
     if (
       existingEdition &&
       (options.update || item.artwork) &&
-      existingEdition.cover_asset_id !== cover.id
+      existingEdition.cover_asset_id !== coverId
     ) {
       statements.push(
         s(
@@ -378,7 +441,7 @@ export async function planItem(
         item.volume,
         /^\d+$/.test(item.volume) ? Number(item.volume) * 1000 : null,
         key(item.volume),
-        cover.id,
+        coverId,
       ),
     );
   } else {

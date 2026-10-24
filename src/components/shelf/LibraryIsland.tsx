@@ -24,6 +24,8 @@ import {
   browseEntries,
   browseParams,
   matchingCopies,
+  cdShelf,
+  bookShelf,
   parseBrowseState,
 } from "../../domain/library.ts";
 import { librarySchema } from "../../domain/library-schema.ts";
@@ -64,11 +66,15 @@ function EntryCard({
   entry: LibraryEntry;
   onOpen: () => void;
 }) {
-  const manga = entry.kind === "manga";
-  const sample = !manga && entry.copies.every((copy) => copy.isSample);
+  const series = entry.kind !== "cd";
+  const sample =
+    entry.kind === "cd" && entry.copies.every((copy) => copy.isSample);
+  const lightNovel =
+    entry.kind === "manga" &&
+    entry.copies.some((copy) => copy.medium === "light_novel");
   return (
     <article
-      className={`entry-card ${manga ? "manga-card" : "cd-card"}`}
+      className={`entry-card ${series ? `${entry.kind}-card` : "cd-card"}`}
       data-entry-kind={entry.kind}
     >
       <button
@@ -87,22 +93,32 @@ function EntryCard({
         <div className="card-caption">
           <h2>{entry.title}</h2>
           <p className="card-credit">
-            {(manga ? entry.authors : entry.artists).join(" · ") ||
-              (manga ? "Author unknown" : "Artist unresolved")}
+            {(entry.kind === "cd" ? entry.artists : entry.authors).join(
+              " · ",
+            ) || (series ? "Author unknown" : "Artist unresolved")}
           </p>
           <div className="card-metadata">
-            {(manga || !sample) && (
+            {(series || !sample) && (
               <p className="card-count mono">
                 {entry.copies.length}{" "}
-                {manga
+                {entry.kind === "manga"
                   ? entry.copies.length === 1
                     ? "volume"
                     : "volumes"
-                  : "owned"}
+                  : entry.kind === "book"
+                    ? entry.copies.length === 1
+                      ? "book"
+                      : "books"
+                    : "owned"}
               </p>
             )}
-            {manga && (
+            {series && (
               <div className="card-languages">
+                {lightNovel && (
+                  <span className="badge-medium" title="Includes light novels">
+                    LN
+                  </span>
+                )}
                 {[...new Set(entry.copies.map((copy) => copy.language))].map(
                   (language) => (
                     <span key={language}>{language}</span>
@@ -156,22 +172,35 @@ export function LibraryIsland({
     () => browseEntries(data.entries, state),
     [data, state],
   );
+  const cdSpines = useMemo(() => cdShelf(entries, state), [entries, state]);
+  const bookSpines = useMemo(() => bookShelf(entries, state), [entries, state]);
   const selected = data.entries.find((entry) => entry.id === state.item);
   const manga = data.entries.filter((entry) => entry.kind === "manga");
+  const books = data.entries.filter((entry) => entry.kind === "book");
   const cds = data.entries.filter((entry) => entry.kind === "cd");
+  // Manga totals include light novels; books are counted separately.
   const copies = manga.flatMap((entry) => entry.copies);
+  const bookCopies = books.flatMap((entry) => entry.copies);
+  const lightNovels = copies.filter(
+    (copy) => copy.medium === "light_novel",
+  ).length;
+  const personalCds = cds
+    .flatMap((entry) => entry.copies)
+    .filter((copy) => !copy.isSample).length;
   const sampleCds = cds
     .flatMap((entry) => entry.copies)
     .filter((copy) => copy.isSample).length;
   const publishers = [
     ...new Set([
       ...copies.map((copy) => copy.publisher),
+      ...bookCopies.map((copy) => copy.publisher),
       ...cds.flatMap((entry) => entry.labels),
     ]),
   ].sort();
   const memories = [
     ...new Set([
       ...copies.flatMap((copy) => copy.tags),
+      ...bookCopies.flatMap((copy) => copy.tags),
       ...cds.flatMap((entry) =>
         entry.copies.flatMap((copy) => copy.tags ?? []),
       ),
@@ -192,13 +221,17 @@ export function LibraryIsland({
     .reverse();
   const formats = [
     ...new Set([
-      ...copies.flatMap((copy) => [copy.format, copy.editionTitle]),
+      ...[...copies, ...bookCopies].flatMap((copy) => [
+        copy.format,
+        copy.editionTitle,
+      ]),
       ...cds.flatMap((entry) => [...entry.formats, entry.editionTitle ?? ""]),
     ]),
   ]
     .filter(Boolean)
     .sort();
   const activeFilters = [
+    state.type,
     state.language,
     state.publisher,
     state.memory,
@@ -247,6 +280,7 @@ export function LibraryIsland({
   }
   function resetFilters() {
     navigate({
+      type: "",
       query: "",
       language: "",
       publisher: "",
@@ -296,6 +330,7 @@ export function LibraryIsland({
     setPanel(null);
     navigate({
       item: "",
+      type: "",
       query: "",
       language: "",
       publisher: "",
@@ -388,25 +423,23 @@ export function LibraryIsland({
           <div className="collection-heading">
             <h1 id="shelf-title">Collection</h1>
             <div className="collection-inventory">
-              <span>
-                <strong>{copies.length}</strong> manga volumes
-              </span>
-              <span>
-                <strong>{manga.length}</strong> series
-              </span>
-              <span>
-                <strong>
-                  {
-                    cds
-                      .flatMap((entry) => entry.copies)
-                      .filter((copy) => !copy.isSample).length
-                  }
-                </strong>{" "}
-                CDs
-              </span>
-              <span>
-                <strong>{sampleCds}</strong> sample CDs
-              </span>
+              {(
+                [
+                  [copies.length, "manga volume", true],
+                  [manga.length, "series", true],
+                  [lightNovels, "light novel", lightNovels > 0],
+                  [bookCopies.length, "book", true],
+                  [personalCds, "CD", true],
+                  [sampleCds, "sample CD", true],
+                ] as const
+              )
+                .filter(([, , shown]) => shown)
+                .map(([count, noun]) => (
+                  <span key={noun}>
+                    <strong>{count}</strong>{" "}
+                    {count === 1 || noun === "series" ? noun : `${noun}s`}
+                  </span>
+                ))}
             </div>
           </div>
           <button
@@ -426,6 +459,7 @@ export function LibraryIsland({
                 [
                   ["all", "All media", data.entries.length],
                   ["manga", "Manga", manga.length],
+                  ["book", "Books", books.length],
                   ["cd", "CDs", cds.length],
                 ] as const
               ).map(([value, label, count]) => (
@@ -435,7 +469,14 @@ export function LibraryIsland({
                   aria-pressed={state.media === value}
                   onClick={() => navigate({ media: value })}
                 >
-                  {label}
+                  {value === "all" ? (
+                    // Phones show "All" so four tabs fit; the name stays "All media".
+                    <span>
+                      All<span className="max-[650px]:sr-only"> media</span>
+                    </span>
+                  ) : (
+                    label
+                  )}
                   <span>{count}</span>
                 </button>
               ))}
@@ -606,45 +647,99 @@ export function LibraryIsland({
               </div>
             ) : (
               <div className="spine-collection">
-                {entries.map((entry) => {
-                  const visible = matchingCopies(entry, state);
-                  return (
-                    <section
-                      key={entry.id}
-                      className="spine-shelf"
-                      aria-label={entry.title}
-                    >
-                      <div className="spine-shelf-heading">
-                        <button type="button" onClick={() => openEntry(entry)}>
-                          {entry.title}
-                          <ArrowRight size={14} />
-                        </button>
-                        <span className="mono">
-                          {visible.length}
-                          {visible.length < entry.copies.length
-                            ? ` OF ${entry.copies.length}`
-                            : ""}{" "}
-                          {entry.kind === "manga" ? "VOL." : "CD"}
-                        </span>
-                      </div>
-                      <div
-                        className="spine-row"
-                        tabIndex={0}
-                        role="group"
-                        aria-label={`${entry.title}: scroll to browse individual copies`}
+                {entries
+                  .filter((entry) => entry.kind === "manga")
+                  .map((entry) => {
+                    const visible = matchingCopies(entry, state);
+                    return (
+                      <section
+                        key={entry.id}
+                        className="spine-shelf"
+                        aria-label={entry.title}
                       >
-                        {visible.map((copy) => (
-                          <Spine
-                            key={copy.id}
-                            entry={entry}
-                            copy={copy}
-                            onOpen={() => openEntry(entry)}
-                          />
-                        ))}
-                      </div>
-                    </section>
-                  );
-                })}
+                        <div className="spine-shelf-heading">
+                          <button
+                            type="button"
+                            onClick={() => openEntry(entry)}
+                          >
+                            {entry.title}
+                            <ArrowRight size={14} />
+                          </button>
+                          <span className="mono">
+                            {visible.length}
+                            {visible.length < entry.copies.length
+                              ? ` OF ${entry.copies.length}`
+                              : ""}{" "}
+                            {entry.kind === "manga" ? "VOL." : "CD"}
+                          </span>
+                        </div>
+                        <div
+                          className="spine-row"
+                          tabIndex={0}
+                          role="group"
+                          aria-label={`${entry.title}: scroll to browse individual copies`}
+                        >
+                          {visible.map((copy) => (
+                            <Spine
+                              key={copy.id}
+                              entry={entry}
+                              copy={copy}
+                              onOpen={() => openEntry(entry)}
+                            />
+                          ))}
+                        </div>
+                      </section>
+                    );
+                  })}
+                {bookSpines.length > 0 && (
+                  <section className="spine-shelf" aria-label="Books by author">
+                    <div className="spine-shelf-heading">
+                      <h2>Books · by author</h2>
+                      <span className="mono">
+                        {bookSpines.length}{" "}
+                        {bookSpines.length === 1 ? "BOOK" : "BOOKS"}
+                      </span>
+                    </div>
+                    <div
+                      className="spine-row"
+                      tabIndex={0}
+                      role="group"
+                      aria-label="Books, alphabetical by author: scroll to browse"
+                    >
+                      {bookSpines.map(({ entry, copy }) => (
+                        <Spine
+                          key={copy.id}
+                          entry={entry}
+                          copy={copy}
+                          onOpen={() => openEntry(entry)}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                )}
+                {cdSpines.length > 0 && (
+                  <section className="spine-shelf" aria-label="CDs by artist">
+                    <div className="spine-shelf-heading">
+                      <h2>CDs · by artist</h2>
+                      <span className="mono">{cdSpines.length} CD</span>
+                    </div>
+                    <div
+                      className="spine-row"
+                      tabIndex={0}
+                      role="group"
+                      aria-label="CDs, alphabetical by artist: scroll to browse"
+                    >
+                      {cdSpines.map(({ entry, copy }) => (
+                        <Spine
+                          key={copy.id}
+                          entry={entry}
+                          copy={copy}
+                          onOpen={() => openEntry(entry)}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                )}
               </div>
             )}
           </div>
@@ -748,6 +843,19 @@ export function LibraryIsland({
             />
           </label>
           <label className="filter-field">
+            Manga type
+            <select
+              value={state.type ?? ""}
+              onChange={(event) =>
+                navigate({ type: event.target.value as BrowseState["type"] })
+              }
+            >
+              <option value="">Manga and light novels</option>
+              <option value="manga">Manga only</option>
+              <option value="light_novel">Light novels only</option>
+            </select>
+          </label>
+          <label className="filter-field">
             Language
             <select
               value={state.language}
@@ -834,6 +942,8 @@ export function LibraryIsland({
             {[
               [copies.length, "Manga copies"],
               [manga.length, "Unique series"],
+              [lightNovels, "Light novels"],
+              [bookCopies.length, "Books"],
               [new Set(ownedDates).size, "Acquisition dates"],
               [copies.filter((copy) => copy.notes).length, "Acquisition notes"],
             ].map(([value, label]) => (

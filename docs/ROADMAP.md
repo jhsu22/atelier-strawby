@@ -64,7 +64,7 @@ Migration, authentication, loading/error behavior, accessibility, and regression
 
 **Dependencies:** preserved D1 schema and seeded data, existing shelf/design, authenticated server mutation boundary.
 
-**Delivered:** MangaDex/Open Library title and volume/locale artwork lookup; MusicBrainz release/track metadata and Cover Art Archive with explicit fallbacks; D1 metadata/R2 artwork caching, retries and provider limits; fuzzy client search with combined filters and editable memory tags; persistent manga/CD CRUD with duplicate identities and concurrency checks; original manga/CD/Discogs CSV previews and resumable imports; CSV exports and full JSON backup/restoration; Cloudflare Access owner JWT verification and same-origin writes.
+**Delivered:** MangaDex/Open Library title and volume/locale artwork lookup; MusicBrainz release/track metadata and Cover Art Archive with explicit fallbacks; D1 metadata/R2 artwork caching, retries and provider limits; a resumable automated cover utility (`npm run covers:cache`) with D1 checkpoints; fuzzy client search with combined filters and editable memory tags; persistent manga/CD CRUD with duplicate identities and concurrency checks; original manga/CD/Discogs CSV previews and resumable imports; CSV exports and full JSON backup/restoration; Cloudflare Access owner JWT verification and same-origin writes.
 
 **Acceptance:** real D1 add/edit/delete and runtime restart tests; browser add/edit/delete with reloads for both media; filter combinations, manual fallback under provider failure, input validation, duplicate detection, interrupted import recovery and exact backup restoration. All pass locally. [STAGE3.md](STAGE3.md) records provider matching boundaries and live D1/R2 cache evidence. The database schema, migration and source CSV remain unchanged. Hosted environment verification is still a release gate.
 
@@ -123,7 +123,7 @@ Stage 1 foundation requirements are preserved. The table below retains the origi
 | R05 | Cascades, terminator clearing, orphan exception | 1 | Every marker resolved; synthetic orphan/date tests |
 | R06 | All named title/author/publisher corrections | 1 | Semantic correction fixtures and audit |
 | R07 | All multilingual mappings and duplicate ownership | 1, 3 | Group counts, editions/language badges, copy tests |
-| R08 | Automated manga/CD cover fetch and caching | 2 | Live provider outcomes, persisted R2 image, resumed utility |
+| R08 | Automated manga/CD cover fetch and caching | 2 (delivered in 3) | Live provider outcomes, persisted R2 image, resumed utility. Stage 3: `covers:cache` live run and real D1/R2 restart test |
 | R09 | Typographic cover fallback under API/image failures | 2, 3 | Provider failure and browser image-error tests |
 | R10 | Boutique palette, serif/sans/mono typography, light/dark | 3 | Responsive/theme/contrast review |
 | R11 | Five-action sticky mobile nav, pills, mobile/desktop grids | 3, 4, 5 | Viewport and safe-area checks; final action navigation |

@@ -15,7 +15,7 @@ function physicalPath(path: string, depth = 0): string {
   }
   return join(physicalPath(dirname(absolute), depth + 1), basename(absolute));
 }
-function assertPrivatePath(path: string) {
+export function assertPrivatePath(path: string) {
   const destinations = [resolve(path), physicalPath(path)];
   for (const dir of ['public', 'dist']) {
     for (const root of [resolve(dir), physicalPath(dir)]) {

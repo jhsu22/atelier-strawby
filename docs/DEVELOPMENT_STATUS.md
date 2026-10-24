@@ -7,6 +7,9 @@
 - Stage 1: deterministic original CSV normalization/import, 27-table relational schema, D1 persistence, provenance, duplicate-copy identities and sample exclusion.
 - Stage 2: responsive shelf/details, cover and spine views, edition-aware gaps, URL state, light/dark themes and collection statistics.
 - Stage 3: reviewed MangaDex/Open Library metadata/artwork and MusicBrainz/CAA release lookup, explicit fallbacks, D1 cache/provider throttling and private R2 artwork; fuzzy search and combined smart filters; editable memory tags; validated persistent manga/CD CRUD; original manga/CD/Discogs CSV preview/import/resume/cancel; CSV export and full JSON backup/restore; owner-only Access JWT verification and same-origin mutations.
+- Pre-approval audit (2026-10-23): import duplicate detection now distinguishes medium, so a book is not a duplicate of a same-titled manga or light-novel copy; this has a regression test. Drizzle Kit reports no pending schema changes. `npm run test:smoke` asserts the original baseline (EN 167 / JP 9), so it was run against a freshly seeded built worker (`STRAWBY_TEST_PORT=4398 node scripts/browser-server.ts`) and passed. It fails against the owner-edited dev collection for the same reason as `verify:seed`.
+- Light novels (badge and filter within Manga) and a separate Books category (add, Open Library lookup, cover utility, Books tab, drawer and author shelf), via the additive migration `0001_edition_medium`. The local dev collection was migrated (backup taken first), and *86*, *Bakemonogatari* and *Three Days of Happiness* were reclassified as light novels, which cleared their automatic manga covers. A scratch run then matched all nine light-novel volumes and *Project Hail Mary* to the correct Open Library editions (visually checked). `npm run verify:seed` now reports the owner's own earlier language edits (164 EN / 12 JP vs. the 167 / 9 baseline) and the removed sample CDs. It checks an untouched seeded baseline, not an edited collection.
+- Stage 3 completion pass: the resumable automated cover utility (`npm run covers:cache`) specified in the architecture is implemented. It fixes a cover-identity bug in R2 caching, and a browser stale-edit test was added.
 - The development baseline remains **177 manga copies across 38 series plus four labeled sample CDs**. Test mutations run on disposable stores. Sample release metadata is never silently replaced with a guessed provider match.
 
 Usage, authentication configuration, provider policies, import templates, live evidence and limitations are documented in [STAGE3.md](STAGE3.md).
@@ -17,9 +20,10 @@ Environment: Node 26.11.1, npm 12.2.1, pinned dependencies, Linux Chromium. Stag
 
 | Check | Result |
 | --- | --- |
-| `npm run validate` | PASS: checking reports 0 errors, 0 warnings, 1 existing hint; **53 unit + 28 integration tests**; production Pages build. |
-| `npm run test:d1` | PASS: **3 real workerd D1 tests**, including the shared CRUD/import/restore scenarios and closing/reopening persistent D1. |
-| `npm run test:e2e` | PASS: **28 desktop/mobile Chromium tests** against a newly built worker and disposable seeded D1/R2, including accessible forms, provider failure/manual entry, manga/CD add/edit/delete with reloads, filters, imports and backups. |
+| `npm run validate` | PASS: checking reports 0 errors, 0 warnings, 1 existing hint; **57 unit + 32 integration tests**; production Pages build. |
+| `npm run test:d1` | PASS: **5 real workerd D1 tests**, including the light-novel/book medium scenario, the shared CRUD/import/restore scenarios, closing/reopening persistent D1, and the cover-utility scenario with real local R2 across a restart. |
+| `npm run test:e2e` | PASS: **34 desktop/mobile Chromium tests** (run with `STRAWBY_TEST_PORT=4399` while a dev server used 4321) against a newly built worker and disposable seeded D1/R2, including accessible forms, provider failure/manual entry, manga/CD add/edit/delete with reloads, stale-edit conflict recovery, full-bleed loaded artwork with typographic fallback on failure, filters, imports and backups. |
+| Cover utility (live) | MangaDex only: 35/176 volume editions. With the Open Library edition fallback, on a copy of the dev state: 92/176 editions (93/177 copies), 26/38 series with shelf art; 56 Open Library covers cached in R2, 1 retained externally after archive.org 503s; covers visually confirmed. |
 | Targeted transfer browser rerun | PASS: 2 desktop/mobile import/export tests after the final multi-label CSV correction (10.6 seconds). |
 | `npm run test:schema` | PASS: reviewed 27-table schema, snapshot and migration parity; none changed in Stage 3. |
 | `npm run verify:seed` | PASS: 177 manga / 38 series, 172 dated / 5 undated, 97 notes, four excluded sample CDs. |
@@ -39,6 +43,7 @@ Logs are ignored local `/tmp/strawby-stage3-*.log` files; reports, live probes a
 - Resolve the existing dependency/platform advisories before public deployment. Audit severity identifies affected packages; it does not establish exploitability in this application. A platform major upgrade is a separate decision.
 - Complete the haul timeline and remaining analytics from Stage 5. Timeline still opens its planned-feature panel.
 - Verify Safari/Firefox, physical devices, screen-reader operation, Node 22 and hosted performance. Chromium emulation is not physical-device coverage.
+- The cover utility only opens local Wrangler state; hosted enrichment needs separately verified credentials. Volumes without a MangaDex or Open Library edition cover remain typographic until the owner selects artwork in the editor. Google Books would need an owner API key.
 - Provider matches require review. Manga volume/locale alone does not establish the physical publisher; Open Library work art, CAA release-group art and iTunes digital metadata remain clearly distinguished fallbacks. R2 image bytes need separate backup; JSON preserves references.
 
 The original Stage 4 workflow scope is absorbed into this revised Stage 3. The next product work is timeline/analytics; hosted release requires its own verification gates.

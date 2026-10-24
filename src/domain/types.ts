@@ -14,3 +14,10 @@ export interface CollectionSummary {
   personalCds: number;
   sampleCds: number;
 }
+export const MEDIUMS = ["manga", "light_novel", "book"] as const;
+export type Medium = (typeof MEDIUMS)[number];
+export const MEDIUM_LABELS: Record<Medium, string> = {
+  manga: "Manga",
+  light_novel: "Light novel",
+  book: "Book",
+};

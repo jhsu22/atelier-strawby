@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { LibraryData } from "./library.ts";
+import { MEDIUMS } from "./types.ts";
 
 const string = z.string();
 const nullable = string.nullable();
@@ -25,22 +26,26 @@ const mangaCopy = z.object({
   volume: string,
   volumeSort: z.number().nullable(),
   numberingBasis: z.enum(["printed", "source_record", "unknown"]),
+  medium: z.enum(MEDIUMS),
   format: string,
   acquiredOn: nullable,
   notes: nullable,
   tags: z.array(string),
 });
+const seriesEntry = <K extends "manga" | "book">(kind: K) =>
+  z.object({
+    kind: z.literal(kind),
+    id: string,
+    title: string,
+    authors: z.array(string),
+    aliases: z.array(string),
+    copies: z.array(mangaCopy),
+  });
 export const librarySchema: z.ZodType<LibraryData> = z.object({
   entries: z.array(
     z.discriminatedUnion("kind", [
-      z.object({
-        kind: z.literal("manga"),
-        id: string,
-        title: string,
-        authors: z.array(string),
-        aliases: z.array(string),
-        copies: z.array(mangaCopy),
-      }),
+      seriesEntry("manga"),
+      seriesEntry("book"),
       z.object({
         kind: z.literal("cd"),
         artwork,

@@ -20,6 +20,25 @@ import {
 import type { Store, Statement } from "../db/store.ts";
 import { ApiError } from "../http/api.ts";
 import type { ImportPreview, ImportKind } from "../../domain/transfer.ts";
+import { MEDIUM_LABELS } from "../../domain/types.ts";
+import type { Medium } from "../../domain/types.ts";
+
+// "Medium" accepts the exported labels and common shorthands; blank is manga.
+function medium(value: string): Medium {
+  const found = (
+    {
+      "": "manga",
+      manga: "manga",
+      "light novel": "light_novel",
+      light_novel: "light_novel",
+      ln: "light_novel",
+      book: "book",
+      novel: "book",
+    } as Record<string, Medium>
+  )[value.trim().toLowerCase()];
+  if (!found) throw new Error("Medium must be Manga, Light novel or Book.");
+  return found;
+}
 
 export const importSchema = z.object({
   kind: z.enum(["manga", "cd", "discogs", "json"]),
@@ -69,6 +88,7 @@ const signature = (
     | "labels"
     | "acquiredOn"
     | "notes"
+    | "medium"
   >,
 ) =>
   JSON.stringify(
@@ -82,6 +102,8 @@ const signature = (
           key(item.publisher),
           item.acquiredOn,
           item.notes || null,
+          // A book and a manga volume of the same title are different copies.
+          item.medium,
         ]
       : [
           "cd",
@@ -159,7 +181,7 @@ export async function createImportPreview(
     for (const entry of library.entries)
       for (const copy of entry.copies) {
         ids.add(copy.id);
-        if (entry.kind === "manga" && "volume" in copy)
+        if (entry.kind !== "cd" && "volume" in copy)
           signatures.add(
             signature({
               kind: "manga",
@@ -172,12 +194,14 @@ export async function createImportPreview(
               labels: [],
               acquiredOn: copy.acquiredOn,
               notes: copy.notes,
+              medium: copy.medium,
             }),
           );
         if (entry.kind === "cd")
           signatures.add(
             signature({
               kind: "cd",
+              medium: "manga",
               title: entry.title,
               volume: "",
               language: "EN",
@@ -271,6 +295,7 @@ export async function createImportPreview(
             numberingBasis:
               row["Numbering Basis"] ||
               (ambiguousNumbering ? "source_record" : "printed"),
+            medium: medium(row.Medium ?? ""),
             aliases: row["Alternate Titles"]
               ? split(row["Alternate Titles"])
               : identity.canonicalTitle !== corrected.row.Title
@@ -641,6 +666,7 @@ export async function exportCsv(
           "Language",
           "Format",
           "Numbering Basis",
+          "Medium",
           "Alternate Titles",
           "Tags",
           "Artwork URL",
@@ -675,8 +701,9 @@ export async function exportCsv(
     ),
   ]);
   for (const entry of library.entries) {
-    if (entry.kind !== kind) continue;
-    if (entry.kind === "manga")
+    // The volume CSV carries manga, light novels and books (see Medium).
+    if ((kind === "cd") !== (entry.kind === "cd")) continue;
+    if (entry.kind !== "cd")
       for (const copy of entry.copies) {
         rows.push(
           [
@@ -692,6 +719,7 @@ export async function exportCsv(
             copy.language,
             copy.format,
             copy.numberingBasis,
+            MEDIUM_LABELS[copy.medium],
             entry.aliases.join(" | "),
             copy.tags.join(" | "),
             copy.artwork?.sourceUrl,

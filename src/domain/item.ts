@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MEDIUMS } from "./types.ts";
 import { TAGS, deriveTags } from "./normalization/tags.ts";
 
 export const key = (value: string) =>
@@ -86,6 +87,8 @@ export const itemSchema = z
     numberingBasis: z
       .enum(["printed", "source_record", "unknown"])
       .default("printed"),
+    // Volume-shaped copies are manga, light novels or other (prose) books.
+    medium: z.enum(MEDIUMS).default("manga"),
     artists: names.default([]),
     releaseDate: z
       .string()

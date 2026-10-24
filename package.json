@@ -26,6 +26,7 @@
     "seed:local": "node scripts/seed-from-csv.ts --target d1-local",
     "seed:sqlite": "node scripts/seed-from-csv.ts --target sqlite",
     "seed:sample-cds": "node scripts/seed-sample-cds.ts",
+    "covers:cache": "node scripts/cache-covers.ts",
     "verify:seed": "node scripts/verify-seed.ts",
     "dev:offline": "node scripts/dev-offline.ts",
     "preview:offline": "node scripts/render-diagnostic.ts",

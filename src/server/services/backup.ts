@@ -49,6 +49,10 @@ export const backupTables = tables.map((table) => {
 const row = z.record(
   z.union([z.string().max(100000), z.number().finite(), z.null()]),
 );
+/** Columns added by later migrations, with the default older rows receive. */
+const addedColumns: Record<string, Record<string, Value>> = {
+  edition_runs: { medium: "manga" },
+};
 export const backupSchema = z
   .object({
     format: z.literal("strawby-collection"),
@@ -100,7 +104,9 @@ export async function previewBackup(db: Store, raw: unknown) {
     const indexed = new Map(existing.map((r) => [canonical(r, table.keys), r]));
     const seen = new Set<string>();
     additions[table.name] = [];
-    for (const value of backup.tables[table.name]!) {
+    for (const raw of backup.tables[table.name]!) {
+      // Version 1 backups made before a later additive column get its default.
+      const value = { ...(addedColumns[table.name] ?? {}), ...raw };
       if (Object.keys(value).sort().join() !== [...table.columns].sort().join())
         throw new ApiError(422, `Invalid columns in ${table.name}.`);
       const id = canonical(value, table.keys);

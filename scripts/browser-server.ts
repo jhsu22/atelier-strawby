@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { openLocalD1 } from "./lib/d1.ts";
+import { migrationStatements } from "./lib/migrations.ts";
 import { normalizeCsv } from "./lib/normalize.ts";
 import { persistPlan } from "./lib/import.ts";
 import { seedSampleCds } from "./lib/sample-cds.ts";
@@ -14,12 +15,7 @@ const directory = await mkdtemp(join(tmpdir(), "strawby-browser-"));
 try {
   const db = await openLocalD1(join(directory, "v3"));
   try {
-    const migration = await readFile("drizzle/0000_foundation.sql", "utf8");
-    const statements = migration
-      .split("--> statement-breakpoint")
-      .map((s) => s.replace(/^--.*$/gm, "").trim())
-      .filter(Boolean)
-      .map((sql) => ({ sql, params: [] }));
+    const statements = await migrationStatements();
     for (let i = 0; i < statements.length; i += 40)
       await db.batch(statements.slice(i, i + 40));
     await persistPlan(
@@ -40,7 +36,7 @@ try {
       "--ip",
       "127.0.0.1",
       "--port",
-      "4321",
+      process.env.STRAWBY_TEST_PORT ?? "4321",
       "--inspector-port",
       "9235",
       "--persist-to",

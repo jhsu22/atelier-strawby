@@ -366,3 +366,268 @@ test("import preview, duplicate prevention, export and same-origin mutation chec
   expect(restored.ok()).toBe(true);
   expect((await restored.json()).added).toBe(0);
 });
+
+test("a stale edit from another session is rejected with the draft kept for recovery", async ({
+  page,
+  baseURL,
+}, info) => {
+  const title = `${prefix}stale ${info.project.name} ${Date.now()}`;
+  const headers = {
+    Origin: new URL(baseURL!).origin,
+    "X-Strawby-Request": "1",
+  };
+  await ready(page);
+  const created = await page.request.post("/api/items", {
+    headers,
+    data: {
+      item: { kind: "manga", title, volume: "1", notes: "Original memory" },
+      requestId: crypto.randomUUID(),
+    },
+  });
+  expect(created.status()).toBe(201);
+  const { id } = (await created.json()) as { id: string };
+  await page.reload();
+  await expect(page.locator("[data-hydrated=true]")).toBeVisible();
+  await open(page, title);
+  await page
+    .getByRole("button", { name: "Edit volume 1 · EN", exact: true })
+    .click();
+  const notes = page.getByRole("textbox", { name: "Notes", exact: true });
+  await expect(notes).toHaveValue("Original memory");
+  await notes.fill("Browser draft");
+
+  // Another session saves first.
+  const current = await page.request.get(`/api/items/${id}`);
+  const { item, version } = await current.json();
+  const other = await page.request.put(`/api/items/${id}`, {
+    headers,
+    data: { item: { ...item, notes: "Other session edit" }, version },
+  });
+  expect(other.ok()).toBe(true);
+
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await expect(page.getByRole("dialog").getByRole("alert")).toContainText(
+    "changed in another session",
+  );
+  await expect(notes).toHaveValue("Browser draft");
+  await expect(
+    page.getByRole("button", { name: "Save changes", exact: true }),
+  ).toBeEnabled();
+  await page.reload();
+  await expect(page.locator("[data-hydrated=true]")).toBeVisible();
+  await open(page, title);
+  await expect(page.locator(".volume-list")).toContainText(
+    "Other session edit",
+  );
+  await expect(page.locator(".volume-list")).not.toContainText("Browser draft");
+});
+
+test("loaded artwork replaces the typographic cover in the same space; failed artwork keeps it", async ({
+  page,
+  baseURL,
+}, info) => {
+  const title = `${prefix}artwork ${info.project.name} ${Date.now()}`;
+  const headers = {
+    Origin: new URL(baseURL!).origin,
+    "X-Strawby-Request": "1",
+  };
+  // A 2x3 PNG stands in for a provider cover; the second URL always fails.
+  const png = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAIAAAADCAIAAAA2iEnWAAAAEklEQVR4nGNgYGBgYGBgYGAAAAAOAAFJ9fKzAAAAAElFTkSuQmCC",
+    "base64",
+  );
+  await page.route("https://example.com/strawby-cover.png", (route) =>
+    route.fulfill({ status: 200, contentType: "image/png", body: png }),
+  );
+  await page.route("https://example.com/strawby-missing.png", (route) =>
+    route.fulfill({ status: 404, body: "" }),
+  );
+  for (const [suffix, url] of [
+    ["loaded", "https://example.com/strawby-cover.png"],
+    ["missing", "https://example.com/strawby-missing.png"],
+  ])
+    expect(
+      (
+        await page.request.post("/api/items", {
+          headers,
+          data: {
+            item: {
+              kind: "manga",
+              title: `${title} ${suffix}`,
+              artwork: { url, scope: "edition" },
+            },
+            requestId: crypto.randomUUID(),
+          },
+        })
+      ).status(),
+    ).toBe(201);
+  await ready(page);
+  await page
+    .getByRole("searchbox", { name: "Search your collection" })
+    .fill(title);
+  const card = (suffix: string) =>
+    page
+      .getByRole("button", { name: `Open ${title} ${suffix}`, exact: true })
+      .locator(".media-art");
+  const loaded = card("loaded");
+  await expect(loaded).toHaveClass(/has-artwork/);
+  await expect(loaded.locator(".cover-print")).toBeHidden();
+  const [frame, image] = await Promise.all([
+    loaded.boundingBox(),
+    loaded.locator(".resolved-artwork").boundingBox(),
+  ]);
+  expect(image!.width).toBeCloseTo(frame!.width, 0);
+  expect(image!.height).toBeCloseTo(frame!.height, 0);
+  const missing = card("missing");
+  await expect(missing.locator(".cover-print")).toBeVisible();
+  await expect(missing).not.toHaveClass(/has-artwork/);
+  await expect(missing.locator(".resolved-artwork")).toHaveCount(0);
+});
+
+test("books have their own add flow, lookup, tab, detail and author shelf; light novels are badged and filterable", async ({
+  page,
+  baseURL,
+}, info) => {
+  const book = `${prefix}Project Hail Mary ${info.project.name}`;
+  const novel = `${prefix}light novel ${info.project.name}`;
+  const headers = {
+    Origin: new URL(baseURL!).origin,
+    "X-Strawby-Request": "1",
+  };
+  const png = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAIAAAADCAIAAAA2iEnWAAAAEklEQVR4nGNgYGBgYGBgYGAAAAAOAAFJ9fKzAAAAAElFTkSuQmCC",
+    "base64",
+  );
+  await page.route("https://example.com/strawby-book.png", (route) =>
+    route.fulfill({ status: 200, contentType: "image/png", body: png }),
+  );
+  let lookup: Record<string, unknown> = {};
+  await page.route("**/api/metadata", async (route) => {
+    lookup = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        candidates: [
+          {
+            id: "/books/OL4M",
+            provider: "openlibrary",
+            title: "Project Hail Mary",
+            subtitle: "Andy Weir · Ballantine Books · Open Library edition",
+            sourceUrl: "https://openlibrary.org/books/OL4M",
+            detail: false,
+            patch: {
+              authors: ["Andy Weir"],
+              publisher: "Ballantine Books",
+              artwork: {
+                url: "https://example.com/strawby-book.png",
+                provider: "manual",
+                sourceId: "",
+                scope: "edition",
+                attribution: "Open Library edition",
+                language: "EN",
+              },
+            },
+            warning: "Confirm it against your copy.",
+          },
+        ],
+        warnings: [],
+      }),
+    });
+  });
+  expect(
+    (
+      await page.request.post("/api/items", {
+        headers,
+        data: {
+          item: {
+            kind: "manga",
+            medium: "light_novel",
+            title: novel,
+            volume: "3",
+          },
+          requestId: crypto.randomUUID(),
+        },
+      })
+    ).status(),
+  ).toBe(201);
+
+  await ready(page);
+  await add(page, info.project.name === "mobile");
+  await page.getByLabel("Copy media type").selectOption("book");
+  await page.getByLabel("Title", { exact: true }).fill(book);
+  await page.getByText("Find metadata & artwork", { exact: true }).click();
+  await page
+    .getByRole("button", { name: "Find metadata", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Use these details", exact: true })
+    .click();
+  expect(lookup).toMatchObject({ kind: "manga", medium: "book" });
+  await expect(page.getByLabel("Authors", { exact: true })).toHaveValue(
+    "Andy Weir",
+  );
+  await page.getByRole("button", { name: "Add copy", exact: true }).click();
+  await saved(page);
+
+  // Books tab, card, detail drawer without volume numbering.
+  await page.getByRole("button", { name: /^Books/ }).click();
+  await page
+    .getByRole("searchbox", { name: "Search your collection" })
+    .fill(book);
+  const card = page.locator("[data-entry-kind=book]");
+  await expect(card).toHaveCount(1);
+  await expect(card).toContainText("Andy Weir");
+  await expect(card).toContainText("1 book");
+  await expect(card.locator(".media-art")).toHaveClass(/has-artwork/);
+  await page.getByRole("button", { name: `Open ${book}`, exact: true }).click();
+  const drawer = page.getByRole("dialog");
+  await expect(drawer.getByRole("heading", { name: "Copies" })).toBeVisible();
+  await expect(drawer.locator(".volume-number")).toHaveCount(0);
+  await expect(drawer.getByText("Find missing volumes")).toHaveCount(0);
+  await expect(
+    drawer.getByRole("button", { name: "Edit copy · EN" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Close panel" }).click();
+  await page
+    .getByRole("button", { name: "Virtual shelf view", exact: true })
+    .click();
+  const shelf = page.getByRole("region", { name: "Books by author" });
+  await expect(
+    shelf.getByRole("button", { name: `Open ${book} by Andy Weir, book, EN` }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Cover grid view", exact: true })
+    .click();
+
+  // Light novels stay in Manga with a badge and a type filter.
+  await page.getByRole("button", { name: /^Manga/ }).click();
+  await page
+    .getByRole("searchbox", { name: "Search your collection" })
+    .fill(novel);
+  await expect(page.locator("[data-entry-kind=manga]")).toContainText("LN");
+  await page.getByRole("button", { name: /^Filters/ }).click();
+  await page.getByLabel("Manga type").selectOption("manga");
+  await expect(
+    page.getByRole("button", { name: "Show 0 titles", exact: true }),
+  ).toBeVisible();
+  await page.getByLabel("Manga type").selectOption("light_novel");
+  await page.getByRole("button", { name: "Show 1 title", exact: true }).click();
+  await page
+    .getByRole("button", { name: `Open ${novel}`, exact: true })
+    .click();
+  await expect(page.getByRole("dialog").locator(".badge-medium")).toHaveText(
+    "Light novel",
+  );
+  // Scan after the drawer's opening transition has settled.
+  await page.evaluate(() =>
+    Promise.all(document.getAnimations().map((a) => a.finished)),
+  );
+  expect(
+    (
+      await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+        .analyze()
+    ).violations,
+  ).toEqual([]);
+});

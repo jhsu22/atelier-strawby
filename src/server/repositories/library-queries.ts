@@ -3,7 +3,7 @@ import { visibleItems } from "./summary-queries.ts";
 const complete = "(i.import_batch_id IS NULL OR b.status = 'complete')";
 export const LIBRARY_QUERIES = {
   manga: `SELECT i.id, i.version, i.acquired_on, i.notes, e.cover_asset_id, s.id AS series_id, s.canonical_title,
-    r.id AS edition_run_id, r.edition_title, r.language, r.language_basis, r.format, r.numbering_basis,
+    r.id AS edition_run_id, r.edition_title, r.language, r.language_basis, r.format, r.numbering_basis, r.medium,
     COALESCE(p.name, 'Unknown publisher') AS publisher, e.volume_label, e.volume_sort
     FROM ${visibleItems} JOIN volumes v ON v.item_id = i.id
     JOIN volume_editions e ON e.id = v.volume_edition_id JOIN edition_runs r ON r.id = e.edition_run_id

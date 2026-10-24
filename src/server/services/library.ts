@@ -1,10 +1,12 @@
 import { z } from "zod";
 import { LIBRARY_QUERIES } from "../repositories/library-queries.ts";
+import { MEDIUMS } from "../../domain/types.ts";
 import type { ReadRows } from "./collection-summary.ts";
 import type {
   Artwork,
   LibraryData,
   MangaSeries,
+  BookSeries,
   CdAlbum,
 } from "../../domain/library.ts";
 
@@ -24,6 +26,7 @@ const mangaRow = z.object({
   language_basis: z.enum(["specified", "assumed", "confirmed"]),
   format: string,
   numbering_basis: z.enum(["printed", "source_record", "unknown"]),
+  medium: z.enum(MEDIUMS),
   publisher: string,
   volume_label: string,
   volume_sort: z.number().nullable(),
@@ -72,14 +75,31 @@ export async function libraryData(read: ReadRows): Promise<LibraryData> {
         }
       : null;
   };
-  const series = new Map<string, MangaSeries>();
+  const series = new Map<string, MangaSeries | BookSeries>();
+  const seriesKinds = new Map<string, Set<string>>();
   for (const value of manga!) {
     const row = mangaRow.parse(value);
-    let entry = series.get(row.series_id);
+    seriesKinds.set(
+      row.series_id,
+      (seriesKinds.get(row.series_id) ?? new Set()).add(
+        row.medium === "book" ? "book" : "manga",
+      ),
+    );
+  }
+  for (const value of manga!) {
+    const row = mangaRow.parse(value);
+    // Books are their own category; light novels stay with manga editions.
+    const kind = row.medium === "book" ? "book" : "manga";
+    const entryKey = `${kind}:${row.series_id}`;
+    let entry = series.get(entryKey);
     if (!entry) {
       entry = {
-        kind: "manga",
-        id: row.series_id,
+        kind,
+        // A series with both books and manga keeps the plain id for manga.
+        id:
+          kind === "book" && seriesKinds.get(row.series_id)?.has("manga")
+            ? `${row.series_id}~book`
+            : row.series_id,
         title: row.canonical_title,
         authors: [
           ...new Set(
@@ -92,8 +112,8 @@ export async function libraryData(read: ReadRows): Promise<LibraryData> {
           .filter((alias) => alias.series_id === row.series_id)
           .map((alias) => string.parse(alias.title)),
         copies: [],
-      };
-      series.set(entry.id, entry);
+      } as MangaSeries | BookSeries;
+      series.set(entryKey, entry);
     }
     entry.copies.push({
       version: row.version,
@@ -107,6 +127,7 @@ export async function libraryData(read: ReadRows): Promise<LibraryData> {
       volume: row.volume_label,
       volumeSort: row.volume_sort,
       numberingBasis: row.numbering_basis,
+      medium: row.medium,
       format: row.format,
       acquiredOn: row.acquired_on,
       notes: row.notes,
