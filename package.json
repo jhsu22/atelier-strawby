@@ -37,6 +37,7 @@
     "@tailwindcss/vite": "4.1.18",
     "astro": "5.18.2",
     "drizzle-orm": "0.45.4",
+    "jose": "6.2.13",
     "lucide-react": "0.563.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",

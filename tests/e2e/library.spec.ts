@@ -287,7 +287,7 @@ test("dialogs trap keyboard focus, Escape restores it, and all navigation action
     await expect(page.getByRole("dialog")).toContainText("177");
     await page.keyboard.press("Escape");
     await nav.getByRole("button", { name: "Add", exact: true }).click();
-    await expect(page.getByRole("dialog")).toContainText("not available yet");
+    await expect(page.getByRole("button", { name: "Add copy", exact: true })).toBeVisible();
   } else {
     await page
       .getByRole("button", { name: "Collection stats", exact: true })
@@ -297,7 +297,7 @@ test("dialogs trap keyboard focus, Escape restores it, and all navigation action
     await page
       .getByRole("button", { name: "Add to collection", exact: true })
       .click();
-    await expect(page.getByRole("dialog")).toContainText("not available yet");
+    await expect(page.getByRole("button", { name: "Add copy", exact: true })).toBeVisible();
   }
 });
 

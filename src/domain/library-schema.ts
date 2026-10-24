@@ -3,7 +3,19 @@ import type { LibraryData } from "./library.ts";
 
 const string = z.string();
 const nullable = string.nullable();
+const artwork = z
+  .object({
+    url: string,
+    scope: z.enum(["edition", "representative"]),
+    attribution: string,
+    provider: string,
+    sourceUrl: string,
+  })
+  .nullable()
+  .optional();
 const mangaCopy = z.object({
+  version: z.number().int().positive().optional(),
+  artwork,
   id: string,
   editionRunId: string,
   editionTitle: string,
@@ -31,6 +43,8 @@ export const librarySchema: z.ZodType<LibraryData> = z.object({
       }),
       z.object({
         kind: z.literal("cd"),
+        artwork,
+        editionTitle: string.optional(),
         id: string,
         title: string,
         artists: z.array(string),
@@ -50,6 +64,8 @@ export const librarySchema: z.ZodType<LibraryData> = z.object({
         copies: z.array(
           z.object({
             id: string,
+            version: z.number().int().positive().optional(),
+            tags: z.array(string).optional(),
             acquiredOn: nullable,
             notes: nullable,
             isSample: z.boolean(),

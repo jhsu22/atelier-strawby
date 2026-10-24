@@ -1,49 +1,44 @@
 # Development assessment — 2026-10-23
 
-**Current stage: Stage 2 is implemented and locally verified; Stage 3 has not started.** This is a functional local collection browser with a tested data foundation. It is not ready for hosted production use.
+**Current stage: Stage 3 is implemented and locally verified.** The application can add, edit and delete manga volumes and CDs, then reload and read the persisted result from D1. The established schema, migration, seed importer, source CSV and visual design are preserved. Hosted production readiness is not claimed.
 
 ## Implemented
 
-- Stage 1: deterministic CSV normalization/import, reviewed 27-table relational schema, D1 persistence, provenance, duplicate-copy preservation, sample exclusion and repeat-import safety.
-- Stage 2: D1-backed shelf and refresh API, manga/CD switching, cover grid and individual-copy spines, responsive detail drawers, edition-aware internal volume gaps, search/filters, URL state, light/dark themes and basic collection statistics.
-- The persisted local collection contains **177 manga copies across 38 series**, plus **four explicitly labeled sample CDs**. The original CSV, schema, migrations, importer and original normalization/database/D1 test files remain unchanged from the Stage 1 commit.
+- Stage 1: deterministic original CSV normalization/import, 27-table relational schema, D1 persistence, provenance, duplicate-copy identities and sample exclusion.
+- Stage 2: responsive shelf/details, cover and spine views, edition-aware gaps, URL state, light/dark themes and collection statistics.
+- Stage 3: reviewed MangaDex/Open Library metadata/artwork and MusicBrainz/CAA release lookup, explicit fallbacks, D1 cache/provider throttling and private R2 artwork; fuzzy search and combined smart filters; editable memory tags; validated persistent manga/CD CRUD; original manga/CD/Discogs CSV preview/import/resume/cancel; CSV export and full JSON backup/restore; owner-only Access JWT verification and same-origin mutations.
+- The development baseline remains **177 manga copies across 38 series plus four labeled sample CDs**. Test mutations run on disposable stores. Sample release metadata is never silently replaced with a guessed provider match.
 
-## Remaining work
+Usage, authentication configuration, provider policies, import templates, live evidence and limitations are documented in [STAGE3.md](STAGE3.md).
 
-| Area | Current boundary |
+## Verification
+
+Environment: Node 26.11.1, npm 12.2.1, pinned dependencies, Linux Chromium. Stage 3 adds pinned `jose` 6.2.13; the Astro/Pages major versions are unchanged.
+
+| Check | Result |
 | --- | --- |
-| Artwork and metadata | Typographic artwork placeholders; no external provider lookup, real cover cache or verified sample CD release enrichment. |
-| Collection management | Add/edit, mutation APIs, metadata-assisted entry, CD/Discogs import and CSV/JSON export/restore are not implemented. Add opens an explanatory panel. |
-| Search | Normalized substring/token matching; typo-tolerant fuzzy search from the original specification is not implemented. |
-| Timeline and analytics | Timeline opens an explanatory panel. Current derived counts, languages and publisher statistics do not complete the planned timeline and analytics work. |
-| Hosting and access | Reads require explicit local flags and a localhost URL. Hosted requests fail closed; Access JWT verification and provisioned preview/production D1/R2 resources are absent. No hosted deployment was verified. |
-| Broader verification | This assessment exercises Linux Chromium desktop/mobile emulation. Safari, Firefox, physical devices, screen readers, Node 22 and hosted performance remain unverified. |
+| `npm run validate` | PASS: checking reports 0 errors, 0 warnings, 1 existing hint; **53 unit + 28 integration tests**; production Pages build. |
+| `npm run test:d1` | PASS: **3 real workerd D1 tests**, including the shared CRUD/import/restore scenarios and closing/reopening persistent D1. |
+| `npm run test:e2e` | PASS: **28 desktop/mobile Chromium tests** against a newly built worker and disposable seeded D1/R2, including accessible forms, provider failure/manual entry, manga/CD add/edit/delete with reloads, filters, imports and backups. |
+| Targeted transfer browser rerun | PASS: 2 desktop/mobile import/export tests after the final multi-label CSV correction (10.6 seconds). |
+| `npm run test:schema` | PASS: reviewed 27-table schema, snapshot and migration parity; none changed in Stage 3. |
+| `npm run verify:seed` | PASS: 177 manga / 38 series, 172 dated / 5 undated, 97 notes, four excluded sample CDs. |
+| `npm run test:smoke -- --url http://127.0.0.1:8791` | PASS: built Pages foundation counts, React SSR, stylesheet, private headers and nonlocal Host rejection. |
+| Visual review | Manga/CD editors fit 320, 768 and 1440 px without document/dialog horizontal overflow; narrow light and desktop dark screenshots inspected. |
+| Live integration | Selected real MangaDex volume and MusicBrainz/CAA multi-disc edition saved in disposable D1, image bytes cached in real local R2, then data and objects verified after runtime reopening. |
+| `npm audit --json` | **13 affected-package findings: 6 moderate, 6 high, 1 critical** remain from the established stack. |
+| Preservation | Original source CSV, typed schema, migrations and deterministic importer unchanged; baseline persisted collection verified. |
 
-The revised stage sequence in [ROADMAP.md](ROADMAP.md) places metadata, artwork and collection workflows in Stage 3. Its original Stage 4–5 lists retain detailed future requirements; they do not describe completed functionality.
+Provider fixtures test timeouts, malformed JSON, missing artwork, rate limits, cache reuse and forced retry without depending on live services. Auth fixtures verify signed JWTs, wrong owners/issuers/audiences, expiry, forged tokens, origins and body limits. SQLite and real D1 execute the same mutation/import scenarios. Stale shared-series edits and changed idempotency retries are rejected.
 
-## Checks rerun for this assessment
+Logs are ignored local `/tmp/strawby-stage3-*.log` files; reports, live probes and screenshots stay under ignored `data/generated/`. These are local verification artifacts, not deployment inputs.
 
-Environment: Node 26.11.1, npm 12.2.1, installed locked dependencies. A clean installation was not repeated in this assessment; earlier clean-install evidence remains in [TESTING.md](TESTING.md).
+## Remaining work and boundaries
 
-| Command/check | Result |
-| --- | --- |
-| `npm ls --depth=0` | PASS: pinned direct dependencies installed without reported dependency-tree errors. |
-| `npm run validate` | PASS: Astro/TypeScript 0 errors, 0 warnings, 1 existing hint; **48 unit + 21 integration tests**, no failures/skips; production build. |
-| `npm run test:schema` | PASS: 27-table schema, snapshot and reviewed migration parity. |
-| `npm run test:d1` | PASS: **2 real workerd D1 tests**, no failures/skips. |
-| `npm run verify:seed` | PASS: 177 personal manga, 38 series, 172 dated/5 undated copies, 97 notes and four excluded sample CDs. |
-| `npm run preview:pages -- --port 8788 --inspector-port 9230` | PASS: compiled Pages worker serves the seeded local D1 application. |
-| `STRAWBY_TEST_URL=http://127.0.0.1:8788 npm run test:e2e` | PASS: **22 desktop/mobile Chromium tests** against the compiled worker, including accessibility scans, responsive layouts, browsing/details, URL state, gestures and refresh failure/recovery. |
-| `npm run test:smoke` | PASS: compiled foundation counts, React SSR, sample exclusion, private headers, stylesheet delivery and nonlocal Host rejection. |
-| `npm audit --json` | Exit 1: **13 affected-package findings: 6 moderate, 6 high, 1 critical**. This supersedes the earlier 11-finding count. |
-| Source/build hygiene | PASS: original CSV SHA-256 unchanged; no ingestion modules, source CSV, generated collection JSON or checked personal-note strings in built assets; credential-pattern scan found no matches in tracked/candidate files. `.dev.vars`, local databases, generated evidence, dependencies and build output remain ignored. |
+- Provision isolated hosted preview/production D1/R2, owner Access policy and exact origin/audience. Test actual hosted authentication, direct-origin rejection, provider access, quotas, persistence and R2 delivery. Hosted writes remain closed without configuration.
+- Resolve the existing dependency/platform advisories before public deployment. Audit severity identifies affected packages; it does not establish exploitability in this application. A platform major upgrade is a separate decision.
+- Complete the haul timeline and remaining analytics from Stage 5. Timeline still opens its planned-feature panel.
+- Verify Safari/Firefox, physical devices, screen-reader operation, Node 22 and hosted performance. Chromium emulation is not physical-device coverage.
+- Provider matches require review. Manga volume/locale alone does not establish the physical publisher; Open Library work art, CAA release-group art and iTunes digital metadata remain clearly distinguished fallbacks. R2 image bytes need separate backup; JSON preserves references.
 
-Command logs for this assessment are local files matching `/tmp/atelier-strawby-assessment-*`; browser reports and screenshots remain under ignored `data/generated/`. These artifacts are not included in Git.
-
-## Next development priorities
-
-1. Resolve the dependency/platform decision and implement verified hosted authentication before any hosted release. The installed Astro 5/Cloudflare adapter 12 stack has unresolved advisories; the audit also flags Zod and its dependent tooling. Audit severity describes affected packages, not a demonstrated exploit in this application. This assessment does not change dependencies or establish exploitability.
-2. Establish Stage 3 acceptance criteria, then implement metadata/artwork and durable add/edit/import/export workflows with authorization, validation and regression coverage.
-3. Complete fuzzy search, timeline and remaining analytics, then broader device/accessibility/performance checks and isolated hosted verification.
-
-The current Stage 2 work can be committed and pushed as a development checkpoint. Production readiness requires the remaining functional and hosted-release gates.
+The original Stage 4 workflow scope is absorbed into this revised Stage 3. The next product work is timeline/analytics; hosted release requires its own verification gates.

@@ -15,7 +15,13 @@ export function DateLabel({ value }: { value: string | null }) {
     <span>Acquisition date unknown</span>
   );
 }
-function MangaDetails({ entry }: { entry: MangaSeries }) {
+function MangaDetails({
+  entry,
+  onEdit,
+}: {
+  entry: MangaSeries;
+  onEdit?: (id: string) => void;
+}) {
   const [showGaps, setShowGaps] = useState(false);
   const [language, setLanguage] = useState("all");
   const languages = [...new Set(entry.copies.map((copy) => copy.language))];
@@ -109,6 +115,16 @@ function MangaDetails({ entry }: { entry: MangaSeries }) {
       <ol className="volume-list">
         {copies.map((copy) => (
           <li key={copy.id} data-item-id={copy.id}>
+            {copy.artwork && (
+              <div className="copy-artwork">
+                <MediaArtwork entry={{ ...entry, copies: [copy] }} compact />
+                <small>
+                  {copy.artwork.scope === "edition"
+                    ? "Edition artwork"
+                    : "Representative fallback"}
+                </small>
+              </div>
+            )}
             <div className="volume-number">
               <span>VOL.</span>
               <strong>{copy.volume.padStart(2, "0")}</strong>
@@ -146,6 +162,15 @@ function MangaDetails({ entry }: { entry: MangaSeries }) {
               {copy.languageBasis === "assumed" && (
                 <span className="language-provenance">Language assumed</span>
               )}
+              {onEdit && (
+                <button
+                  type="button"
+                  className="text-button"
+                  onClick={() => onEdit(copy.id)}
+                >
+                  Edit volume {copy.volume} · {copy.language}
+                </button>
+              )}
             </div>
           </li>
         ))}
@@ -153,7 +178,13 @@ function MangaDetails({ entry }: { entry: MangaSeries }) {
     </>
   );
 }
-function CdDetails({ entry }: { entry: CdAlbum }) {
+function CdDetails({
+  entry,
+  onEdit,
+}: {
+  entry: CdAlbum;
+  onEdit?: (id: string) => void;
+}) {
   const [openCase, setOpenCase] = useState(false);
   const sample = entry.copies.every((copy) => copy.isSample);
   return (
@@ -237,15 +268,57 @@ function CdDetails({ entry }: { entry: CdAlbum }) {
             <DateLabel value={copy.acquiredOn} />
           </p>
           <p>{copy.notes || "No acquisition note recorded."}</p>
+          {!!copy.tags?.length && <p>{copy.tags.join(" · ")}</p>}
+          {onEdit && (
+            <button
+              type="button"
+              className="text-button"
+              onClick={() => onEdit(copy.id)}
+            >
+              Edit CD copy
+            </button>
+          )}
         </div>
       ))}
     </>
   );
 }
-export function EntryDetails({ entry }: { entry: LibraryEntry }) {
-  return entry.kind === "manga" ? (
-    <MangaDetails entry={entry} />
-  ) : (
-    <CdDetails entry={entry} />
+export function EntryDetails({
+  entry,
+  onEdit,
+  onAdd,
+}: {
+  entry: LibraryEntry;
+  onEdit?: (id: string) => void;
+  onAdd?: () => void;
+}) {
+  const artwork =
+    entry.kind === "cd"
+      ? entry.artwork
+      : entry.copies.find((copy) => copy.artwork)?.artwork;
+  return (
+    <>
+      {artwork && (
+        <p className="artwork-attribution">
+          {artwork.scope === "edition"
+            ? "Selected edition artwork"
+            : "Representative artwork fallback"}{" "}
+          · {artwork.attribution}{" "}
+          <a href={artwork.sourceUrl} target="_blank" rel="noreferrer">
+            Source
+          </a>
+        </p>
+      )}
+      {entry.kind === "manga" ? (
+        <MangaDetails entry={entry} onEdit={onEdit} />
+      ) : (
+        <CdDetails entry={entry} onEdit={onEdit} />
+      )}
+      {onAdd && (
+        <button type="button" className="button detail-add" onClick={onAdd}>
+          Add another copy
+        </button>
+      )}
+    </>
   );
 }

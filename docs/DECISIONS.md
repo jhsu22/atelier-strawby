@@ -2,6 +2,16 @@
 
 Status: Stage 0 design decisions retained; reviewed 2026-10-21. Source of product authority: [project_specification](../project_specification). No application implementation occurred during planning; Stage 1 implementation and verification are recorded below and in [STAGE1_VALIDATION.md](STAGE1_VALIDATION.md).
 
+## Stage 3 execution adjustments (2026-10-23)
+
+- The user's revised Stage 3 absorbs original Stage 4 editing/import/export work. Existing schema, source CSV, importer and visual tokens are preserved.
+- Cloudflare Access is implemented now, before hosted writes can be enabled: signed RS256 JWT, exact issuer/audience/origin and owner email; fail closed without configuration. Same-origin mutations also require a custom header. No password store or client secret is introduced.
+- Use a dependency-free one-edit/transposition search matcher instead of planned Fuse.js; the same copy must satisfy combined filters. Shared Zod schemas validate both form and API inputs.
+- Catalog and physical-copy identities remain separate. Creation uses an idempotency UUID plus payload digest; stale edits conflict; intentional duplicate copies get independent UUIDs. Shared manga edits invalidate other affected copy versions.
+- Metadata is owner-reviewed. MangaDex volume/locale matches still require physical publisher/edition confirmation. Open Library and CAA release-group covers are explicitly representative. The iTunes fallback supplies digital metadata only; promotional artwork is not imported. MangaDex artwork is always proxied; selected MangaDex/CAA files cache in R2.
+- Imports use private previews, source provenance, revision checks, staged visibility, stable identities and server-discoverable resume/cancel. JSON is a full relational backup including samples; default CSV excludes samples. Restores reject conflicting IDs rather than overwrite current edits. R2 bytes remain a separate backup.
+- `jose` 6.2.13 is the only added runtime dependency. The Astro/Pages major-version choice is preserved. Existing audit findings and hosted quotas/configuration remain release gates. Full workflows and limits: [STAGE3.md](STAGE3.md).
+
 ## Stage 1 execution adjustments
 
 - Initial registry restrictions were resolved during Stage 1 completion. The lockfile, clean `npm ci`, full type check, and Astro build are verified. Astro 5.18.2 / Cloudflare adapter 12.6.13 retain Pages compatibility. Drizzle ORM 0.45.4 fixes the reported identifier-escaping advisory. Wrangler 4.151.3 and matching Workers types resolve peers normally; the adapter separately retains its pinned Wrangler 4.59.2. Both runtime paths pass local checks. The audit remains nonzero; see TESTING.md for unresolved upstream advisories and the required platform/version decision before release.

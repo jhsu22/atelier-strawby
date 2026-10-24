@@ -2083,3 +2083,245 @@ a {
     gap: 10px;
   }
 }
+
+/* Collection management shares the shelf's surfaces, typography and controls. */
+.item-editor fieldset,
+.transfer-panel fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.item-editor .filter-field,
+.transfer-panel .filter-field {
+  margin-bottom: 18px;
+}
+.filter-field textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 12px;
+  resize: vertical;
+  font: inherit;
+}
+.filter-field input,
+.filter-field select,
+.filter-field textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+.filter-field small,
+.field-help {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  font-weight: 400;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.form-row {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.form-row .filter-field {
+  flex: 1 1 120px;
+}
+.form-row .duration-field {
+  flex: 0 1 90px;
+}
+.form-row > button {
+  margin-bottom: 22px;
+}
+.form-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 18px 0;
+}
+.check-label {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 16px 0;
+}
+.check-label input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  margin-top: 2px;
+  accent-color: var(--accent-text);
+}
+.editor-section {
+  border-top: 1px solid var(--line);
+  padding: 18px 0;
+  margin: 15px 0;
+}
+.editor-section h3,
+.transfer-panel h3 {
+  font-family: var(--font-heading);
+  font-size: 23px;
+  margin: 10px 0 16px;
+}
+.editor-section summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 10px 0;
+}
+.disc-editor {
+  padding: 14px;
+  margin: 12px 0;
+  background: var(--surface-soft);
+  border-radius: 10px;
+}
+.form-error,
+.delete-confirmation {
+  padding: 14px;
+  background: var(--surface-soft);
+  border: 1px solid var(--accent-text);
+  color: var(--accent-text);
+  border-radius: 8px;
+  margin-bottom: 18px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.form-notice,
+.resume-import {
+  padding: 14px;
+  background: var(--sage-surface);
+  color: var(--sage-text);
+  border-radius: 8px;
+  margin-bottom: 18px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.danger-text {
+  color: var(--accent-text);
+}
+.danger-button {
+  background: var(--accent-text);
+  color: var(--surface);
+}
+.delete-confirmation .button {
+  margin: 10px 10px 0 0;
+}
+button:disabled,
+fieldset:disabled {
+  opacity: 0.65;
+}
+button:disabled {
+  cursor: wait;
+}
+.metadata-results article {
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+}
+.metadata-results article p {
+  margin: 8px 0;
+}
+.metadata-results article .button {
+  margin: 10px;
+}
+.metadata-results a,
+.transfer-panel a:not(.button),
+.artwork-attribution a {
+  color: var(--accent-text);
+  text-decoration: underline;
+}
+.transfer-panel > p,
+.transfer-panel details p {
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 12px 0;
+}
+.transfer-link {
+  margin: 0 0 18px;
+}
+.preview-table {
+  overflow: auto;
+  max-height: 340px;
+  margin: 18px 0;
+}
+.preview-table table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+}
+.preview-table th,
+.preview-table td {
+  text-align: left;
+  padding: 9px;
+  border-bottom: 1px solid var(--line);
+}
+.preview-table th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+}
+.resolved-artwork {
+  position: absolute;
+  inset: 5%;
+  width: 90%;
+  height: 90%;
+  object-fit: cover;
+  z-index: 2;
+  border-radius: 2px;
+}
+.artwork-fallback-label {
+  position: absolute;
+  z-index: 3;
+  bottom: 7%;
+  right: 7%;
+  left: 7%;
+  font-size: 9px;
+  padding: 3px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: center;
+}
+.copy-artwork {
+  width: 62px;
+  flex-shrink: 0;
+}
+.copy-artwork .media-art {
+  width: 56px;
+}
+.copy-artwork small {
+  font-size: 9px;
+  line-height: 1.3;
+  display: block;
+  color: var(--muted);
+}
+.artwork-attribution {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+.detail-add {
+  margin: 24px 0;
+}
+@media (max-width: 480px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .form-row {
+    gap: 6px;
+  }
+  .copy-artwork {
+    width: 44px;
+  }
+  .copy-artwork .media-art {
+    width: 40px;
+  }
+}

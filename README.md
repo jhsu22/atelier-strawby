@@ -1,22 +1,24 @@
 # Atelier Strawby · Strawby Stacks
 
-Stage 2 adds the visual design system, real collection browsing, and responsive UI to the established Stage 1 data foundation. The authoritative input is the unchanged `initial_collection.csv`, not the longer filename mentioned in the original specification.
+Stage 3 adds metadata/artwork lookup, fuzzy search and filters, persistent manga/CD editing, and previewed imports and backups to the established collection application. The architecture, database schema, visual design and original `initial_collection.csv` are preserved.
 
-**Latest assessment (2026-10-23):** Stage 2 is locally verified; Stage 3 has not started. The current dependency audit reports 13 findings (6 moderate, 6 high, 1 critical). See [development status](docs/DEVELOPMENT_STATUS.md) for checks, incomplete features and next priorities.
+**Current stage:** Stage 3 is implemented and locally verified. Manga and CD add → edit → reload → delete flows persist in real D1. The baseline collection remains 177 manga copies across 38 series plus four labeled sample CDs. See [the Stage 3 guide](docs/STAGE3.md) for workflows, authentication, provider behavior, CSV templates and restoration, and [development status](docs/DEVELOPMENT_STATUS.md) for verification and remaining work.
 
-**Current status:** the local application includes the real 177 manga copies grouped into 38 series, four labeled sample CDs, light/dark themes, cover and equal-height manga spine views, search/filters, responsive detail drawers and edition-aware gap detection. Stage 1 schema/import behavior remains unchanged. See [the Stage 2 audit](docs/STAGE2_AUDIT.md) for acceptance and current verification, and [the implementation report](docs/STAGE2_UI.md) for the initial record. Dependency advisories remain open; hosted readiness is not claimed.
+Hosted deployment is not verified. Existing dependency advisories remain: 13 affected-package findings (6 moderate, 6 high, 1 critical). The application fails closed outside explicitly configured local or owner-authenticated environments.
 
 ## Browse the application
 
 After the local D1 setup below, run `npm run dev` and open **http://127.0.0.1:4321**. The main page is the new shelf; **/foundation** retains the Stage 1 database diagnostic and its counts/distributions. Search, filters, media/view changes and open details are reflected in the URL. Theme preference is stored locally. Use the refresh button to query D1 again.
 
-Manga covers are designed typographic placeholders using actual titles and credits. CD cases and metadata are explicitly labeled as demonstrations/unresolved. Add and Haul Timeline open clear upcoming-feature panels; collection stats show current derived totals. Remote cover APIs, metadata enrichment, mutations and import/export are reserved for the user's revised Stage 3.
+Use **Add to collection** (mobile **Add**) to create a manga volume or CD; open a detail drawer to edit/delete a physical copy or add another. Optional metadata suggestions use MangaDex/Open Library and MusicBrainz/Cover Art Archive, with an explicitly digital iTunes fallback. Manual entry and artwork overrides remain available. Representative artwork is labeled and unresolved artwork retains the designed typographic fallback.
 
-`npm run test:e2e` runs Chromium desktop/mobile interactions and axe checks against the local seeded app. It uses `/usr/bin/chromium` when available, or Playwright's installed Chromium; set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to select another compatible executable. `STRAWBY_TEST_URL` selects an already-running local built Pages server. See [STAGE2_UI.md](docs/STAGE2_UI.md) for exact commands and browser limits.
+**Import / export** provides validated previews, duplicate choices, resumable CSV imports, full JSON backups/restoration and separate manga/CD CSV downloads. Search combines with media, publisher/label, language, year, memory tag and edition/format filters. The haul timeline remains a later-stage feature.
+
+`npm run test:e2e` builds the worker and provisions disposable seeded D1/R2 automatically, then runs Chromium desktop/mobile interactions and axe checks. It uses `/usr/bin/chromium` when available, or Playwright's installed Chromium; set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to select another executable. Only set `STRAWBY_TEST_URL` for an already-running **disposable seeded** Pages runtime: management tests perform real writes. See [TESTING.md](docs/TESTING.md).
 
 ## Run the verified offline data foundation
 
-Requires Node **22.18+** (tested with 26.11.1), including built-in TypeScript stripping and `node:sqlite`. The seed/migration/diagnostic commands use Node built-ins. The combined test suites now include Stage 2 validation and require `npm ci`. Node 22 may print an experimental SQLite warning.
+Requires Node **22.18+** (tested with 26.11.1), including built-in TypeScript stripping and `node:sqlite`. The seed/migration/diagnostic commands use Node built-ins. The combined test suites now include Stage 3 validation and require `npm ci`. Node 22 may print an experimental SQLite warning.
 
 ```bash
 npm run seed:csv -- --input initial_collection.csv
@@ -93,10 +95,10 @@ The baseline SQL was authored offline and has now been compared with Drizzle Kit
 
 Four deliberately unresolved CD definitions live in `data/sample-cds.json`; provenance points to the original specification. They carry `is_sample=1` and no invented acquisition dates, label/catalog numbers, media formats, or tracklists. An unspecified Hirasawa album is explicitly labeled unresolved. Personal counts exclude all four.
 
-Stage 1 foundation and Stage 2 browsing use the approved `src/{config,components,domain,layouts,pages,server,styles}`, `scripts`, `data`, `drizzle`, `tests`, and `docs` structure. Editing/mutation APIs, Access JWT authentication, remote covers, metadata enrichment, import/export and deployment remain future work.
+Stages 1–3 retain the approved `src/{config,components,domain,layouts,pages,server,styles}`, `scripts`, `data`, `drizzle`, `tests`, and `docs` structure. Stage 3 adds server-side collection services and authenticated APIs within it. Timeline, remaining analytics and hosted deployment remain future work.
 
-`wrangler.toml` uses local placeholders for `DB` and `COVERS`. Its preview/production environments are unprovisioned; create separate D1/R2 resources and bind them explicitly before any hosted verification. Hosted reads currently fail closed. Local reads require both `.dev.vars` flags and a localhost URL; no JWT verification is claimed. No deployment or remote writes have been attempted.
+`wrangler.toml` uses local placeholders for `DB` and `COVERS`. Its preview/production environments are unprovisioned; create separate D1/R2 resources and bind them explicitly before any hosted verification. Hosted requests require a configured Cloudflare Access owner policy, verified JWT, exact origin and environment-specific bindings. Configuration is documented in [STAGE3.md](docs/STAGE3.md). Local access requires both `.dev.vars` flags and a localhost URL. No hosted deployment or remote collection writes have been attempted.
 
 ## Validation scripts
 
-`npm test` runs the preserved Stage 1 normalization/SQLite suites plus Stage 2 library, search, gap and DTO checks using `node:test`. `npm run test:d1` runs separate real Wrangler/workerd tests and fails if dependencies are absent; it never silently substitutes SQLite. `npm run check` runs Astro and TypeScript checks; `npm run validate` runs those checks, offline suites, and the Astro build. Stage 1's local functional gate also requires `test:schema`, `test:d1`, `verify:seed` against D1, and `test:smoke` against the built Pages server. Dependency audit findings are recorded separately and remain unresolved.
+`npm test` runs the preserved Stage 1 normalization/SQLite suites plus Stage 2 browsing and Stage 3 CRUD, transfer, provider, authentication and search checks using `node:test`. `npm run test:d1` runs separate real Wrangler/workerd tests and fails if dependencies are absent; it never silently substitutes SQLite. `npm run check` runs Astro and TypeScript checks; `npm run validate` runs those checks, offline suites, and the Astro build. Stage 1's local functional gate also requires `test:schema`, `test:d1`, `verify:seed` against D1, and `test:smoke` against the built Pages server. Dependency audit findings are recorded separately and remain unresolved.

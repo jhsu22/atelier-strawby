@@ -30,8 +30,11 @@ import { librarySchema } from "../../domain/library-schema.ts";
 import { MediaArtwork, Spine } from "../covers/MediaArtwork.tsx";
 import { Drawer } from "../ui/Drawer.tsx";
 import { EntryDetails } from "../details/EntryDetails.tsx";
+import { ItemEditor } from "../manage/ItemEditor.tsx";
+import { TransferPanel } from "../manage/TransferPanel.tsx";
+import type { ItemInput } from "../../domain/item.ts";
 
-type Panel = "filters" | "stats" | "timeline" | "add" | null;
+type Panel = "filters" | "stats" | "timeline" | "add" | "transfer" | null;
 function StrawberryMark() {
   return (
     <svg viewBox="0 0 40 44" fill="none" aria-hidden="true">
@@ -145,6 +148,10 @@ export function LibraryIsland({
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [ready, setReady] = useState(false);
+  const [editing, setEditing] = useState<{
+    id?: string;
+    seed?: Partial<ItemInput>;
+  } | null>(null);
   const entries = useMemo(
     () => browseEntries(data.entries, state),
     [data, state],
@@ -156,21 +163,55 @@ export function LibraryIsland({
   const sampleCds = cds
     .flatMap((entry) => entry.copies)
     .filter((copy) => copy.isSample).length;
-  const publishers = [...new Set(copies.map((copy) => copy.publisher))].sort();
-  const memories = [...new Set(copies.flatMap((copy) => copy.tags))]
+  const publishers = [
+    ...new Set([
+      ...copies.map((copy) => copy.publisher),
+      ...cds.flatMap((entry) => entry.labels),
+    ]),
+  ].sort();
+  const memories = [
+    ...new Set([
+      ...copies.flatMap((copy) => copy.tags),
+      ...cds.flatMap((entry) =>
+        entry.copies.flatMap((copy) => copy.tags ?? []),
+      ),
+    ]),
+  ]
     .filter(
       (tag) => !["Box Set", "Omnibus", "Collector's Edition"].includes(tag),
     )
     .sort();
-  const activeFilters = [state.language, state.publisher, state.memory].filter(
-    Boolean,
-  ).length;
+  const years = [
+    ...new Set(
+      data.entries.flatMap((entry) =>
+        entry.copies.map((copy) => copy.acquiredOn?.slice(0, 4) ?? "unknown"),
+      ),
+    ),
+  ]
+    .sort()
+    .reverse();
+  const formats = [
+    ...new Set([
+      ...copies.flatMap((copy) => [copy.format, copy.editionTitle]),
+      ...cds.flatMap((entry) => [...entry.formats, entry.editionTitle ?? ""]),
+    ]),
+  ]
+    .filter(Boolean)
+    .sort();
+  const activeFilters = [
+    state.language,
+    state.publisher,
+    state.memory,
+    state.year,
+    state.format,
+  ].filter(Boolean).length;
   useEffect(() => {
     setReady(true);
     setTheme(document.documentElement.dataset.theme ?? "light");
     const pop = () => {
       setState(parseBrowseState(new URLSearchParams(window.location.search)));
       setPanel(null);
+      setEditing(null);
     };
     window.addEventListener("popstate", pop);
     return () => window.removeEventListener("popstate", pop);
@@ -200,11 +241,69 @@ export function LibraryIsland({
     navigate({ item: entry.id });
   }
   function showPanel(next: Panel) {
+    setEditing(null);
     if (state.item) navigate({ item: "" });
     setPanel(next);
   }
   function resetFilters() {
-    navigate({ query: "", language: "", publisher: "", memory: "" });
+    navigate({
+      query: "",
+      language: "",
+      publisher: "",
+      memory: "",
+      year: "",
+      format: "",
+    });
+  }
+  function editCopy(id: string) {
+    navigate({ item: "" });
+    setPanel(null);
+    setEditing({ id });
+  }
+  async function addCopy(entry: LibraryEntry) {
+    try {
+      const response = await fetch(
+        `/api/items/${encodeURIComponent(entry.copies[0]!.id)}`,
+        { cache: "no-store" },
+      );
+      if (!response.ok)
+        throw new Error("Could not load the copy. Refresh and try again.");
+      const { item } = (await response.json()) as { item: ItemInput };
+      navigate({ item: "" });
+      setPanel(null);
+      setEditing({
+        seed: {
+          ...item,
+          acquiredOn: null,
+          notes: null,
+          tags: [],
+          tagsMode: "auto",
+          isSample: false,
+        },
+      });
+    } catch (error) {
+      setError((error as Error).message);
+    }
+  }
+  async function mutationFinished() {
+    const response = await fetch("/api/library", { cache: "no-store" });
+    if (!response.ok)
+      throw new Error(
+        "Changes were saved, but refresh failed. Reload the page to see them.",
+      );
+    setData(librarySchema.parse(await response.json()));
+    setEditing(null);
+    setPanel(null);
+    navigate({
+      item: "",
+      query: "",
+      language: "",
+      publisher: "",
+      memory: "",
+      year: "",
+      format: "",
+      media: "all",
+    });
   }
   async function refresh() {
     setRefreshing(true);
@@ -296,10 +395,27 @@ export function LibraryIsland({
                 <strong>{manga.length}</strong> series
               </span>
               <span>
+                <strong>
+                  {
+                    cds
+                      .flatMap((entry) => entry.copies)
+                      .filter((copy) => !copy.isSample).length
+                  }
+                </strong>{" "}
+                CDs
+              </span>
+              <span>
                 <strong>{sampleCds}</strong> sample CDs
               </span>
             </div>
           </div>
+          <button
+            type="button"
+            className="text-button transfer-link"
+            onClick={() => showPanel("transfer")}
+          >
+            Import & export
+          </button>
           <div className="shelf-toolbar">
             <div
               className="media-switcher"
@@ -599,7 +715,11 @@ export function LibraryIsland({
           title={selected.title}
           onClose={() => navigate({ item: "" })}
         >
-          <EntryDetails entry={selected} />
+          <EntryDetails
+            entry={selected}
+            onEdit={editCopy}
+            onAdd={() => void addCopy(selected)}
+          />
         </Drawer>
       )}
       {state.item && !selected && (
@@ -640,14 +760,40 @@ export function LibraryIsland({
             </select>
           </label>
           <label className="filter-field">
-            Publisher
+            Publisher or label
             <select
               value={state.publisher}
               onChange={(event) => navigate({ publisher: event.target.value })}
             >
-              <option value="">All publishers</option>
+              <option value="">All publishers and labels</option>
               {publishers.map((value) => (
                 <option key={value}>{value}</option>
+              ))}
+            </select>
+          </label>
+          <label className="filter-field">
+            Acquisition year
+            <select
+              value={state.year ?? ""}
+              onChange={(event) => navigate({ year: event.target.value })}
+            >
+              <option value="">All years</option>
+              {years.map((year) => (
+                <option key={year} value={year}>
+                  {year === "unknown" ? "Unknown date" : year}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="filter-field">
+            Edition or format
+            <select
+              value={state.format ?? ""}
+              onChange={(event) => navigate({ format: event.target.value })}
+            >
+              <option value="">All editions and formats</option>
+              {formats.map((format) => (
+                <option key={format}>{format}</option>
               ))}
             </select>
           </label>
@@ -719,6 +865,7 @@ export function LibraryIsland({
                 count: copies.filter((copy) => copy.publisher === publisher)
                   .length,
               }))
+              .filter(({ count }) => count > 0)
               .sort((a, b) => b.count - a.count)
               .map(({ publisher, count }) => (
                 <li key={publisher}>
@@ -739,20 +886,49 @@ export function LibraryIsland({
           </a>
         </Drawer>
       )}
-      {(panel === "timeline" || panel === "add") && (
+      {(panel === "add" || editing) && (
         <Drawer
-          title={panel === "add" ? "Add to collection" : "Haul timeline"}
-          onClose={() => setPanel(null)}
+          title={editing?.id ? "Edit copy" : "Add to collection"}
+          onClose={() => {
+            setEditing(null);
+            setPanel(null);
+          }}
+          wide
         >
+          <ItemEditor
+            key={editing?.id ?? "new"}
+            id={editing?.id}
+            seed={editing?.seed}
+            entries={data.entries}
+            onSaved={mutationFinished}
+            onClose={() => {
+              setEditing(null);
+              setPanel(null);
+            }}
+          />
+        </Drawer>
+      )}
+      {panel === "transfer" && (
+        <Drawer title="Import & export" onClose={() => setPanel(null)} wide>
+          <TransferPanel
+            onChanged={async () => {
+              const response = await fetch("/api/library", {
+                cache: "no-store",
+              });
+              if (!response.ok)
+                throw new Error("Reload to see the imported collection.");
+              setData(librarySchema.parse(await response.json()));
+            }}
+          />
+        </Drawer>
+      )}
+      {panel === "timeline" && (
+        <Drawer title="Haul timeline" onClose={() => setPanel(null)}>
           <div className="coming-soon">
             <span>
-              {panel === "add" ? <Plus size={34} /> : <History size={34} />}
+              <History size={34} />
             </span>
-            <p>
-              {panel === "add"
-                ? "Adding and editing items is not available yet."
-                : "The haul timeline is not available yet."}
-            </p>
+            <p>The haul timeline is not available yet.</p>
             <button
               type="button"
               className="button button-primary"

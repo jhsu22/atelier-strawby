@@ -1,8 +1,31 @@
 # Testing strategy and verification record
 
-Latest revalidation: [development assessment, 2026-10-23](DEVELOPMENT_STATUS.md). Checking/build, 48 unit tests, 21 integration tests, two real D1 tests, 22 browser tests against the compiled Pages worker, schema parity, persisted seed verification and built Pages smoke pass. The fresh dependency audit reports **13 findings: 6 moderate, 6 high, 1 critical**, superseding the historical 11-finding results below.
+Latest revalidation: [Stage 3 development assessment](DEVELOPMENT_STATUS.md). **53 unit + 28 integration + 3 actual D1 + 28 desktop/mobile browser tests pass**, plus checking/build, schema parity, persisted seed verification and built Pages smoke. No final suite failures/skips remain. The dependency audit still reports **13 findings: 6 moderate, 6 high, 1 critical**. Earlier Stage 1–2 results below are historical.
 
-Status: the user-requested Stage 2 visual/browsing UI is implemented and locally verified. [STAGE2_AUDIT.md](STAGE2_AUDIT.md) records the latest fixes, commands and browser limits; [STAGE2_UI.md](STAGE2_UI.md) preserves the initial implementation record. Stage 1's local functional acceptance checks still pass, including clean locked installation, full checking/build, Drizzle schema parity, real D1 tests, persisted D1 verification, and Astro/built Pages HTTP smoke. The dependency audit remains nonzero. Hosted deployment, external metadata and later-stage features were not attempted. Earlier blocked results and Stage 0/future-stage material are retained below as history.
+## Stage 3 verification
+
+| Command/check | Actual result |
+| --- | --- |
+| `npm run validate` | PASS: Astro/TypeScript 0 errors, 0 warnings, 1 existing hint; 53 unit and 28 integration tests; Pages production build. |
+| `npm run test:d1` | PASS: 3 real workerd tests, including CRUD, duplicate identity, stale/shared-series edits, staged imports, exact JSON restore and reopening persistent state. |
+| `npm run test:e2e` | PASS: 28 desktop/mobile Chromium tests in 56.6 seconds on disposable seeded D1/R2. Real add/edit/delete and reload for both manga and CDs, metadata failure with manual entry, tracklist corrections, filter combinations, import previews, duplicate prevention, exports/restoration and origin enforcement. |
+| `npm run test:e2e -- --grep 'import preview'` | PASS: 2 desktop/mobile tests in 10.6 seconds after preserving empty catalog numbers in multi-label CSV. |
+| `npm run test:schema` | PASS: schema/migration/snapshot parity. No Stage 3 schema change. |
+| `npm run verify:seed` | PASS: original persisted baseline remains 177 manga / 38 series / 4 sample CDs with original distributions and provenance. |
+| `npm run test:smoke -- --url http://127.0.0.1:8791` | PASS against compiled Pages worker: D1 counts, SSR, private headers, sample exclusion, CSS and nonlocal Host rejection. |
+| Editor visual probe | PASS: manga/CD dialog and document fit 320/768/1440 px. Narrow light and desktop dark images inspected. Existing shelf responsive checks also pass. |
+| Real metadata/R2 probe | PASS: real Japanese MangaDex volume and Japanese MusicBrainz limited CD/Blu-ray release cached in local D1/R2, then verified after closing/reopening the runtime. Exact release and explicit representative fallback were both exercised. |
+| `npm audit --json` | Exit 1: 13 existing affected-package findings; no production-readiness claim. |
+
+The default Playwright web server builds the application, creates and seeds temporary D1/R2, and destroys that test state after shutdown. It does not reuse a development server. Set `STRAWBY_TEST_URL` only for an explicitly disposable seeded server: management tests perform real persistent mutations. Set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` if the system Chromium path is unavailable.
+
+Failure coverage injects provider timeout, malformed JSON, 429/503 Retry-After, unavailable exact covers and fallback responses. It exercises local manual saving while external lookup fails. Provider success/missing/failure caches and R2 reuse are asserted. JWT tests cover signature, issuer, audience, expiry, owner email, origin and CSRF restrictions. Input tests cover calendar dates, URLs, body limits, disc/track relationships and duplicate positions. Real D1 and SQLite share service scenarios rather than substituting one for the other.
+
+Live probes are supplementary and are not required by `npm test`. No guessed provider metadata was applied to the user's baseline collection. The iTunes fallback is explicitly digital and does not import promotional artwork. Documentation: [STAGE3.md](STAGE3.md).
+
+Logs: `/tmp/strawby-stage3-validate.log`, `-d1.log`, `-e2e.log`, `-e2e-transfer.log`, `-schema.log`, `-seed.log`, `-smoke.log`, and `-audit.json`. Visual/live evidence is under ignored `data/generated/`. A transient smoke attempt after the disposable browser server had already exited was retried successfully against the running Pages worker. Initial E2E selector mismatches were corrected; final full and focused runs are recorded above.
+
+Limits: no hosted Cloudflare deployment; no Safari/Firefox, physical-device, screen-reader or hosted performance sign-off. Authentication is locally tested but still requires a real owner Access policy and hosted verification. Dependency advisories and plan-specific D1 limits remain release gates.
 
 ## Stage 2 visual and browsing verification
 

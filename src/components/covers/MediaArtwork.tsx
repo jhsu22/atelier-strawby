@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { useState } from "react";
 import type { LibraryEntry, MangaCopy } from "../../domain/library.ts";
 
 const palettes = [
@@ -36,6 +37,10 @@ export function MediaArtwork({
   compact?: boolean;
 }) {
   const cd = entry.kind === "cd";
+  const artwork = cd
+    ? entry.artwork
+    : entry.copies.find((copy) => copy.artwork)?.artwork;
+  const [failedUrl, setFailedUrl] = useState("");
   const names = cd ? entry.artists : entry.authors;
   return (
     <div
@@ -43,6 +48,21 @@ export function MediaArtwork({
       style={mediaStyle(entry.title)}
       className={`media-art ${cd ? "jewel-case" : "book-cover"} ${compact ? "art-compact" : ""}`}
     >
+      {artwork && artwork.url !== failedUrl && (
+        <img
+          className="resolved-artwork"
+          src={artwork.url}
+          alt=""
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={() => setFailedUrl(artwork.url)}
+        />
+      )}
+      {artwork &&
+        artwork.url !== failedUrl &&
+        artwork.scope === "representative" && (
+          <span className="artwork-fallback-label">Representative</span>
+        )}
       <div className="cover-print">
         <span
           className={`cover-title ${entry.title.length > 34 ? "cover-title-long" : ""}`}
@@ -89,7 +109,13 @@ export function Spine({
     >
       <span className="spine-top">{cd ? "CD" : copy.language}</span>
       <span className="spine-title">{entry.title}</span>
-      <span className="spine-publisher">{cd ? "SAMPLE" : copy.publisher}</span>
+      <span className="spine-publisher">
+        {cd
+          ? entry.kind === "cd" && entry.copies.every((c) => c.isSample)
+            ? "SAMPLE"
+            : entry.labels.join(" · ") || "CD"
+          : copy.publisher}
+      </span>
       <span className="spine-number">
         {cd ? "◉" : copy.volume?.padStart(2, "0")}
       </span>

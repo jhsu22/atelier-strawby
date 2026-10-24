@@ -36,8 +36,9 @@ export default defineConfig({
   webServer: process.env.STRAWBY_TEST_URL
     ? undefined
     : {
-        command: "npm run dev -- --port 4321",
+        command: "node scripts/browser-server.ts",
         url: "http://127.0.0.1:4321",
-        reuseExistingServer: !process.env.CI,
+        reuseExistingServer: false,
+        timeout: 120_000,
       },
 });

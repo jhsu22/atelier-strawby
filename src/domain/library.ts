@@ -1,6 +1,16 @@
 import type { Language, LanguageBasis } from "./types.ts";
 
+export interface Artwork {
+  url: string;
+  scope: "edition" | "representative";
+  attribution: string;
+  provider: string;
+  sourceUrl: string;
+}
+
 export interface MangaCopy {
+  version?: number;
+  artwork?: Artwork | null;
   id: string;
   editionRunId: string;
   editionTitle: string;
@@ -24,6 +34,8 @@ export interface MangaSeries {
   copies: MangaCopy[];
 }
 export interface CdCopy {
+  version?: number;
+  tags?: string[];
   id: string;
   acquiredOn: string | null;
   notes: string | null;
@@ -36,6 +48,8 @@ export interface CdTrack {
   durationMs: number | null;
 }
 export interface CdAlbum {
+  artwork?: Artwork | null;
+  editionTitle?: string;
   kind: "cd";
   id: string;
   title: string;
@@ -53,6 +67,8 @@ export interface LibraryData {
   entries: LibraryEntry[];
 }
 export interface BrowseState {
+  year?: string;
+  format?: string;
   media: "all" | "manga" | "cd";
   view: "grid" | "spines";
   query: string;
@@ -63,6 +79,8 @@ export interface BrowseState {
   item: string;
 }
 export const defaultBrowseState: BrowseState = {
+  year: "",
+  format: "",
   media: "all",
   view: "grid",
   query: "",
@@ -74,6 +92,10 @@ export const defaultBrowseState: BrowseState = {
 };
 export function parseBrowseState(params: URLSearchParams): BrowseState {
   return {
+    year: /^(\d{4}|unknown)$/.test(params.get("year") ?? "")
+      ? params.get("year")!
+      : "",
+    format: (params.get("format") ?? "").slice(0, 100),
     media:
       params.get("media") === "manga"
         ? "manga"
@@ -96,6 +118,8 @@ export function browseParams(state: BrowseState): URLSearchParams {
   if (state.media !== "all") params.set("media", state.media);
   if (state.view !== "grid") params.set("view", state.view);
   if (state.query) params.set("q", state.query);
+  if (state.year) params.set("year", state.year);
+  if (state.format) params.set("format", state.format);
   for (const field of ["language", "publisher", "memory", "item"] as const)
     if (state[field]) params.set(field, state[field]);
   if (state.sort !== "title") params.set("sort", state.sort);
@@ -103,6 +127,37 @@ export function browseParams(state: BrowseState): URLSearchParams {
 }
 const searchText = (value: string) =>
   value.normalize("NFKD").replace(/\p{M}/gu, "").toLocaleLowerCase();
+// Exact substrings win; words of four or more letters permit one edit or
+// transposition. Numbers and short words remain exact to avoid volume noise.
+export function fuzzyTerm(term: string, text: string): boolean {
+  if (text.includes(term)) return true;
+  if (term.length < 4 || !/^\p{L}+$/u.test(term)) return false;
+  return text.split(/[^\p{L}\p{N}]+/u).some((word) => {
+    if (Math.abs(word.length - term.length) > 1) return false;
+    let i = 0,
+      j = 0,
+      edits = 0;
+    while (i < term.length && j < word.length) {
+      if (term[i] === word[j]) {
+        i++;
+        j++;
+        continue;
+      }
+      if (++edits > 1) return false;
+      if (term.length === word.length) {
+        if (term[i] === word[j + 1] && term[i + 1] === word[j]) {
+          i += 2;
+          j += 2;
+        } else {
+          i++;
+          j++;
+        }
+      } else if (term.length > word.length) i++;
+      else j++;
+    }
+    return edits + Number(i < term.length || j < word.length) <= 1;
+  });
+}
 export function matchingCopies(
   entry: LibraryEntry,
   state: BrowseState,
@@ -112,25 +167,53 @@ export function matchingCopies(
   if (entry.kind === "manga") {
     const common = [entry.title, ...entry.authors, ...entry.aliases].join(" ");
     return entry.copies.filter((copy) => {
+      if (
+        state.year &&
+        (copy.acquiredOn?.slice(0, 4) ?? "unknown") !== state.year
+      )
+        return false;
+      if (
+        state.format &&
+        state.format !== copy.format &&
+        state.format !== copy.editionTitle
+      )
+        return false;
       if (state.language && state.language !== copy.language) return false;
       if (state.publisher && state.publisher !== copy.publisher) return false;
       if (state.memory && !copy.tags.includes(state.memory)) return false;
       const haystack = searchText(
         [common, copy.editionTitle, copy.publisher, copy.notes ?? ""].join(" "),
       );
-      return terms.every((term) => haystack.includes(term));
+      return terms.every((term) => fuzzyTerm(term, haystack));
     });
   }
-  if (state.language || state.publisher || state.memory) return [];
+  if (
+    state.language ||
+    (state.publisher && !entry.labels.includes(state.publisher))
+  )
+    return [];
+  if (
+    state.format &&
+    !entry.formats.includes(state.format) &&
+    state.format !== entry.editionTitle
+  )
+    return [];
   const common = [
     entry.title,
     ...entry.artists,
     ...entry.labels,
     ...entry.catalogNumbers,
+    entry.editionTitle ?? "",
   ].join(" ");
   return entry.copies.filter((copy) => {
+    if (
+      state.year &&
+      (copy.acquiredOn?.slice(0, 4) ?? "unknown") !== state.year
+    )
+      return false;
+    if (state.memory && !copy.tags?.includes(state.memory)) return false;
     const haystack = searchText(`${common} ${copy.notes ?? ""}`);
-    return terms.every((term) => haystack.includes(term));
+    return terms.every((term) => fuzzyTerm(term, haystack));
   });
 }
 export function browseEntries(

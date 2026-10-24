@@ -1,14 +1,16 @@
-# Atelier Strawby — proposed architecture
+# Atelier Strawby — architecture
 
-Status: Stage 0 architecture retained for future integrations. The user revised Stage 2 to prioritize visual design and browsing; the implemented UI and current boundary are documented in [STAGE2_UI.md](STAGE2_UI.md). Stage 1's local functional checks pass, including locked installation, Astro checking/build, Drizzle schema parity, actual D1 integration and seeded Astro/Pages runtime smoke. Upstream dependency advisories remain; hosted readiness is unverified. See [Stage 1 results](STAGE1_VALIDATION.md) and [TESTING.md](TESTING.md). Updated 2026-10-21 (America/Los_Angeles).
+Status: Stages 1–3 are implemented and locally verified. Stage 3 retains the established schema, runtime and visual design; [STAGE3.md](STAGE3.md) records the implemented mutation, metadata, import/export and authentication boundaries. The remaining planning sections describe intended operating behavior and future release gates where not yet verified. Hosted readiness is unverified and existing dependency findings remain.
 
-The authoritative requirements are [project_specification](../project_specification). The supplied dataset is [initial_collection.csv](../initial_collection.csv). This document describes proposed behavior, not existing functionality. See [ROADMAP.md](ROADMAP.md) for requirement coverage, [DATA_MODEL.md](DATA_MODEL.md) for the relational design, [DECISIONS.md](DECISIONS.md) for assumptions and risks, and [TESTING.md](TESTING.md) for evidence and future checks.
+The authoritative requirements are [project_specification](../project_specification) plus the user's revised Stage 2–3 scope. The dataset is [initial_collection.csv](../initial_collection.csv). See [ROADMAP.md](ROADMAP.md), [DATA_MODEL.md](DATA_MODEL.md), [DECISIONS.md](DECISIONS.md) and [TESTING.md](TESTING.md).
+
+Stage 3 uses shared Zod inputs, a small D1 Store interface with parameterized SQL, atomic batches and revision guards, and service modules under `src/server/`. Existing Drizzle schema/read services remain. Metadata and image failures do not control whether a collection copy can be saved. R2 persists eligible image bytes; D1 persists all collection data and provider/cache state. React forms refresh the existing shelf after mutations. No extra database or global state framework was introduced.
 
 ## Product and scope
 
 Atelier Strawby is the project name; retain **Strawby Stacks — The Strawby Library** as the application title specified by the PRD. Keep these names in one configuration module so a later branding change is inexpensive.
 
-Build one private, single-owner library for manga and CDs. Preserve personal notes, duplicate copies, edition titles, languages, and unknown dates. D1 is the production source of truth from the first implementation stage. Normalized seed JSON is an import artifact, never a second mutable database. Four explicitly labeled sample CDs demonstrate the CD experience; exclude them from personal statistics, timeline, and default backups.
+Build one private, single-owner library for manga and CDs. Preserve personal notes, duplicate copies, edition titles, languages, and unknown dates. D1 is the production source of truth from the first implementation stage. Normalized seed JSON is an import artifact, never a second mutable database. Four explicitly labeled sample CDs demonstrate the CD experience; exclude them from personal statistics, timeline, and default CSV exports. Full JSON backups include samples to preserve the complete database.
 
 ## Runtime and technical choices
 
@@ -22,8 +24,8 @@ Build one private, single-owner library for manga and CDs. Preserve personal not
 | Cover files | Private Cloudflare R2 bucket plus D1 asset metadata | Persistent object storage outside the deployment filesystem |
 | Authentication | Cloudflare Access; server-side JWT verification | Single-owner access without building password storage or account management |
 | Validation | Shared runtime schemas using one compatible Zod version | TypeScript does not validate CSV, HTTP bodies, or provider responses |
-| Search | Fuse.js, loaded with the shelf island | Actual fuzzy matching over the small collection and multilingual aliases |
-| Verification | Astro/TypeScript checks, Vitest, local Wrangler D1/R2, Playwright with axe | Domain rules, real database behavior, and user workflows |
+| Search | Dependency-free token/edit-distance matching in the shelf island | Typo-tolerant matching over the small collection and multilingual aliases |
+| Verification | Astro/TypeScript checks, node:test, local Wrangler D1/R2, Playwright with axe | Domain rules, real database behavior, and user workflows |
 
 Astro's current adapter documentation says newer adapters remove Pages support. Stay on Astro 5 with its Pages-compatible adapter, rather than installing all packages at `latest`. Confirm exact peer dependencies and a Pages build in Stage 1. A future Astro upgrade and Workers migration are a separate decision. [Current adapter migration notes](https://docs.astro.build/en/guides/integrations-guide/cloudflare/), [Astro 5 adapter documentation](https://v5.docs.astro.build/en/guides/integrations-guide/cloudflare/).
 

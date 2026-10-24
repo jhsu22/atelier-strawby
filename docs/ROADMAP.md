@@ -1,6 +1,6 @@
 # Requirements and five-stage implementation plan
 
-Status as of 2026-10-23: **Stage 1 is preserved. Stage 2 implements the visual design system, collection browsing, and responsive UI requested by the user. Stage 3 has not started.** The latest user scope supersedes the original stage ordering: remote images, complete mutations, ingestion/editing, and import/export move to Stage 3. Latest assessment and verification: [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md); Stage 2 implementation record: [STAGE2_UI.md](STAGE2_UI.md).
+Status as of 2026-10-23: **Stages 1–2 are preserved and Stage 3 is implemented and locally verified.** The user's revised Stage 3 includes metadata, artwork, complete CRUD, search, imports and exports, absorbing the original Stage 4 workflow scope. Latest evidence: [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md); implementation and setup: [STAGE3.md](STAGE3.md). Hosted deployment is still unverified.
 
 Authority: [project_specification](../project_specification), supplemented by the user's engineering and development-discipline requirements. Design: [ARCHITECTURE.md](ARCHITECTURE.md), [DATA_MODEL.md](DATA_MODEL.md). Evidence: [TESTING.md](TESTING.md). Assumptions and risk responses: [DECISIONS.md](DECISIONS.md).
 
@@ -60,13 +60,17 @@ Migration, authentication, loading/error behavior, accessibility, and regression
 
 **Boundary:** no remote artwork APIs, metadata enrichment, mutation API, import/export, authentication migration or deployment. Typographic artwork is an explicit designed fallback. Existing hosted access continues to fail closed.
 
-## Stage 3 — Metadata, artwork, and collection workflows (not started)
+## Stage 3 — Metadata, search and collection workflows (locally verified)
 
-The user's updated ordering places remote image APIs, ingestion/editing, full mutations and import/export here. Retain the original matching, caching, throttling, persistence, idempotence and backup requirements in [ARCHITECTURE.md](ARCHITECTURE.md) and [DATA_MODEL.md](DATA_MODEL.md). Establish the exact next-stage acceptance criteria before implementation. None of those integrations is claimed by Stage 2.
+**Dependencies:** preserved D1 schema and seeded data, existing shelf/design, authenticated server mutation boundary.
 
-The original Stage 4–5 requirement lists below are retained as future-work detail; their numbering does not override the user's revised scope.
+**Delivered:** MangaDex/Open Library title and volume/locale artwork lookup; MusicBrainz release/track metadata and Cover Art Archive with explicit fallbacks; D1 metadata/R2 artwork caching, retries and provider limits; fuzzy client search with combined filters and editable memory tags; persistent manga/CD CRUD with duplicate identities and concurrency checks; original manga/CD/Discogs CSV previews and resumable imports; CSV exports and full JSON backup/restoration; Cloudflare Access owner JWT verification and same-origin writes.
 
-## Stage 4 — Add/edit, imports, and portable backups
+**Acceptance:** real D1 add/edit/delete and runtime restart tests; browser add/edit/delete with reloads for both media; filter combinations, manual fallback under provider failure, input validation, duplicate detection, interrupted import recovery and exact backup restoration. All pass locally. [STAGE3.md](STAGE3.md) records provider matching boundaries and live D1/R2 cache evidence. The database schema, migration and source CSV remain unchanged. Hosted environment verification is still a release gate.
+
+The original Stage 4 workflow criteria below are fulfilled by this Stage 3 implementation, subject to its documented provider/hosting limits. Stage 5 remains future work.
+
+## Original Stage 4 — Add/edit, imports, and portable backups (absorbed into Stage 3)
 
 **Dependencies:** Stages 1–3; authenticated mutation boundary; versioned schema and stable item IDs; metadata resolution and working dialogs/forms.
 
@@ -80,7 +84,7 @@ The original Stage 4–5 requirement lists below are retained as future-work det
 4. CSV imports handle quoted commas, embedded newlines, UTF-8/BOM, missing optional fields, invalid fields, and duplicates. Preview identifies every rejected/warned row before commit. Column mappings and preview hashes are retained with the import audit.
 5. Import a representative Discogs collection export with artist, title, label, catalog number, format, year, release ID, and custom notes. Preserve source fields for unmapped values. `Date Added` is not acquisition date unless the owner explicitly maps it. No Discogs API token is needed for this file import.
 6. A partially failed import does not become a partially visible collection. Retrying resumes by record identity; finalization verifies expected count/references. Re-import of the identical file does not duplicate owned copies; changed-file candidates require review.
-7. JSON export→restore into a fresh local D1 preserves IDs, aliases, multiple credits, editions, owned copies, notes, tags, null dates, tracks, and cover references. CSV output has proper quoting/Unicode and documented spreadsheet formula protection. Sample records are excluded by default and selectable explicitly.
+7. JSON export→restore into a fresh local D1 preserves IDs, aliases, multiple credits, editions, owned copies, notes, tags, null dates, tracks, and cover references. CSV output has proper quoting/Unicode and documented spreadsheet formula protection. CSV sample records are excluded by default and selectable explicitly; a full JSON backup includes them.
 8. Unauthorized, cross-origin, invalid, and oversized mutation/import requests fail safely. No private export is available from a static public asset or public cache.
 9. End-to-end add→lookup/manual entry→save→edit→export tests pass for both media types, with API failure and stale-edit scenarios.
 
@@ -108,7 +112,7 @@ If hosted resources are unavailable, complete local deliverables and explicitly 
 
 ## Requirement traceability
 
-Stage 1 foundation requirements are preserved. The table below retains the original stage references for historical traceability; the revised Stage 2 UI mapping above and STAGE2_UI.md take precedence. External integrations and mutations remain future work.
+Stage 1 foundation requirements are preserved. The table below retains the original stage references for historical traceability; the revised Stage 2 UI mapping above and STAGE2_UI.md take precedence. Stage 3 implementation evidence supersedes the original stage numbers for integrations and mutations.
 
 | ID | Original requirement | Stage(s) | Evidence needed |
 | --- | --- | --- | --- |
@@ -142,4 +146,4 @@ Stage 1 foundation requirements are preserved. The table below retains the origi
 
 ## Current handoff
 
-Stage 1 remains intact and the requested Stage 2 UI is implemented. See [STAGE2_UI.md](STAGE2_UI.md) and [TESTING.md](TESTING.md) for current evidence. The Stage 1 diagnostic is available at `/foundation`. Stage 3 integrations and hosted deployment were not attempted. The recorded dependency/platform security decision remains open before hosted release.
+Stage 3 is locally verified and documented in [STAGE3.md](STAGE3.md). Stage 1 data and Stage 2 design remain intact. The next product scope is the haul timeline and remaining analytics; hosted provisioning, dependency remediation and broader deployment/device verification are separate unfinished release gates. See [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md).

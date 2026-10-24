@@ -2,6 +2,7 @@ import { z } from "zod";
 import { LIBRARY_QUERIES } from "../repositories/library-queries.ts";
 import type { ReadRows } from "./collection-summary.ts";
 import type {
+  Artwork,
   LibraryData,
   MangaSeries,
   CdAlbum,
@@ -10,6 +11,8 @@ import type {
 const string = z.string();
 const nullable = string.nullable();
 const mangaRow = z.object({
+  version: z.number().int().positive(),
+  cover_asset_id: nullable,
   id: string,
   acquired_on: nullable,
   notes: nullable,
@@ -26,6 +29,9 @@ const mangaRow = z.object({
   volume_sort: z.number().nullable(),
 });
 const cdRow = z.object({
+  version: z.number().int().positive(),
+  cover_asset_id: nullable,
+  edition_title: nullable,
   id: string,
   acquired_on: nullable,
   notes: nullable,
@@ -37,10 +43,35 @@ const cdRow = z.object({
 });
 const credit = z.object({ display_name: string });
 export async function libraryData(read: ReadRows): Promise<LibraryData> {
-  const [manga, authors, aliases, tags, cds, artists, labels, media, tracks] =
-    await Promise.all(
-      Object.values(LIBRARY_QUERIES).map((query) => read(query)),
-    );
+  const [
+    manga,
+    authors,
+    aliases,
+    tags,
+    cds,
+    artists,
+    labels,
+    media,
+    tracks,
+    artwork,
+  ] = await Promise.all(
+    Object.values(LIBRARY_QUERIES).map((query) => read(query)),
+  );
+  const cover = (id: string | null): Artwork | null => {
+    const value = artwork!.find((row) => row.id === id);
+    return value
+      ? {
+          url:
+            value.object_key || value.provider === "mangadex"
+              ? `/api/artwork/${encodeURIComponent(String(value.id))}`
+              : String(value.external_url),
+          scope: z.enum(["edition", "representative"]).parse(value.match_scope),
+          provider: String(value.provider),
+          attribution: String(value.attribution ?? ""),
+          sourceUrl: String(value.source_url ?? ""),
+        }
+      : null;
+  };
   const series = new Map<string, MangaSeries>();
   for (const value of manga!) {
     const row = mangaRow.parse(value);
@@ -65,6 +96,8 @@ export async function libraryData(read: ReadRows): Promise<LibraryData> {
       series.set(entry.id, entry);
     }
     entry.copies.push({
+      version: row.version,
+      artwork: cover(row.cover_asset_id),
       id: row.id,
       editionRunId: row.edition_run_id,
       editionTitle: row.edition_title,
@@ -93,6 +126,8 @@ export async function libraryData(read: ReadRows): Promise<LibraryData> {
     if (!entry) {
       entry = {
         kind: "cd",
+        artwork: cover(row.cover_asset_id),
+        editionTitle: row.edition_title ?? "",
         id: row.release_id,
         title: row.title,
         releaseId: row.release_id,
@@ -138,6 +173,14 @@ export async function libraryData(read: ReadRows): Promise<LibraryData> {
       acquiredOn: row.acquired_on,
       notes: row.notes,
       isSample: row.is_sample === 1,
+      version: row.version,
+      tags: [
+        ...new Set(
+          tags!
+            .filter((tag) => tag.item_id === row.id)
+            .map((tag) => string.parse(tag.label)),
+        ),
+      ],
     });
   }
   return { entries: [...series.values(), ...albums.values()] };
