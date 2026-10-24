@@ -190,7 +190,10 @@ button:disabled {
   z-index: calc(var(--z-raised) + 1);
   border-radius: inherit;
   opacity: 0;
-  transition: opacity var(--duration-base) var(--ease-standard);
+  filter: blur(6px);
+  transition:
+    opacity var(--duration-slower) var(--ease-standard),
+    filter var(--duration-deliberate) var(--ease-out);
 }
 /* Loaded artwork replaces the typographic placeholder in the same footprint. */
 .media-art.has-artwork {
@@ -200,6 +203,7 @@ button:disabled {
 }
 .has-artwork .resolved-artwork {
   opacity: 1;
+  filter: none;
 }
 .has-artwork:before,
 .has-artwork:after,
