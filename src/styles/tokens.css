@@ -1,48 +1,260 @@
+/*
+ * Atelier Strawby design tokens.
+ *
+ * Three layers, each built only from the one above it:
+ *   1. Primitives: raw palette, type, space, radius and motion scales.
+ *   2. Semantic roles: what a value is for (page, text, accent...). Themes
+ *      swap these, so component styles never reference a primitive colour.
+ *   3. Component aliases: a few shared decisions (control radius, focus ring)
+ *      that several components must agree on.
+ *
+ * Every text/background pairing in both themes meets WCAG AA (4.5:1), and the
+ * white-on-accent button meets it too; check new pairings before adding them.
+ */
+
+/* Tailwind utilities read the same primitives as the hand-written styles. */
 @theme {
-  --color-paper: #faf8f5;
-  --color-ink: #141413;
-  --color-strawberry: #d9383a;
-  --color-sage: #6b8e78;
+  --color-paper: #faf7f2;
+  --color-ink: #181715;
+  --color-strawberry: #d41b35;
+  --color-leaf: #3f7e50;
+  --color-sage: #3f7e50;
+  --font-display: "Geist", "Inter", system-ui, sans-serif;
   --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
   --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
+
 :root {
-  color-scheme: light;
-  --page: #faf8f5;
-  --surface: #fffdf9;
-  --surface-soft: #f1eee7;
-  --surface-raised: #ffffff;
-  --text: #282822;
-  --muted: #68665d;
-  --faint: #aaa69a;
-  --line: #dedbd1;
-  --accent: #d9383a;
-  --accent-text: #b72e31;
-  --sage: #6b8e78;
-  --sage-text: #3e624b;
-  --sage-surface: #e8ede4;
-  --shadow: 0 12px 28px -16px #33281d55;
+  /* ---- 1. Primitives ---------------------------------------------------- */
+
+  /* Strawberry: the brand red, pushed a little toward crimson for punch. */
+  --strawberry-50: #fff1f2;
+  --strawberry-100: #ffe0e3;
+  --strawberry-200: #ffc2c8;
+  --strawberry-300: #ff929d;
+  --strawberry-400: #fb5b6b;
+  --strawberry-500: #ee2f45;
+  --strawberry-600: #d41b35;
+  --strawberry-700: #b0132c;
+  --strawberry-800: #8c1127;
+  --strawberry-900: #6b0f20;
+  --strawberry-950: #3d0612;
+
+  /* Leaf: the strawberry's calyx, a deeper evolution of the old sage. */
+  --leaf-50: #eff6f0;
+  --leaf-100: #dcebdf;
+  --leaf-200: #b8d6be;
+  --leaf-300: #8cba96;
+  --leaf-400: #5f9a6d;
+  --leaf-500: #3f7e50;
+  --leaf-600: #2f6640;
+  --leaf-700: #275134;
+  --leaf-800: #20412b;
+  --leaf-900: #1a3424;
+  --leaf-950: #0d1d13;
+
+  /* Cream to ink: warm neutrals that keep the paper feel. */
+  --neutral-0: #ffffff;
+  --neutral-25: #fdfbf8;
+  --neutral-50: #faf7f2;
+  --neutral-100: #f2eee6;
+  --neutral-200: #e5e0d5;
+  --neutral-300: #d0cabd;
+  --neutral-400: #a8a195;
+  --neutral-500: #7d776c;
+  --neutral-600: #5f5a51;
+  --neutral-700: #46423b;
+  --neutral-800: #2c2a26;
+  --neutral-850: #221f1c;
+  --neutral-900: #181715;
+  --neutral-950: #0f0e0d;
+
+  /* Families. Geist carries headings and the wordmark; Newsreader stays for
+     the typographic cover art and the italic personal notes (Geist has no
+     italic). */
   --font-heading: "Geist", "Inter", system-ui, sans-serif;
-  --brand-leaf: #5f8a6c;
   --font-note: "Newsreader", Georgia, serif;
   --font-ui: "Inter", system-ui, sans-serif;
   --font-data: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Type scale. Small steps are for dense data labels; display steps are
+     fluid so headlines stay bold on desktop without crowding a phone. */
+  --text-3xs: 0.5625rem; /* 9px */
+  --text-2xs: 0.625rem; /* 10px */
+  --text-xs: 0.6875rem; /* 11px */
+  --text-sm: 0.75rem; /* 12px */
+  --text-md: 0.8125rem; /* 13px */
+  --text-base: 0.875rem; /* 14px */
+  --text-lg: 1rem; /* 16px */
+  --text-xl: 1.0625rem; /* 17px */
+  --text-2xl: 1.5rem; /* 24px */
+  --text-3xl: 1.875rem; /* 30px */
+  --text-4xl: clamp(2.125rem, 1.7rem + 1.3vw, 2.625rem); /* 34-42px */
+  --text-display: clamp(2.25rem, 1.5rem + 2.6vw, 3.5rem); /* 36-56px */
+
+  --leading-none: 1;
+  --leading-tight: 1.08;
+  --leading-snug: 1.25;
+  --leading-normal: 1.55;
+  --leading-relaxed: 1.75;
+
+  --tracking-tighter: -0.04em;
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0;
+  --tracking-data: 0.055em;
+  --tracking-caps: 0.08em;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* Spacing on a 4px grid. */
+  --space-0-5: 2px;
+  --space-1: 4px;
+  --space-1-5: 6px;
+  --space-2: 8px;
+  --space-2-5: 10px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-14: 56px;
+  --space-16: 64px;
+  --space-20: 80px;
+
+  /* Radius */
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+  --radius-round: 50%;
+
+  /* Motion. Durations are short and deliberate; easings favour a quick
+     start and a soft landing, which reads as smooth rather than floaty. */
+  --duration-instant: 90ms;
+  --duration-fast: 150ms;
+  --duration-base: 220ms;
+  --duration-slow: 320ms;
+  --duration-slower: 480ms;
+  --duration-deliberate: 650ms;
+
+  --ease-linear: linear;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Layers */
+  --z-raised: 2;
+  --z-sticky: 5;
+  --z-nav: 20;
+  --z-skip-link: 1000;
+
+  /* Layout */
   --content-width: 1320px;
+  --content-width-wide: 1500px;
+  --gutter: var(--space-10);
+  --header-height: 88px;
+
+  /* Physical media cast the same shadow in either theme. */
+  --shadow-cover:
+    3px 5px 8px #1f1b1428,
+    8px 14px 25px -12px #1f1b1466;
+  --shadow-cover-lift:
+    6px 12px 20px #1f1b1436,
+    10px 24px 32px -12px #1f1b1470;
+
+  /* ---- 2. Semantic roles: light ---------------------------------------- */
+  color-scheme: light;
+  --page: var(--neutral-50);
+  --surface: var(--neutral-25);
+  --surface-soft: var(--neutral-100);
+  --surface-raised: var(--neutral-0);
+  --text: var(--neutral-900);
+  --muted: var(--neutral-600);
+  --faint: var(--neutral-400);
+  --line: var(--neutral-200);
+  --line-strong: var(--neutral-300);
+
+  --accent: var(--strawberry-600);
+  --accent-hover: var(--strawberry-700);
+  --accent-text: var(--strawberry-700);
+  --accent-surface: var(--strawberry-50);
+  --on-accent: var(--neutral-0);
+
+  /* "sage" names are kept so existing components need no renames. */
+  --sage: var(--leaf-500);
+  --sage-text: var(--leaf-700);
+  --sage-surface: var(--leaf-100);
+
+  --selection: #d41b3530;
+  --scrim: #0f0e0d8c;
+  --shadow-sm: 0 1px 2px #33281d14, 0 2px 6px -2px #33281d1f;
+  --shadow: 0 12px 28px -16px #33281d55;
+  --shadow-panel: -24px 0 64px -16px #33281d38;
+  --shadow-nav: 0 -4px 24px #33281d0d;
+
+  /* The logo's calyx green, tuned with the mark rather than the leaf scale. */
+  --brand-leaf: #5f8a6c;
+
+  /* ---- 3. Component aliases -------------------------------------------- */
+  --radius-control: var(--radius-pill);
+  --radius-field: var(--radius-md);
+  --radius-card: var(--radius-md);
+  --radius-chip: var(--radius-xs);
+  --focus-ring: 2px solid var(--accent-text);
+  --focus-offset: 3px;
 }
+
+/* ---- 2. Semantic roles: dark ------------------------------------------- */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --page: #141413;
-  --surface: #1d1e1a;
-  --surface-soft: #252620;
-  --surface-raised: #292b24;
-  --text: #eee9dd;
-  --muted: #b0ada1;
-  --faint: #8b887d;
-  --line: #393b31;
-  --accent-text: #ff8f86;
-  --sage-text: #b2c9b5;
-  --sage-surface: #29372d;
+  --page: var(--neutral-950);
+  --surface: var(--neutral-900);
+  --surface-soft: var(--neutral-850);
+  --surface-raised: var(--neutral-800);
+  --text: #f5f1ea;
+  --muted: #b3ac9f;
+  --faint: #8a8478;
+  --line: #34312c;
+  --line-strong: #4a463f;
+
+  --accent: var(--strawberry-600);
+  --accent-hover: var(--strawberry-500);
+  --accent-text: var(--strawberry-300);
+  --accent-surface: var(--strawberry-950);
+
+  --sage: var(--leaf-400);
+  --sage-text: var(--leaf-200);
+  --sage-surface: var(--leaf-900);
   --brand-leaf: #86b394;
+
+  --selection: #ff929d40;
+  --scrim: #000000a6;
+  --shadow-sm: 0 1px 2px #0006, 0 2px 6px -2px #0008;
   --shadow: 0 14px 30px -12px #0009;
+  --shadow-panel: -24px 0 64px -12px #000b;
+  --shadow-nav: 0 -4px 24px #0006;
+}
+
+/* Collapse motion tokens too, so inline or scripted animations that read
+   them honour the preference as well as the stylesheet override. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 0.01ms;
+    --duration-fast: 0.01ms;
+    --duration-base: 0.01ms;
+    --duration-slow: 0.01ms;
+    --duration-slower: 0.01ms;
+    --duration-deliberate: 0.01ms;
+  }
 }

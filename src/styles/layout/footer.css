@@ -1,0 +1,26 @@
+/* Site footer and the hidden-by-default mobile navigation. */
+.site-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-5);
+  border-top: 1px solid var(--line);
+  margin-top: var(--space-14);
+  padding: var(--space-6) 0 var(--space-8);
+  font: var(--text-sm) var(--font-ui);
+  color: var(--muted);
+}
+.site-footer a {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+.site-footer a:hover {
+  color: var(--text);
+  min-height: 44px;
+}
+.mobile-nav {
+  display: none;
+}

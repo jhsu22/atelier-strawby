@@ -1,0 +1,79 @@
+/* Keyframes and the reduced-motion override, imported last so it wins. */
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes breathe {
+  to {
+    opacity: 0.4;
+  }
+}
+@keyframes turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+/* Active tab and nav indicators draw in from the leading edge. */
+@keyframes underline-in {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes brand-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+@keyframes brand-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+@keyframes brand-word-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *:before,
+  *:after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .entry-open:hover .media-art,
+  .entry-open:focus-visible .media-art,
+  .media-spine:hover,
+  .icon-button:active,
+  .button:active,
+  .brand-lockup:hover .brand-berry-crown,
+  .brand-lockup:focus-visible .brand-berry-crown {
+    transform: none;
+  }
+}

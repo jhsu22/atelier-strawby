@@ -1,0 +1,91 @@
+/* Buttons, text buttons and badges shared across every screen. */
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-round);
+  flex-shrink: 0;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-out);
+}
+.icon-button:active,
+.button:active {
+  transform: scale(0.96);
+}
+.icon-button:hover {
+  background: var(--surface-soft);
+}
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 11px var(--space-5);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: 1.4;
+  background: var(--surface);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-base) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-out);
+}
+.button:hover {
+  background: var(--surface-soft);
+}
+.button-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+.button-primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  box-shadow: var(--shadow-sm);
+}
+.text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  color: var(--accent-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  text-decoration: underline 1px transparent;
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--duration-fast) var(--ease-standard);
+}
+.text-button:hover {
+  text-decoration-color: currentColor;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  background: var(--surface-soft);
+  font: var(--text-2xs) var(--font-data);
+  border-radius: var(--radius-chip);
+}
+.badge-language {
+  background: var(--sage-surface);
+  color: var(--sage-text);
+}
+/* Light novels share manga shelves; the accent outline marks the medium. */
+.badge-medium {
+  background: transparent;
+  color: var(--accent-text);
+  border: 1px solid currentColor;
+}
+.card-languages .badge-medium {
+  color: var(--accent-text);
+  border-color: currentColor;
+}
