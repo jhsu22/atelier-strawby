@@ -112,7 +112,7 @@ Four deliberately unresolved CD definitions live in `data/sample-cds.json`; prov
 
 Stages 1–3 retain the approved `src/{config,components,domain,layouts,pages,server,styles}`, `scripts`, `data`, `drizzle`, `tests`, and `docs` structure. Stage 3 adds server-side collection services and authenticated APIs within it. Stage 4 adds timeline and analytics within the existing architecture. Hosted deployment remains separate work.
 
-`wrangler.toml` uses local placeholders for `DB` and `COVERS`. Its preview/production environments are unprovisioned; create separate D1/R2 resources and bind them explicitly before any hosted verification. Hosted requests require a configured Cloudflare Access owner policy, verified JWT, exact origin and environment-specific bindings. Configuration is documented in [STAGE3.md](docs/STAGE3.md). Local access requires both `.dev.vars` flags and a localhost URL. No hosted deployment or remote collection writes have been attempted.
+`wrangler.toml` holds the hosted production and preview bindings that Cloudflare Pages Git builds read. Local dev uses its `preview_database_id` and `preview_bucket_name`, and `.dev.vars` overrides its vars. Hosted requests require a configured Cloudflare Access owner policy, verified JWT, exact origin and environment-specific bindings. Configuration is documented in [STAGE3.md](docs/STAGE3.md). Local access requires both `.dev.vars` flags and a localhost URL.
 
 ## Validation scripts
 

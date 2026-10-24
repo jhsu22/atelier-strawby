@@ -4,23 +4,42 @@ compatibility_date = "2026-01-16"
 compatibility_flags = ["nodejs_compat"]
 send_metrics = false
 
-# Placeholder IDs are for local emulation only. Provision isolated preview and
-# production resources before deployment; this project does not deploy or seed remotely.
+# Hosted configuration, read by Cloudflare Pages Git builds. Resource IDs and
+# Access settings are not secrets; ACCESS_OWNER_EMAIL is a dashboard secret.
+# Local dev uses the preview_* resources below, and .dev.vars overrides vars.
 [[d1_databases]]
 binding = "DB"
-database_name = "atelier-strawby-local"
-database_id = "00000000-0000-0000-0000-000000000001"
+database_name = "atelier-strawby-production"
+database_id = "8d55e0ed-8947-4da5-9ee9-a27bb39076b9"
+preview_database_id = "00000000-0000-0000-0000-000000000001"
 migrations_dir = "drizzle"
 
 [[r2_buckets]]
 binding = "COVERS"
-bucket_name = "atelier-strawby-covers-local"
+bucket_name = "atelier-strawby-production-covers"
+preview_bucket_name = "atelier-strawby-covers-local"
 
 [vars]
-APP_ENV = "unconfigured"
+APP_ENV = "production"
+APP_ORIGIN = "https://atelier-strawby.pages.dev"
+ACCESS_TEAM_DOMAIN = "jowosie.cloudflareaccess.com"
+ACCESS_AUDIENCE = "2787e1338e58ad5b50cf3176bba77e2087f461b992d40472fa9b054a2d08725c"
+METADATA_CONTACT = "https://github.com/jhsu22"
+
+# Pages does not inherit bindings or vars into environments; repeat them all.
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "atelier-strawby-preview"
+database_id = "f0629136-3620-4a77-8501-e434242effc7"
+migrations_dir = "drizzle"
+
+[[env.preview.r2_buckets]]
+binding = "COVERS"
+bucket_name = "atelier-strawby-preview-covers"
 
 [env.preview.vars]
 APP_ENV = "preview"
-
-[env.production.vars]
-APP_ENV = "production"
+APP_ORIGIN = "https://preview.atelier-strawby.pages.dev"
+ACCESS_TEAM_DOMAIN = "jowosie.cloudflareaccess.com"
+ACCESS_AUDIENCE = "2787e1338e58ad5b50cf3176bba77e2087f461b992d40472fa9b054a2d08725c"
+METADATA_CONTACT = "https://github.com/jhsu22"
