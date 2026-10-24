@@ -35,11 +35,13 @@ test("series details lookup released volumes, show edition-specific missing numb
   await expect(panel).toContainText("Partial results");
   await expect(panel.locator(".missing-release-list li")).toHaveCount(2);
   await panel.getByRole("button", {name: "Check more releases", exact: true}).click();
-  await expect(panel.locator(".missing-release-list a")).toHaveText([/Vol. 2/, /Vol. 3/, /Vol. 4/, /Vol. 5/]);
+  await expect(panel.locator(".missing-release-list a")).toHaveText(["2", "3", "4", "5"]);
+  await expect(panel.getByRole("link", {name: "Volume 2 · Open source", exact: true})).toHaveAttribute("href", "https://books.google.com/books?id=test2");
+  await expect(panel.getByRole("link", {name: "Volume 5 · Digital listing · Open source", exact: true})).toHaveAttribute("target", "_blank");
   await expect(panel.locator(".release-count")).toHaveText("4");
-  await expect(panel).toContainText("Digital listing");
   await expect(panel.getByRole("button", {name: "Check more releases", exact: true})).toHaveCount(0);
   await panel.getByText("Options & sources", {exact: true}).click();
+  await expect(panel.locator(".release-evidence")).toContainText("Digital listing");
   await expect(panel.locator(".release-query")).toContainText("6 releases found · 2 owned");
   await expect(panel.locator(".release-evidence li")).toHaveCount(6);
   expect(requests).toHaveLength(2); expect(requests[1]!.continuation).toBe(true);
