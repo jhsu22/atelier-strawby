@@ -47,7 +47,7 @@ For a separately configured hosted environment, set `GOOGLE_BOOKS_API_KEY` as a 
 - Applying a candidate never changes acquisition dates, notes, memory tags, volume numbering, media classification, or physical format. Manga/light-novel canonical titles stay as entered. Book titles, recorded creators/publisher and optional artwork can be applied to the form, with normal save required to persist.
 - The server sends the key in `X-Goog-Api-Key`, not browser requests or query strings. Secret-bearing requests cannot follow a redirect to another origin. Credentials are not written into provider cache payloads/keys or error messages.
 - Existing bounded requests, D1 caching, provider spacing and Retry-After handling apply. Successful responses cache for seven days; editor search is limited to 12 returned results per lookup. The released-volume panel uses paginated catalog queries described in [RELEASED_VOLUMES.md](RELEASED_VOLUMES.md), initiated per edition by the owner. Force retry spends another request and retains provider throttling.
-- Google Books links and the official **Powered by Google** graphic accompany search results, following [Google's branding guidelines](https://developers.google.com/books/branding). The unmodified attribution image in `public/images/googlebooks-poweredby.png` comes from Google's published branding assets.
+- Google Books source links and a compact Google G logo accompany results. The unmodified image in `public/images/google-g.png` comes from [Google’s published G logo asset](https://developers.google.com/static/identity/images/g-logo.png).
 
 ## Verification
 

@@ -76,24 +76,30 @@
   .analytics-chart { padding: 16px; }
   .analytics-totals > div { padding: 16px; }
 }
-.released-volumes { margin: 28px 0; padding: 22px; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--surface); }
+.released-volumes { margin: 20px 0; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--surface); }
+.release-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.release-heading h3 { display: flex; align-items: center; gap: 8px; font-size: 18px; }
+.release-heading .text-button, .release-more .text-button { min-height: 44px; font-size: 12px; }
+.release-count { display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 6px; border-radius: var(--radius-pill); background: var(--sage-surface); color: var(--sage-text); font: 600 12px var(--font-data); }
+.release-context { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 30px; color: var(--muted); font-size: 11px; }
+.release-context > span { min-width: 0; overflow-wrap: anywhere; }
+.release-context > a { flex-shrink: 0; }
+.release-context img { display: block; width: 20px; height: 20px; object-fit: contain; background: white; border-radius: 3px; }
+.release-status { color: var(--muted); font-size: 13px; line-height: 1.6; margin: 8px 0; }
+.release-find { margin: 8px 0; }
+.release-more { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; }
 .released-volumes .filter-field { margin: 14px 0; min-width: 0; }
 .released-volumes select, .released-volumes input { width: 100%; min-width: 0; }
-.release-lookup-fields { display: grid; grid-template-columns: minmax(0, 1fr); }
 .release-notice, .release-limit { font-size: 11px; line-height: 1.7; color: var(--muted); padding: 10px 12px; background: var(--surface-soft); border-radius: var(--radius-sm); margin: 12px 0; overflow-wrap: anywhere; }
 .release-stamp, .release-query { font: 10px/1.7 var(--font-data); color: var(--muted); margin: 12px 0; overflow-wrap: anywhere; }
-.release-totals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin: 18px 0; }
-.release-totals > div { border-radius: var(--radius-sm); background: var(--sage-surface); padding: 14px 10px; }
-.release-totals strong { display: block; font: 600 26px var(--font-heading); }
-.release-totals span { display: block; font-size: 10px; color: var(--muted); line-height: 1.5; margin-top: 7px; }
-.released-volumes h4 { font-size: 16px; margin: 18px 0 12px; }
-.missing-release-list { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 9px; }
-.missing-release-list a { display: block; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--accent-text); font-size: 14px; }
-.missing-release-list span { display: block; font-size: 10px; color: var(--muted); line-height: 1.6; margin-top: 6px; }
-.release-evidence { margin: 20px 0; font-size: 12px; }
-.release-evidence summary { cursor: pointer; }
-.release-evidence ul { padding: 0; list-style: none; }
+.missing-release-list { list-style: none; padding: 0; margin: 8px 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.missing-release-list a { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 62px; min-height: 44px; padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--accent-text); font-size: 14px; }
+.missing-release-list span { font-size: 9px; color: var(--muted); line-height: 1.5; }
+.release-options { margin-top: 8px; border-top: 1px solid var(--line); font-size: 12px; }
+.release-options > summary { min-height: 44px; padding: 12px 0 0; cursor: pointer; color: var(--muted); }
+.release-evidence { margin: 12px 0; padding: 0; list-style: none; font-size: 12px; }
 .release-evidence li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); padding: 10px 0; }
 .release-evidence a { color: var(--accent-text); overflow-wrap: anywhere; }
+.release-evidence small { display: block; margin-top: 4px; color: var(--muted); }
 .release-evidence li > span { color: var(--muted); flex-shrink: 0; }
-@media (max-width: 450px) { .released-volumes { padding: 14px; } .release-totals { grid-template-columns: 1fr; } .release-totals > div { display: flex; align-items: center; gap: 12px; } .release-totals span { margin: 0; } }
+@media (max-width: 450px) { .released-volumes { padding: 12px; } }

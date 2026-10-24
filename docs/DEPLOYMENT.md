@@ -1,6 +1,6 @@
 # Cloudflare Pages deployment and operations
 
-**Status: configuration and local workerd validation only. No Cloudflare account, hosted DB/bucket, Access application or deployment was created or verified during Stage 5. Resolve the release blockers in [STAGE5.md](STAGE5.md) before production use.**
+The live installation is [Atelier Strawby](https://atelier-strawby.pages.dev/), hosted on Cloudflare Pages with D1 and R2. The shared shelf is read-only; owner management lives at `/edit`. See [PUBLIC_ACCESS.md](PUBLIC_ACCESS.md) for the Access policy and verification steps. [STAGE5.md](STAGE5.md) records the earlier local release audit; its deployment status describes that stage rather than the current installation.
 
 ## Supported toolchain
 
@@ -50,7 +50,7 @@ Local D1/R2 live under `.wrangler/state`. The SQLite diagnostic is a separate di
 | `CLOUDFLARE_ACCOUNT_ID` | Not needed for local work | Deployment-machine/CI account selection, not a browser variable |
 | `CLOUDFLARE_API_TOKEN` | Not needed for local work | CI secret for deployment/resource operations, or use interactive `wrangler login` |
 
-No `PUBLIC_` secrets. Never commit `.dev.vars`, `.env`, credentials, database exports or populated hosted config. Deploy only `dist`, never the repository root. The source ZIP excludes live state, generated reports, populated hosted config and all credentials. Static fonts, scripts, icons and templates are public; all collection routes and artwork API routes pass through authentication. The app does not use Astro sessions: adapter 12 announces a default SESSION KV driver, but there are no `Astro.session` calls and no session KV is required by this app. Revisit bindings if session usage is introduced.
+No `PUBLIC_` secrets. Never commit `.dev.vars`, `.env`, credentials, database exports or populated hosted config. Deploy only `dist`, never the repository root. The source ZIP excludes live state, generated reports, populated hosted config and all credentials. Static assets, the shelf, collection record, library JSON, artwork and saved release results are public. Editing, imports, exports and metadata/release refreshes require owner authentication. See [PUBLIC_ACCESS.md](PUBLIC_ACCESS.md). The app does not use Astro sessions: adapter 12 announces a default SESSION KV driver, but there are no `Astro.session` calls and no session KV is required by this app. Revisit bindings if session usage is introduced.
 
 ## Provisioning (manual account access required)
 
@@ -68,7 +68,7 @@ cp wrangler.hosted.json.example wrangler.hosted.json
 
 Fill both environments in `wrangler.hosted.json` with returned D1 UUIDs and bucket names. Set `name` to the Pages project created above. `main` must be its production branch and `preview` must be a nonproduction branch. Choose a stable preview branch URL (`https://preview.<project>.pages.dev`) and a production hostname. Exact-origin validation deliberately rejects the generated per-deployment URLs and other aliases. A production custom domain may require an initial deployment for DNS setup; leave auth unconfigured/fail-closed until the domain and Access policy are ready.
 
-In Cloudflare Zero Trust, create self-hosted Access applications covering the entire production and preview hosts, including `/api/*`, with an Allow policy for only the owner email. Configure an identity provider or email one-time PIN. No Bypass/Everyone policy. Protect the preview hostname with Access as well as the production custom domain; test direct `pages.dev` and deployment aliases. The app independently validates signed RS256 Access JWTs, issuer, AUD, expiry, required identity claims, owner email and the exact origin. A raw `Cf-Access-Authenticated-User-Email` header is insufficient.
+In Cloudflare Zero Trust, protect only `/edit` on each canonical production/preview host with a self-hosted Access application and an Allow policy for the owner email. Keep the shelf and read APIs outside Access so shared links open without login. Leave Cookie Path Attribute disabled, so the signed `CF_Authorization` cookie reaches the same-origin APIs. The application verifies that cookie (or the Access assertion header), RS256 signature, issuer, AUD, expiry, identity claims, owner email and exact origin before allowing writes or owner-only reads. A raw email header is insufficient. Follow [PUBLIC_ACCESS.md](PUBLIC_ACCESS.md) for the route policy and verification steps.
 
 In Pages → Settings → Variables and Secrets, add encrypted `ACCESS_OWNER_EMAIL` (required) and `GOOGLE_BOOKS_API_KEY` (optional) separately for production and preview. Redeploy after changing runtime variables/secrets. Use the dashboard for this environment selection; do not paste secrets into the checked-in config or shell command arguments.
 
@@ -98,7 +98,7 @@ npm run deploy:production
 
 `deploy:prepare` builds and stages without network deployment. The upload commands rebuild and stage; they never migrate, seed or change Access policy automatically. For Pages Git builds, the committed `wrangler.toml` supplies bindings and vars; keep it in sync with `wrangler.hosted.json`. Git builds do not run migrations.
 
-Hosted acceptance must verify: signed-in owner browsing and CRUD with reload; unauthenticated and wrong-user denial; forged JWT and direct-origin denial; same-origin mutation protection; private/no-store headers; preview/production isolation; R2 artwork; provider network/quotas; JSON export and restore to a separate preview database; narrow/mobile keyboard flows; response latency and CPU/memory limits. Inspect Pages logs for unexpected 5xx without logging JWTs, API keys or personal backup bodies.
+Hosted acceptance must verify: anonymous read-only browsing; owner sign-in at `/edit` and CRUD with reload; anonymous and wrong-user denial for edits, backups and imports; forged JWT and direct-origin denial; same-origin mutation protection; private/no-store headers; preview/production isolation; R2 artwork; provider network/quotas; JSON export and restore to a separate preview database; narrow/mobile keyboard flows; response latency and CPU/memory limits. Inspect Pages logs for unexpected 5xx without logging JWTs, API keys or personal backup bodies.
 
 ## Backup and rollback
 

@@ -10,6 +10,13 @@ export interface AccessEnv {
   APP_ORIGIN?: string;
 }
 const keys = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
+export function configuredOrigin(request: Request, env: AccessEnv): boolean {
+  const url = new URL(request.url);
+  if (env.APP_ENV === "local")
+    return ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+  return ["production", "preview"].includes(env.APP_ENV ?? "") &&
+    url.protocol === "https:" && url.origin === env.APP_ORIGIN;
+}
 export async function authorize(
   request: Request,
   env: AccessEnv,
@@ -29,7 +36,11 @@ export async function authorize(
   const issuer = `https://${env.ACCESS_TEAM_DOMAIN}`;
   if (!/^[a-z0-9-]+\.cloudflareaccess\.com$/.test(env.ACCESS_TEAM_DOMAIN))
     return false;
-  const token = request.headers.get("Cf-Access-Jwt-Assertion");
+  // Only /edit is behind Access. Same-origin API requests carry its signed
+  // domain cookie instead of the edge assertion header. Verify both identically.
+  const token = request.headers.get("Cf-Access-Jwt-Assertion") ??
+    request.headers.get("cookie")?.split(";").map(value => value.trim())
+      .find(value => value.startsWith("CF_Authorization="))?.slice("CF_Authorization=".length);
   if (!token || token.length > 16384) return false;
   try {
     if (!testKey && !keys.has(issuer))

@@ -29,7 +29,7 @@ test("Google Books is a third source with setup guidance, attribution and review
   await page.getByRole("button", {name: "Search Books again", exact: true}).click();
   await expect(page.getByText("Google Books search results", {exact: true})).toBeVisible();
   await expect(page.getByRole("link", {name: "View on Google Books"})).toHaveCount(2);
-  await expect(page.locator(".metadata-results").getByAltText("Powered by Google")).toBeVisible();
+  await expect(page.locator(".metadata-results").getByAltText("Google", {exact: true})).toBeVisible();
   const mismatch = page.locator(".metadata-results article").filter({hasText: "Different book"});
   await expect(mismatch.getByRole("button", {name: "Use these details"})).toBeDisabled();
   const audit = await new AxeBuilder({page}).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();

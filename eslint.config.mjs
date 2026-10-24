@@ -4,7 +4,7 @@ import tseslint from 'typescript-eslint';
 import astro from 'eslint-plugin-astro';
 
 export default defineConfig(
-  { ignores: ['node_modules/**', 'dist/**', '.astro/**', '.wrangler/**', 'data/generated/**', 'src/worker-configuration.d.ts'] },
+  { ignores: ['node_modules/**', 'dist/**', 'releases/**', '.astro/**', '.wrangler/**', 'data/generated/**', 'src/worker-configuration.d.ts'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   ...astro.configs.recommended,

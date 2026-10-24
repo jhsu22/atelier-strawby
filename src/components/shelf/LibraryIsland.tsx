@@ -143,9 +143,11 @@ function ShelfSkeleton() {
 export function LibraryIsland({
   initialData,
   initialState,
+  canEdit = false,
 }: {
   initialData: LibraryData;
   initialState: BrowseState;
+  canEdit?: boolean;
 }) {
   const [data, setData] = useState(initialData);
   const [state, setState] = useState(initialState);
@@ -388,14 +390,14 @@ export function LibraryIsland({
             >
               {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
             </button>
-            <button
+            {canEdit && <button
               type="button"
               className="button button-primary desktop-add"
               onClick={() => showPanel("add")}
             >
               <Plus size={17} />
               Add to collection
-            </button>
+            </button>}
           </div>
         </div>
       </header>
@@ -423,13 +425,13 @@ export function LibraryIsland({
                 ))}
             </div>
           </div>
-          <button
+          {canEdit && <button
             type="button"
             className="text-button transfer-link"
             onClick={() => showPanel("transfer")}
           >
             Import & export
-          </button>
+          </button>}
           <div className="shelf-toolbar">
             <div
               className="media-switcher"
@@ -732,9 +734,11 @@ export function LibraryIsland({
           <a href="/foundation">
             Collection record <ArrowRight size={12} />
           </a>
+          {canEdit ? <a href="/">Public view <ArrowRight size={12} /></a>
+            : <a href="/edit">Owner sign in <ArrowRight size={12} /></a>}
         </footer>
       </main>
-      <nav className="mobile-nav" aria-label="Mobile navigation">
+      <nav className="mobile-nav" aria-label="Mobile navigation" style={{ gridTemplateColumns: `repeat(${canEdit ? 5 : 4}, minmax(0, 1fr))` }}>
         <button
           type="button"
           aria-label="Shelf"
@@ -774,7 +778,7 @@ export function LibraryIsland({
           <ChartNoAxesColumnIncreasing size={21} />
           <span>Stats</span>
         </button>
-        <button
+        {canEdit && <button
           type="button"
           className="mobile-add"
           aria-label="Add"
@@ -785,7 +789,7 @@ export function LibraryIsland({
             <Plus size={21} />
           </span>
           <span>Add</span>
-        </button>
+        </button>}
       </nav>
       {selected && (
         <Drawer
@@ -795,8 +799,8 @@ export function LibraryIsland({
         >
           <EntryDetails
             entry={selected}
-            onEdit={editCopy}
-            onAdd={() => void addCopy(selected)}
+            onEdit={canEdit ? editCopy : undefined}
+            onAdd={canEdit ? () => void addCopy(selected) : undefined}
           />
         </Drawer>
       )}
@@ -924,7 +928,7 @@ export function LibraryIsland({
           <CollectionAnalytics entries={data.entries} onOpen={entry => navigate({ item: entry.id })} onTimeline={() => showPanel("timeline")} />
         </Drawer>
       )}
-      {(panel === "add" || editing) && (
+      {canEdit && (panel === "add" || editing) && (
         <Drawer
           title={editing?.id ? "Edit copy" : "Add to collection"}
           onClose={() => {
@@ -946,7 +950,7 @@ export function LibraryIsland({
           />
         </Drawer>
       )}
-      {panel === "transfer" && (
+      {canEdit && panel === "transfer" && (
         <Drawer title="Import & export" onClose={() => setPanel(null)} wide>
           <TransferPanel
             onChanged={async () => {

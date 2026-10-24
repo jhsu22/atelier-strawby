@@ -15,6 +15,5 @@ type Runtime = import("@astrojs/cloudflare").Runtime<{
 }>;
 declare namespace App {
   // Astro merges Locals with the adapter runtime declaration.
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  interface Locals extends Runtime {}
+  interface Locals extends Runtime { canEdit: boolean }
 }

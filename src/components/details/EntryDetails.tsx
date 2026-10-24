@@ -64,7 +64,7 @@ function MangaDetails({
           </div>
         </div>
       </div>
-      {entry.kind === "manga" && <ReleasedVolumes entry={entry} />}
+      {entry.kind === "manga" && <ReleasedVolumes entry={entry} canLookup={Boolean(onEdit)} />}
       <div className="section-heading detail-section-heading">
         <h3>
           {book ? (numbered ? "Books in this series" : "Copies") : "Volumes"}

@@ -42,7 +42,7 @@ try {
       "--binding",
       "APP_ENV=local",
       "--binding",
-      "LOCAL_DEV_AUTH=true",
+      `LOCAL_DEV_AUTH=${process.env.STRAWBY_TEST_READ_ONLY === "true" ? "false" : "true"}`,
       "--persist-to",
       directory,
     ],

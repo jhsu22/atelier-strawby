@@ -3,7 +3,7 @@ APP_ENV=local
 LOCAL_DEV_AUTH=true
 # Hosted configuration belongs in the corresponding Cloudflare environment.
 # Never enable LOCAL_DEV_AUTH on a hosted environment. Missing configuration
-# fails closed. See docs/DEPLOYMENT.md for the owner-only Access policy and JWT checks.
+# fails closed. See docs/PUBLIC_ACCESS.md for public browsing and owner-only editing.
 # APP_ENV=preview
 # APP_ORIGIN=https://your-private-host.example.com
 # ACCESS_TEAM_DOMAIN=your-team.cloudflareaccess.com

@@ -16,6 +16,6 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean
   }
 }
 
-export function LibraryBoundary(props: { initialData: LibraryData; initialState: BrowseState }) {
+export function LibraryBoundary(props: { initialData: LibraryData; initialState: BrowseState; canEdit?: boolean }) {
   return <ErrorBoundary><LibraryIsland {...props} /></ErrorBoundary>;
 }

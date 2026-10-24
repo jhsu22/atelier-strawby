@@ -1,7 +1,7 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist", "node_modules", "data/generated"],
+  "exclude": ["dist", "releases", "node_modules", "data/generated"],
   "compilerOptions": {
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,

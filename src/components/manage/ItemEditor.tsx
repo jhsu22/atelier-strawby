@@ -671,7 +671,7 @@ export function ItemEditor({
               ))}
             </select>
           </label>
-          {provider === "googlebooks" && <p className="google-books-credit"><a href="https://books.google.com" target="_blank" rel="noreferrer"><img src="/images/googlebooks-poweredby.png" alt="Powered by Google" width="62" height="30" /></a></p>}
+          {provider === "googlebooks" && <p className="google-books-credit"><a href="https://books.google.com" target="_blank" rel="noreferrer" aria-label="Google Books" title="Google Books"><img src="/images/google-g.png" alt="Google" width="20" height="20" /></a></p>}
           <label className="check-label">
             <input
               type="checkbox"
@@ -701,7 +701,7 @@ export function ItemEditor({
           {metadataBusy && <p role="status">Looking up metadata…</p>}
           {result && (
             <div className="metadata-results" aria-live="polite">
-              {result.candidates.some(candidate => candidate.provider === "googlebooks") && <div className="google-books-credit"><p>Google Books search results</p><a href="https://books.google.com" target="_blank" rel="noreferrer"><img src="/images/googlebooks-poweredby.png" alt="Powered by Google" width="62" height="30" /></a></div>}
+              {result.candidates.some(candidate => candidate.provider === "googlebooks") && <div className="google-books-credit"><p>Google Books search results</p><a href="https://books.google.com" target="_blank" rel="noreferrer" aria-label="Google Books" title="Google Books"><img src="/images/google-g.png" alt="Google" width="20" height="20" /></a></div>}
               {result.warnings.map((warning, i) => (
                 <p key={i}>{warning}</p>
               ))}

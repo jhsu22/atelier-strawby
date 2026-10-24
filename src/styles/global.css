@@ -18,3 +18,13 @@
 @import "./components/management.css";
 @import "./components/insights.css";
 @import "./base/motion.css";
+
+/* iOS zooms focused fields with text below 16px, including Home Screen apps.
+   Keep this after component styles so search, filters and editors all inherit it. */
+@media (any-pointer: coarse) {
+  :root input,
+  :root select,
+  :root textarea {
+    font-size: max(16px, 1rem);
+  }
+}

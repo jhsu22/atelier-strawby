@@ -1,8 +1,8 @@
 # Released volumes and missing-copy comparison
 
-Open any manga or light-novel series from the shelf, timeline or stats. Its **Released & missing volumes** panel appears directly beneath the detail introduction. Select the edition/language, review the lookup title, then choose **Search released volumes**. Alternate recorded titles are available as input suggestions. The default source is **Google Books → Open Library**; either source can also be selected directly.
+Open any manga or light-novel series from the shelf, timeline or stats. Its compact **Missing volumes** panel appears beneath the detail introduction. Saved missing numbers appear immediately as source links, with a count and the edition's language/publisher. For a first lookup, choose **Find missing volumes**; use **Refresh** to update it. **Check more releases** continues partial results.
 
-The panel displays distinct released numbers found, how many of those numbers you own, and **Missing released volumes**, with publication evidence and a source link for every listed number. Expand **All catalogued release numbers** to inspect owned and unowned numbers together. A digital listing carries a separate label: it does not establish that a matching physical edition is available. Numbers not observed in the catalog are never manufactured from a maximum number or search-result count.
+Expand **Options & sources** to change the edition/language, lookup title or source, or inspect all released numbers, publication dates, ownership, catalog warnings and the last check date. The default source remains **Google Books → Open Library**. Extra fields and explanations stay collapsed by default. Digital listings remain labeled next to missing numbers because they do not establish a matching physical release. Numbers not observed in the catalog are never manufactured from a maximum number or search-result count.
 
 Lookups are saved per edition and survive reloads. Missing numbers are recalculated from current ownership, so acquiring another copy updates the comparison without another provider query. Duplicate owned copies count once for this comparison and remain separate physical records elsewhere. A JP copy cannot satisfy an EN missing number; standard, collector, omnibus and manga/light-novel editions remain separate. The existing **Find missing volumes** switch still reports observable internal ownership gaps, without requiring a release catalog.
 
@@ -18,7 +18,7 @@ Both providers are incomplete catalogs. Exhausting their search pages does **not
 
 ## Pagination, caching and fallback order
 
-Each lookup reads up to four pages: Google Books requests up to 40 listings per page, Open Library up to 100. **Load more catalog results** continues the persisted scan until the provider's pages finish. Paging uses source totals only as pagination hints, not as release counts. A repeated-page guard prevents loops; a 2,000-listing ceiling stops overly broad searches with an explicit warning. Narrow the lookup title if that ceiling is reached.
+Each lookup reads up to four pages: Google Books requests up to 40 listings per page, Open Library up to 100. **Check more releases** continues the persisted scan until the provider's pages finish. Paging uses source totals only as pagination hints, not as release counts. A repeated-page guard prevents loops; a 2,000-listing ceiling stops overly broad searches with an explicit warning. Narrow the lookup title if that ceiling is reached.
 
 Google Books is preferred when its server key is configured. Missing credentials, unavailable Google access or an exhausted Google scan without compatible released numbers allow Open Library fallback. If Google still has more pages, the result stays partial and can continue. Open Library exposes a selected matching edition per work; other editions of that work can be absent, which the UI discloses. Per-source manual selection supports cross-checking or an alternate/native title.
 
