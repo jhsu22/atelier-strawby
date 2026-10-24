@@ -129,3 +129,10 @@
 .cd-spine .spine-publisher {
   font-size: 6px;
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  .spine-shelf {
+    animation: rise-in var(--duration-slower) var(--ease-out) backwards;
+    animation-delay: calc(var(--stagger, 0) * 32ms);
+  }
+}

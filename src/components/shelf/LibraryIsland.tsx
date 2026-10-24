@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import {
   ArrowDownUp,
   ArrowRight,
@@ -39,11 +40,16 @@ import { TransferPanel } from "../manage/TransferPanel.tsx";
 import type { ItemInput } from "../../domain/item.ts";
 
 type Panel = "filters" | "stats" | "timeline" | "add" | "transfer" | null;
+// Entrance delays stop growing after the first rows so long shelves settle quickly.
+const stagger = (index: number) =>
+  ({ "--stagger": Math.min(index, 12) }) as CSSProperties;
 function EntryCard({
   entry,
+  index,
   onOpen,
 }: {
   entry: LibraryEntry;
+  index: number;
   onOpen: () => void;
 }) {
   const series = entry.kind !== "cd";
@@ -56,6 +62,7 @@ function EntryCard({
     <article
       className={`entry-card ${series ? `${entry.kind}-card` : "cd-card"}`}
       data-entry-kind={entry.kind}
+      style={stagger(index)}
     >
       <button
         type="button"
@@ -607,25 +614,28 @@ export function LibraryIsland({
                 )}
               </div>
             ) : state.view === "grid" ? (
-              <div className="cover-grid">
-                {entries.map((entry) => (
+              // Keyed by media so each switch replays the entrance.
+              <div className="cover-grid shelf-view" key={state.media}>
+                {entries.map((entry, index) => (
                   <EntryCard
                     key={entry.id}
                     entry={entry}
+                    index={index}
                     onOpen={() => openEntry(entry)}
                   />
                 ))}
               </div>
             ) : (
-              <div className="spine-collection">
+              <div className="spine-collection shelf-view" key={state.media}>
                 {entries
                   .filter((entry) => entry.kind === "manga")
-                  .map((entry) => {
+                  .map((entry, index) => {
                     const visible = matchingCopies(entry, state);
                     return (
                       <section
                         key={entry.id}
                         className="spine-shelf"
+                        style={stagger(index)}
                         aria-label={entry.title}
                       >
                         <div className="spine-shelf-heading">

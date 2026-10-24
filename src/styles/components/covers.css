@@ -260,3 +260,15 @@
 .cd-card .card-stage {
   padding-bottom: 9px;
 }
+
+/* Each media or view switch remounts the grid, so cards rise in on a short
+   stagger capped in LibraryIsland. */
+@media (prefers-reduced-motion: no-preference) {
+  .shelf-view {
+    animation: fade-in var(--duration-slow) var(--ease-standard) backwards;
+  }
+  .entry-card {
+    animation: rise-in var(--duration-slower) var(--ease-out) backwards;
+    animation-delay: calc(var(--stagger, 0) * 32ms);
+  }
+}

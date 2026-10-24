@@ -183,6 +183,10 @@ test("individual spine view preserves browsing state and opens detail", async ({
     "Open Evangelion Finally, CD",
   ]);
   await expect(page.locator(".spine-shelf")).toHaveCount(39);
+  // Measure and scan after the shelves' entrance animation has settled.
+  await page.evaluate(() =>
+    Promise.all(document.getAnimations().map((a) => a.finished)),
+  );
   expect(
     await page
       .locator(".media-spine:not(.cd-spine)")
