@@ -1,0 +1,131 @@
+/* Spine view: shelves of book and CD spines. */
+.spine-collection {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-7);
+}
+.spine-shelf {
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 18px 20px 0;
+  border-radius: var(--radius-card);
+}
+.spine-shelf-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2-5);
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.spine-shelf-heading button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font: var(--weight-semibold) var(--text-xl)/1.2 var(--font-heading);
+  letter-spacing: var(--tracking-tight);
+  text-align: left;
+  min-height: 44px;
+}
+.spine-shelf-heading h2 {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  font: var(--weight-semibold) var(--text-xl)/1.2 var(--font-heading);
+  letter-spacing: var(--tracking-tight);
+}
+.spine-shelf-heading > .mono {
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: var(--text-3xs);
+}
+.spine-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-height: 254px;
+  padding: 7px 7px 17px;
+  position: relative;
+  border-bottom: 8px solid var(--line);
+  scrollbar-width: thin;
+  scrollbar-color: var(--sage) var(--surface-soft);
+}
+.media-spine {
+  background: var(--cover-paper);
+  color: var(--cover-ink);
+  width: var(--spine-width);
+  min-width: var(--spine-width);
+  height: 235px;
+  border-radius: 2px 2px 0 0;
+  box-shadow:
+    inset 3px 0 3px #fff2,
+    inset -3px 0 3px #0002,
+    2px 2px 3px #0002;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  padding: 10px 7px;
+  position: relative;
+  transition: transform var(--duration-base) var(--ease-out);
+}
+.media-spine:hover,
+.media-spine:focus-visible {
+  transform: translateY(-6px);
+}
+.spine-top {
+  font: 8px var(--font-data);
+  border-bottom: 1px solid currentColor;
+  width: 100%;
+  text-align: center;
+  padding-bottom: 7px;
+}
+.spine-medium {
+  display: block;
+  margin-top: 3px;
+  font-weight: 700;
+}
+.spine-title {
+  writing-mode: vertical-rl;
+  font: 500 var(--text-xl)/1 var(--font-note);
+  margin: 11px 0;
+  overflow: hidden;
+  flex: 1;
+  text-align: left;
+}
+.spine-publisher {
+  writing-mode: vertical-rl;
+  font: 6px var(--font-data);
+  position: absolute;
+  right: 4px;
+  top: 48px;
+  max-height: 150px;
+  overflow: hidden;
+}
+.spine-number {
+  font: 500 15px var(--font-data);
+  border-top: 1px solid currentColor;
+  padding-top: 5px;
+  width: 100%;
+}
+.cd-spine {
+  min-width: 44px;
+  width: 44px;
+  height: 208px;
+  border-left: 4px solid #a9b0b2;
+  border-right: 2px solid #8c9294;
+  background:
+    linear-gradient(90deg, #fff3, transparent 25%), var(--cover-paper);
+}
+.cd-spine .spine-title {
+  font-family: var(--font-ui);
+  font-size: var(--text-2xs);
+  /* One line, like a real case spine, so the title never covers the artist. */
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 14px;
+}
+.cd-spine .spine-publisher {
+  font-size: 6px;
+}

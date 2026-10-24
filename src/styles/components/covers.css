@@ -1,0 +1,262 @@
+/* Cover grid cards: typographic book covers and CD jewel cases. */
+.cover-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--space-8) var(--space-6);
+}
+.entry-card {
+  min-width: 0;
+}
+.entry-open {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0;
+}
+.card-stage {
+  position: relative;
+  padding: 0 7px 9px 2px;
+  aspect-ratio: 1/1.41;
+  display: flex;
+  align-items: flex-end;
+}
+.media-art {
+  color: var(--cover-ink);
+  background: var(--cover-paper);
+  position: relative;
+  width: 100%;
+  isolation: isolate;
+  box-shadow: var(--shadow-cover);
+  transition:
+    transform var(--duration-slow) var(--ease-out),
+    box-shadow var(--duration-slow) var(--ease-standard);
+}
+.book-cover {
+  aspect-ratio: 1/1.46;
+  border-radius: 2px 4px 4px 2px;
+  border-right: 3px solid #eee7da;
+  overflow: hidden;
+}
+.book-cover:before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: 0 auto 0 0;
+  width: 8px;
+  background: linear-gradient(90deg, #0002, transparent, #fff3, transparent);
+  border-right: 1px solid #0000000c;
+}
+.cover-print {
+  position: absolute;
+  inset: 11px 10px 11px 13px;
+  border: 1px solid currentColor;
+  padding: 10px 9px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  overflow: hidden;
+}
+.cover-title {
+  font: 500 25px/0.98 var(--font-note);
+  letter-spacing: -0.045em;
+  margin-top: var(--space-5);
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.cover-title-long {
+  font-size: 21px;
+}
+.cover-ornament {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 12px;
+  margin: var(--space-2) 0;
+}
+.cover-ornament i {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-round);
+  border: 1px solid currentColor;
+}
+.cover-ornament i:nth-child(2) {
+  width: 20px;
+  height: 20px;
+  background: currentColor;
+  opacity: 0.8;
+}
+.cover-author {
+  font: 7px/1.4 var(--font-data);
+  margin-top: auto;
+  max-width: 100%;
+}
+.card-open-mark {
+  position: absolute;
+  right: 1px;
+  bottom: 0;
+  width: 31px;
+  height: 31px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-round);
+  opacity: 0;
+  transform: translateX(-5px);
+  transition:
+    opacity var(--duration-base) var(--ease-standard),
+    transform var(--duration-base) var(--ease-out);
+}
+.entry-open:hover .media-art,
+.entry-open:focus-visible .media-art {
+  transform: translateY(-6px) rotate(-1deg);
+  box-shadow: var(--shadow-cover-lift);
+}
+.entry-open:hover .card-open-mark,
+.entry-open:focus-visible .card-open-mark {
+  opacity: 1;
+  transform: none;
+}
+.card-caption {
+  padding: var(--space-2) 1px 0;
+}
+.card-caption h2 {
+  font: var(--weight-semibold) var(--text-lg) / var(--leading-snug) var(--font-heading);
+  letter-spacing: var(--tracking-tight);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  min-height: 40px;
+}
+.card-credit {
+  font-size: var(--text-3xs);
+  line-height: 1.5;
+  color: var(--muted);
+  margin-top: var(--space-1);
+  overflow-wrap: anywhere;
+}
+.card-metadata {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1-5) var(--space-2-5);
+  margin-top: var(--space-2);
+}
+.card-count {
+  color: var(--muted);
+  font-size: var(--text-3xs);
+}
+.card-languages {
+  display: flex;
+  gap: var(--space-1);
+}
+.card-languages span {
+  font: 7px var(--font-data);
+  padding: var(--space-0-5) var(--space-1);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  color: var(--muted);
+}
+.jewel-case {
+  aspect-ratio: 1;
+  border: 2px solid #b5b8b7;
+  border-left: 12px solid #c3c7c8;
+  border-radius: 2px;
+  box-shadow:
+    inset 0 0 0 2px #fff9,
+    3px 5px 8px #1f1b1428,
+    6px 12px 20px -10px #1f1b1455;
+}
+.jewel-case:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    125deg,
+    #fff5,
+    transparent 30%,
+    transparent 63%,
+    #fff4 64%,
+    transparent 66%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+.jewel-case .cover-print {
+  inset: 6px;
+  border: none;
+  padding: var(--space-2);
+}
+.jewel-case .cover-title {
+  font-size: 21px;
+  margin-top: var(--space-3);
+  max-width: 100%;
+  -webkit-line-clamp: 3;
+}
+.jewel-case .cover-title-long {
+  font-size: 15px;
+}
+.jewel-case .cover-ornament {
+  min-height: 6px;
+}
+.jewel-case .cover-author {
+  font-size: 6px;
+}
+.jewel-hinge {
+  position: absolute;
+  left: -11px;
+  top: 0;
+  bottom: 0;
+  width: 9px;
+  background: repeating-linear-gradient(0deg, #8a9093 0 1px, #b8bebf 1px 3px);
+  border-right: 2px solid #e8eeee;
+}
+.record-disc {
+  display: block;
+  width: 30px;
+  height: 30px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-round);
+  position: relative;
+  opacity: 0.7;
+}
+.record-disc:before {
+  content: "";
+  inset: 4px;
+  border: 1px solid currentColor;
+  position: absolute;
+  border-radius: var(--radius-round);
+}
+.record-disc:after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  background: currentColor;
+  position: absolute;
+  border-radius: var(--radius-round);
+  left: 11px;
+  top: 11px;
+}
+.sample-ribbon {
+  position: absolute;
+  bottom: 20px;
+  left: -3px;
+  background: var(--sage-surface);
+  color: var(--sage-text);
+  border: 1px solid var(--sage);
+  padding: 4px 7px;
+  font: 7px var(--font-data);
+  letter-spacing: 0.08em;
+  transform: rotate(-3deg);
+}
+.cd-card .card-stage {
+  padding-bottom: 9px;
+}
