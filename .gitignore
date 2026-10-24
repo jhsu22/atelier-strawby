@@ -12,6 +12,6 @@ data/generated/
 *.tsbuildinfo
 *.log
 wrangler.hosted.json
-releases/
+/releases/
 playwright-report/
 test-results/
