@@ -6,7 +6,7 @@
 
 Use the lockfile: Astro 5.18.2, `@astrojs/cloudflare` 12.6.13, Wrangler 4.151.3. `npm run build` emits a Pages advanced-mode `_worker.js` directory and static assets in `dist`. New adapter majors change the deployment target; do not upgrade the platform blindly. [Astro 5 adapter documentation](https://v5.docs.astro.build/en/guides/integrations-guide/cloudflare/).
 
-Wrangler 4.151.3 **rejects `--config` on `pages deploy`** and selects preview/production with `--branch`, not `--env`. The release wrapper stages `dist`, migrations, a minimal private `package.json` and a standard `wrangler.json` in ignored `releases/cloudflare/`, then invokes Pages from that working directory. The package boundary also keeps Wrangler Pages temporary files from resolving the parent localhost configuration. D1 commands do accept `--config` and `--env`. Local `wrangler.toml` remains local-only. Preview overrides explicitly repeat both resource bindings and all runtime vars. [Pages configuration](https://developers.cloudflare.com/pages/functions/wrangler-configuration/).
+Wrangler 4.151.3 **rejects `--config` on `pages deploy`** and selects preview/production with `--branch`, not `--env`. The release wrapper stages `dist`, migrations, a minimal private `package.json` and a standard `wrangler.json` in ignored `releases/cloudflare/`, then invokes Pages from that working directory. The package boundary also keeps Wrangler Pages temporary files from resolving the parent localhost configuration. D1 commands do accept `--config` and `--env`. The committed `wrangler.toml` is the hosted config for Pages Git builds. Preview overrides explicitly repeat both resource bindings and all runtime vars. [Pages configuration](https://developers.cloudflare.com/pages/functions/wrangler-configuration/).
 
 Node 22.18+ is required for TypeScript scripts and `node:sqlite`; Stage 5 ran on Node 26.11.1. A compatible Node 22 runtime still needs its own verification. Python 3 is needed only for `release:zip`. Browser tests need Chromium (`npx playwright install chromium`, or `PLAYWRIGHT_CHROMIUM_EXECUTABLE`).
 
@@ -37,7 +37,7 @@ Local D1/R2 live under `.wrangler/state`. The SQLite diagnostic is a separate di
 
 | Name | Local | Hosted |
 | --- | --- | --- |
-| `DB` | Local D1 binding in `wrangler.toml` | Distinct preview and production D1 UUIDs |
+| `DB` | `preview_database_id` in `wrangler.toml` | Distinct preview and production D1 UUIDs |
 | `COVERS` | Local emulated private R2 | Distinct private buckets; leave public access disabled |
 | `APP_ENV` | `local` in `.dev.vars` | `preview` or `production` in hosted config |
 | `LOCAL_DEV_AUTH` | `true`, accepted only for loopback hostnames | **Unset** |
@@ -96,7 +96,7 @@ npm run deploy:preview
 npm run deploy:production
 ```
 
-`deploy:prepare` builds and stages without network deployment. The upload commands rebuild and stage; they never migrate, seed or change Access policy automatically. For Git/CI hosting, use this same wrapper and supply the ignored hosted config from protected CI configuration. Do not point a Pages Git build at the local placeholder `wrangler.toml`. No CI workflow/secret connection has been activated.
+`deploy:prepare` builds and stages without network deployment. The upload commands rebuild and stage; they never migrate, seed or change Access policy automatically. For Pages Git builds, the committed `wrangler.toml` supplies bindings and vars; keep it in sync with `wrangler.hosted.json`. Git builds do not run migrations.
 
 Hosted acceptance must verify: signed-in owner browsing and CRUD with reload; unauthenticated and wrong-user denial; forged JWT and direct-origin denial; same-origin mutation protection; private/no-store headers; preview/production isolation; R2 artwork; provider network/quotas; JSON export and restore to a separate preview database; narrow/mobile keyboard flows; response latency and CPU/memory limits. Inspect Pages logs for unexpected 5xx without logging JWTs, API keys or personal backup bodies.
 

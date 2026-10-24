@@ -6,7 +6,7 @@ atelier_strawby/
   initial_collection.csv         Immutable 177-copy input (includes personal haul notes)
   package.json / package-lock.json  Pinned dependencies and commands
   astro.config.mjs               Astro 5 SSR, React, Tailwind, Pages adapter
-  wrangler.toml                  Local-only placeholder D1/R2 configuration
+  wrangler.toml                  Hosted Pages config (Git builds); preview_* IDs for local dev
   wrangler.hosted.json.example   Hosted config template, no real resources/credentials
   .dev.vars.example             Loopback development auth and variable reference
   eslint.config.mjs              ESLint/TypeScript/Astro checks
