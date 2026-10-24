@@ -2,6 +2,19 @@
 
 Status: Stage 0 design decisions retained; reviewed 2026-10-21. Source of product authority: [project_specification](../project_specification). No application implementation occurred during planning; Stage 1 implementation and verification are recorded below and in [STAGE1_VALIDATION.md](STAGE1_VALIDATION.md).
 
+## Visual recognition Phase A decisions (2026-10-24)
+
+- **Phase split.** The request named Phase A without defining it. Phase A is barcode scanning end to end; cover recognition (B) and multi-volume batches (C) are roadmap items only.
+- **Decoder.** `barcode-detector` 3.2.2 / `zxing-wasm` 3.1.3 (MIT), pinned to versions older than two weeks. The newest releases were 5 days old. The WASM is self-hosted rather than fetched from jsDelivr.
+- **No image upload in Phase A.** Decoding is on-device, so no photo retention question arises yet.
+- **ISBN trust.** Checksum-valid scans are the only ISBN source. Provider ISBNs are used solely to verify that a record describes the scanned book.
+- **ISBN conflicts.** A different recorded ISBN for the same volume edition returns 409 instead of overwriting it.
+- **Google Books.** Its `isbn:` search returned nothing in testing, so one ISBN-verified title search, seeded by Open Library, recovers Google records.
+- **Script bridging.** MangaDex alternate titles bridge Japanese and Korean titles to owned English series.
+- **Preselection.** Only exact titles are preselected. Run reuse requires the same language and format.
+- **Rate limits.** D1 fixed windows: 30/min and 400/h for lookups.
+- **CSV unchanged.** No ISBN column was added, to preserve import/export compatibility.
+
 ## Stage 3 execution adjustments (2026-10-23)
 
 - The user's revised Stage 3 absorbs original Stage 4 editing/import/export work. Existing schema, source CSV, importer and visual tokens are preserved.

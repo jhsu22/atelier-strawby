@@ -15,6 +15,13 @@
       "when": 1792820006270,
       "tag": "0001_edition_medium",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792870104817,
+      "tag": "0002_request_limits",
+      "breakpoints": true
     }
   ]
 }

@@ -195,6 +195,9 @@
   --sage: var(--leaf-500);
   --sage-text: var(--leaf-700);
   --sage-surface: var(--leaf-100);
+  /* Uncertain recognition results: 6.9:1. */
+  --caution-text: #7a4a00;
+  --caution-surface: #fff4dc;
 
   --selection: #d41b3530;
   --scrim: #0f0e0d8c;
@@ -236,6 +239,8 @@
   --sage: var(--leaf-400);
   --sage-text: var(--leaf-200);
   --sage-surface: var(--leaf-900);
+  --caution-text: #ffd58a;
+  --caution-surface: #3a2a0c;
   --brand-leaf: #86b394;
 
   --selection: #ff929d40;

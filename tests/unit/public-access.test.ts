@@ -24,7 +24,7 @@ test("anonymous visitors can browse and view artwork, but cannot open editor dat
     assert.equal((await requestAccess(request(path), env)).response?.status, 403, path);
   }
   for (const method of ["POST", "PUT", "PATCH", "DELETE", "OPTIONS"]) {
-    for (const path of ["/", "/api/library", "/api/items", "/api/items/id", "/api/imports", "/api/releases", "/api/metadata", "/api/artwork"]) {
+    for (const path of ["/", "/api/library", "/api/items", "/api/items/id", "/api/imports", "/api/releases", "/api/metadata", "/api/artwork", "/api/scan/isbn"]) {
       const result = await requestAccess(request(path, method, { origin, "x-strawby-request": "1", "sec-fetch-site": "same-origin" }), env);
       assert.equal(result.response?.status, 403, `${method} ${path}`);
       assert.match(await result.response!.text(), /collection owner/);

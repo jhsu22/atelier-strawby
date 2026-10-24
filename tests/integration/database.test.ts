@@ -16,12 +16,12 @@ async function database() { const db = openSqlite(':memory:'); await migrateSqli
 const summary = (db: Database) => collectionSummary(sql => db.all(sql));
 const statement = (sql: string, params: (string | number | null)[] = []) => ({ sql, params });
 
-test('actual SQL migration creates 27 normalized tables, enforces FKs and is repeatable', async () => {
+test('actual SQL migration creates 28 tables (27 normalized + request limits), enforces FKs and is repeatable', async () => {
   const db = await database();
   try {
     await migrateSqlite(db);
     const tables = await db.all("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE '_offline_%'");
-    assert.equal(tables.length, 27);
+    assert.equal(tables.length, 28);
     assert.equal((await db.all('PRAGMA foreign_keys'))[0]!.foreign_keys, 1);
     await assert.rejects(db.batch([statement("INSERT INTO volumes(item_id, volume_edition_id) VALUES ('missing-item', 'missing-edition')")]));
   } finally { await db.close(); }

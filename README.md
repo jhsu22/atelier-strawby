@@ -81,6 +81,7 @@ Follow the [deployment guide](docs/DEPLOYMENT.md) for provisioning, migrations, 
 | [Deployment](docs/DEPLOYMENT.md) | Local setup and Cloudflare operations |
 | [Public access](docs/PUBLIC_ACCESS.md) | Shared shelves and owner-only management |
 | [Released volumes](docs/RELEASED_VOLUMES.md) | Edition matching, missing volumes, and catalog limits |
+| [Barcode scanning](docs/SCANNING.md) | Scanning manga ISBNs, matching, measured accuracy, and the recognition roadmap |
 | [Architecture](docs/ARCHITECTURE.md) | Application structure and service boundaries |
 | [Data model](docs/DATA_MODEL.md) | Catalog entries, editions, and owned copies |
 | [Directory structure](docs/DIRECTORY_STRUCTURE.md) | Where code, tests, and assets live |

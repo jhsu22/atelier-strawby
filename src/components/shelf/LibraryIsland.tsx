@@ -10,6 +10,8 @@ import {
   Moon,
   Plus,
   RefreshCw,
+  ScanBarcode,
+  PencilLine,
   Search,
   SlidersHorizontal,
   Sun,
@@ -36,6 +38,7 @@ import { BrandLockup } from "../brand/BrandMark.tsx";
 import { brand } from "../../config/brand.ts";
 import { EntryDetails } from "../details/EntryDetails.tsx";
 import { ItemEditor } from "../manage/ItemEditor.tsx";
+import { ScanFlow } from "../scan/ScanFlow.tsx";
 import { TransferPanel } from "../manage/TransferPanel.tsx";
 import { HaulTimeline } from "../timeline/HaulTimeline.tsx";
 import { CollectionAnalytics } from "../stats/CollectionAnalytics.tsx";
@@ -161,6 +164,7 @@ export function LibraryIsland({
     id?: string;
     seed?: Partial<ItemInput>;
   } | null>(null);
+  const [addMode, setAddMode] = useState<"manual" | "scan">("manual");
   const entries = useMemo(
     () => browseEntries(data.entries, state),
     [data, state],
@@ -317,13 +321,16 @@ export function LibraryIsland({
       setError((error as Error).message);
     }
   }
-  async function mutationFinished() {
+  async function reloadLibrary() {
     const response = await fetch("/api/library", { cache: "no-store" });
     if (!response.ok)
       throw new Error(
         "Changes were saved, but refresh failed. Reload the page to see them.",
       );
     setData(librarySchema.parse(await response.json()));
+  }
+  async function mutationFinished() {
+    await reloadLibrary();
     setEditing(null);
     setPanel(null);
     navigate({
@@ -937,17 +944,37 @@ export function LibraryIsland({
           }}
           wide
         >
-          <ItemEditor
-            key={editing?.id ?? "new"}
-            id={editing?.id}
-            seed={editing?.seed}
-            entries={data.entries}
-            onSaved={mutationFinished}
-            onClose={() => {
-              setEditing(null);
-              setPanel(null);
-            }}
-          />
+          {!editing && (
+            <div className="add-modes" role="group" aria-label="How to add">
+              <button type="button" aria-pressed={addMode === "manual"} onClick={() => setAddMode("manual")}>
+                <PencilLine size={16} aria-hidden="true" />
+                Enter details
+              </button>
+              <button type="button" aria-pressed={addMode === "scan"} onClick={() => setAddMode("scan")}>
+                <ScanBarcode size={16} aria-hidden="true" />
+                Scan barcode
+              </button>
+            </div>
+          )}
+          {!editing && addMode === "scan" ? (
+            <ScanFlow
+              series={data.entries.flatMap((entry) => (entry.kind === "cd" ? [] : [entry]))}
+              onSaved={reloadLibrary}
+              onEditFully={(seed) => setEditing({ seed })}
+            />
+          ) : (
+            <ItemEditor
+              key={editing?.id ?? "new"}
+              id={editing?.id}
+              seed={editing?.seed}
+              entries={data.entries}
+              onSaved={mutationFinished}
+              onClose={() => {
+                setEditing(null);
+                setPanel(null);
+              }}
+            />
+          )}
         </Drawer>
       )}
       {canEdit && panel === "transfer" && (

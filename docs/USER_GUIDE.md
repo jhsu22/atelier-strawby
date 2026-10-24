@@ -12,3 +12,12 @@
 The theme button switches light/dark mode and saves the preference on your device. Reduced-motion preferences are respected. If artwork fails, a typographic cover remains. If refresh fails, the current shelf stays visible with retry; if initial loading fails, use the retry link after checking setup. No cloud sync exists between your local emulator and a hosted instance: each uses its configured D1 database.
 
 Local setup and owner authentication: [DEPLOYMENT.md](DEPLOYMENT.md). Current verification and limitations: [STAGE5.md](STAGE5.md).
+
+## Scan a barcode
+
+On the editing page, choose **Add**, then **Scan barcode**. Allow the camera and hold the book's barcode inside the frame; on Japanese books scan the upper barcode (978…), not the 192 price code. The app reads the barcode on your device and looks up only the ISBN.
+
+The review screen shows where each detail came from. Check anything marked **Needs your input** or **Assumed from ISBN**, choose the right series (or **A series I own** when the catalogs don't know the book), and press **Add to collection**. If you already own that volume, you'll see a note and the button reads **Add another copy**: duplicates are always allowed. After saving, **Scan next book** keeps going.
+
+If the camera is blocked or unavailable, use **Use a photo** or **Type an ISBN** (ISBN-10 works too). Photos are read on your device and never uploaded. **Edit all fields** opens the full editor with the scan's details, including the ISBN. More: [SCANNING.md](SCANNING.md).
+

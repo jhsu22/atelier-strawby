@@ -110,6 +110,52 @@ The original Stage 4 workflow criteria below are fulfilled by this Stage 3 imple
 
 If hosted resources are unavailable, complete local deliverables and explicitly leave deployment/production verification incomplete. Do not relabel a local-only result as production-ready.
 
+## Visual recognition phases
+
+The owner's visual-recognition request is delivered in three phases. Implementation, design and **measured** results: [SCANNING.md](SCANNING.md).
+
+### Phase A — Barcode scanning (implemented and locally verified 2026-10-24)
+
+Scan option in Add; on-device live camera decoding (native BarcodeDetector or self-hosted ZXing WebAssembly); photo and typed-ISBN fallbacks; ISBN-13/ISBN-10; collection-first lookup; Google Books + Open Library edition metadata with ISBN verification; MangaDex alternate-title bridge; reconciliation with owned series, runs and volumes; non-blocking duplicate warnings; editable confirmation with field provenance; owner-only endpoint, 2 KB body limit, D1 rate limits; additive `0002_request_limits` migration. Real iOS/Android devices remain unverified.
+
+### Phase B — Single-cover recognition (planned, not implemented)
+
+**Dependencies:** Phase A review screen, reconciliation and catalog adapters; an owner-approved multimodal model provider and server-only API key; a cost budget.
+
+**Deliver:**
+
+- Photograph or upload one cover. The client downscales it (≤1600 px, JPEG) and strips EXIF.
+- An authenticated endpoint with a strict size limit (≈1.5 MB) and per-hour image rate limits forwards the image to a multimodal vision model.
+- A strict Zod schema covers the model output: title and alternate title as printed, volume, language (JP/EN/KR), visible publisher/imprint, per-field confidence, and `unreadable` flags. The model is told not to guess ISBNs, and any ISBN it returns is discarded.
+- Search the collection first (titles, aliases, edition titles), then the catalogs. Generate ranked candidates from several signals rather than trusting one response.
+- Reuse the Phase A review screen for manual correction and selection.
+- Photos stay in memory only. They are retained (in private R2) only after explicit per-photo consent, with deletion.
+- Cache recognition results by image digest.
+
+**Acceptance:**
+
+- A labeled cover test set covers EN/JP/KR editions, consecutive volumes with near-identical art, and ambiguous titles. It reports measured title/volume/language accuracy and wrong-candidate rates separately from barcode results.
+- Tests cover model outages, malformed model output and oversized images.
+- No unverified ISBN or edition metadata is persisted.
+
+### Phase C — Multi-volume photos and acquisition batches (planned, not implemented)
+
+**Dependencies:** Phase B recognition; an acquisition-batch schema (new additive migration: batch date, store name, notes, and an item→batch link distinct from CSV `import_batches`).
+
+**Deliver:**
+
+- Accept a shelf or haul photo and detect individual visible covers/spines where possible (per-region crops, each recognized as in Phase B).
+- Show an editable checklist of candidates. Unrecognized and uncertain regions are clearly flagged and can be skipped or entered manually.
+- Shared acquisition date, store name and notes apply to the whole checklist.
+- Save each confirmed item as a separate physical copy in one atomic acquisition batch, including intentional duplicates.
+- Show the batch in the haul timeline.
+
+**Acceptance:**
+
+- Measured per-cover detection and recognition rates on multi-volume photos.
+- An atomic batch save, with no partial batches on failure.
+- CSV import/export unchanged; batches round-trip in JSON backup.
+
 ## Requirement traceability
 
 Stage 1 foundation requirements are preserved. The table below retains the original stage references for historical traceability; the revised Stage 2 UI mapping above and STAGE2_UI.md take precedence. Stage 3 implementation evidence supersedes the original stage numbers for integrations and mutations.

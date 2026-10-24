@@ -1,0 +1,41 @@
+{
+  "about": "Phase A ISBN test set. Every ISBN was discovered in Google Books or Open Library search results on 2026-10-24 (except the two labeled synthetic). Expectations come from the book's identity and the owner's initial_collection.csv, not from system output. series=null means no owned series should be preselected.",
+  "cases": [
+    { "isbn": "9781974715466", "label": "Spy x Family, Vol. 1 (VIZ, print)", "tags": ["en", "owned", "duplicate"], "expect": { "series": "SPY x FAMILY", "volume": "1", "language": "EN", "duplicate": "same-volume" } },
+    { "isbn": "9781974720286", "label": "Spy x Family, Vol. 1 (VIZ eBook ISBN)", "tags": ["en", "owned", "duplicate", "ebook-isbn"], "expect": { "series": "SPY x FAMILY", "volume": "1", "language": "EN", "duplicate": "same-volume", "flag": "eBook" } },
+    { "isbn": "9781974757466", "label": "Spy x Family, Vol. 14 (VIZ)", "tags": ["en", "owned-series", "new-volume"], "expect": { "series": "SPY x FAMILY", "volume": "14", "language": "EN", "duplicate": "none" } },
+    { "isbn": "9781974709939", "label": "Chainsaw Man, Vol. 1 (VIZ)", "tags": ["en", "owned", "duplicate"], "expect": { "series": "Chainsaw Man", "volume": "1", "language": "EN", "duplicate": "same-volume" } },
+    { "isbn": "9781646597147", "label": "A Sign of Affection 2 (Kodansha)", "tags": ["en", "owned", "duplicate"], "expect": { "series": "A Sign of Affection", "volume": "2", "language": "EN", "duplicate": "same-volume" } },
+    { "isbn": "9781646598816", "label": "A Sign of Affection 3 (Kodansha)", "tags": ["en", "owned", "duplicate", "similar-cover"], "expect": { "series": "A Sign of Affection", "volume": "3", "language": "EN", "duplicate": "same-volume" } },
+    { "isbn": "9798888771938", "label": "A Sign of Affection Omnibus 1 (Vol. 1-3)", "tags": ["en", "owned-series", "omnibus", "ambiguous"], "expect": { "series": "A Sign of Affection", "volume": "1", "language": "EN", "duplicate": "none", "flag": "omnibus" } },
+    { "isbn": "9798888771389", "label": "The Fragrant Flower Blooms With Dignity 1 (Kodansha, 979-8)", "tags": ["en", "owned", "duplicate", "isbn-979"], "expect": { "series": "The Fragrant Flower Blooms With Dignity", "volume": "1", "language": "EN", "duplicate": "same-volume" } },
+    { "isbn": "9798888771396", "label": "The Fragrant Flower Blooms With Dignity 2 (Kodansha, 979-8)", "tags": ["en", "owned", "duplicate", "isbn-979", "similar-cover"], "expect": { "series": "The Fragrant Flower Blooms With Dignity", "volume": "2", "language": "EN", "duplicate": "same-volume" } },
+    { "isbn": "9781975358273", "label": "Fruits Basket Collector's Edition, Vol. 1 (Yen Press)", "tags": ["en", "owned", "duplicate", "collectors"], "expect": { "series": "Fruits Basket: Collector's Edition", "volume": "1", "language": "EN", "duplicate": "same-volume" } },
+    { "isbn": "9781975358358", "label": "Fruits Basket Collector's Edition, Vol. 5 (ISBN-10 197535835X)", "tags": ["en", "owned-series", "new-volume", "isbn10-x"], "code": "1975358-35X", "expect": { "series": "Fruits Basket: Collector's Edition", "volume": "5", "language": "EN", "duplicate": "none" } },
+    { "isbn": "9781975329334", "label": "your name. Another Side:Earthbound, Vol. 1 (manga)", "tags": ["en", "owned", "duplicate", "ambiguous"], "expect": { "series": "Your Name Another Side: Earthbound", "volume": "1", "language": "EN", "duplicate": "same-volume" } },
+    { "isbn": "9780316473132", "label": "your name. Another Side:Earthbound (light novel)", "tags": ["en", "ambiguous", "different-medium"], "expect": { "series": null, "volume": null, "language": "EN", "duplicate": "none" } },
+    { "isbn": "9780316470636", "label": "Girls' Last Tour, Vol. 1 (Yen Press)", "tags": ["en", "owned", "duplicate"], "expect": { "series": "Girls' Last Tour", "volume": "1", "language": "EN", "duplicate": "same-volume" } },
+    { "isbn": "9781975329044", "label": "Girls' Last Tour, Vol. 6 (owned as \"Girls Last Tour\")", "tags": ["en", "owned", "duplicate", "alias"], "expect": { "series": "Girls' Last Tour", "volume": "6", "language": "EN", "duplicate": "same-volume" } },
+    { "isbn": "9781975326111", "label": "Girls' Last Tour, Vol. 4 (Yen Press)", "tags": ["en", "owned-series", "new-volume", "similar-cover"], "expect": { "series": "Girls' Last Tour", "volume": "4", "language": "EN", "duplicate": "none" } },
+    { "isbn": "9781974729548", "label": "Frieren: Beyond Journey's End, Vol. 1 (VIZ)", "tags": ["en", "new-series"], "expect": { "series": null, "volume": "1", "language": "EN", "duplicate": "none" } },
+    { "isbn": "9798855430493", "label": "Frieren: Beyond Journey's End -Prelude-, Vol. 1 (novel)", "tags": ["en", "new-series", "ambiguous", "isbn-979"], "expect": { "series": null, "volume": "1", "language": "EN", "duplicate": "none" } },
+    { "isbn": "9780593135204", "label": "Project Hail Mary (not manga)", "tags": ["en", "new-series", "not-manga"], "expect": { "series": null, "volume": null, "language": "EN", "duplicate": "none" } },
+    { "isbn": "9784065266090", "label": "薫る花は凛と咲く 1 (講談社)", "tags": ["jp", "owned", "duplicate", "cross-script"], "expect": { "series": "The Fragrant Flower Blooms With Dignity", "volume": "1", "language": "JP", "duplicate": "same-volume" } },
+    { "isbn": "9784088818313", "label": "チェンソーマン 2 (集英社)", "tags": ["jp", "owned-series", "new-edition", "cross-script"], "expect": { "series": "Chainsaw Man", "volume": "2", "language": "JP", "duplicate": "none" } },
+    { "isbn": "9784088820163", "label": "チェンソーマン 3 (集英社)", "tags": ["jp", "owned-series", "new-edition", "cross-script", "similar-cover"], "expect": { "series": "Chainsaw Man", "volume": "3", "language": "JP", "duplicate": "none" } },
+    { "isbn": "9784088821719", "label": "チェンソーマン 5 (集英社)", "tags": ["jp", "owned-series", "new-edition", "cross-script", "similar-cover"], "expect": { "series": "Chainsaw Man", "volume": "5", "language": "JP", "duplicate": "none" } },
+    { "isbn": "9784832272408", "label": "ゆるキャン△ 11 (芳文社) — EN Vol. 11 is owned", "tags": ["jp", "owned-series", "new-edition", "cross-script", "other-language-owned"], "expect": { "series": "Laid Back Camp", "volume": "11", "language": "JP", "duplicate": "none" } },
+    { "isbn": "9784098501809", "label": "葬送のフリーレン 1 (小学館)", "tags": ["jp", "new-series"], "expect": { "series": null, "volume": "1", "language": "JP", "duplicate": "none" } },
+    { "isbn": "9791137323926", "label": "스파이 패밀리 08 (학산문화사) — EN Vol. 8 is owned", "tags": ["kr", "owned-series", "new-edition", "cross-script", "other-language-owned"], "expect": { "series": "SPY x FAMILY", "volume": "8", "language": "KR", "duplicate": "none" } },
+    { "isbn": "9784999999996", "label": "Synthetic: valid checksum, unassigned Japanese ISBN", "tags": ["jp", "synthetic", "no-catalog"], "expect": { "series": null, "volume": null, "language": "JP", "duplicate": "none" } },
+    { "isbn": "9798999999993", "label": "Synthetic: valid checksum, unassigned 979-8 ISBN", "tags": ["en", "synthetic", "no-catalog", "isbn-979"], "expect": { "series": null, "volume": null, "language": "EN", "duplicate": "none" } }
+  ],
+  "invalid": [
+    { "code": "9781974715467", "problem": "checksum", "label": "Spy x Family Vol. 1 with a wrong check digit" },
+    { "code": "1920979005006", "problem": "price-code", "label": "Japanese second (price) barcode" },
+    { "code": "4901234567894", "problem": "not-a-book", "label": "Japanese grocery EAN-13 (49…)" },
+    { "code": "012345678905", "problem": "not-a-book", "label": "UPC-A retail code" },
+    { "code": "197535835", "problem": "length", "label": "ISBN-10 missing its check character" },
+    { "code": "97819747154X6", "problem": "characters", "label": "Stray X inside an ISBN-13" }
+  ]
+}

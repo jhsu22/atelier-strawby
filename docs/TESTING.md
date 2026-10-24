@@ -4,6 +4,24 @@
 
 Latest revalidation: [Stage 3 development assessment](DEVELOPMENT_STATUS.md). **57 unit + 32 integration + 5 actual D1 + 34 desktop/mobile browser tests pass**, plus checking/build, schema parity, persisted seed verification and built Pages smoke. No final suite failures/skips remain. The dependency audit still reports **13 findings: 6 moderate, 6 high, 1 critical**. Earlier Stage 1–2 results below are historical.
 
+## Visual recognition Phase A verification (2026-10-24)
+
+Commands run on Node 26.11.1 / Chromium 155, all passing:
+
+- `npm run validate`: lint, `astro check` and `tsc`; **84/84 unit**; **49/49 integration**; schema parity for 28 tables after 3 migrations; build.
+- `npm run test:d1`: 8/8.
+- `npm run test:migrations`: all three migrations applied on disposable Wrangler D1 and repeated cleanly.
+- `npx playwright test`: **80 passed, 4 skipped**, across desktop and mobile projects. The skips are 2 deliberately desktop-only scan measurements plus 2 pre-existing skips.
+
+New suites:
+
+- `tests/unit/scan.test.ts`: ISBN parsing and conversion, invalid codes, catalog-title parsing, provider normalization, ranking, reconciliation safety, drafts and strict schemas.
+- `tests/integration/scan.test.ts`: measured lookup accuracy with safety invariants, collection-first and cache, outages, rate limits, saves, CSV and backup.
+- `tests/e2e/scan.spec.ts`: live fake-camera scans, duplicates, owned-series picking, omnibus, five camera failures, photo and outage fallbacks, editor ISBN validation, endpoint security and rate limits, and axe.
+- `tests/e2e/scan-accuracy.spec.ts`: barcode decoding benchmark.
+
+Measured accuracy is recorded in [SCANNING.md](SCANNING.md#measured-results-2026-10-24).
+
 ## Stage 3 verification
 
 | Command/check | Actual result |

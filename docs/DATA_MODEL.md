@@ -93,6 +93,12 @@ Keep asset bytes out of D1. R2 and D1 cannot commit in one transaction: upload t
 
 The operational tables support required caching and deterministic imports. They are not a general job scheduler, user system, or event-sourcing framework.
 
+## Barcode scans and request limits
+
+Scanning writes no new catalog tables. `volume_editions.isbn13` holds the scanned, checksum-valid ISBN for the volume edition (shared by its copies). `metadata_state` is left unchanged, so the confirmed-ISBN unique index is not engaged. `external_refs` records the owner-confirmed catalog record (`provider_entity_type='edition'`, `match_basis='isbn'`, `is_owner_confirmed=1`).
+
+Migration `0002_request_limits.sql` adds `request_limits(bucket PK, window_start, count)`: operational fixed-window counters, excluded from backups. See [SCANNING.md](SCANNING.md).
+
 ## Deterministic CSV ingestion contract
 
 The implemented entry point is `scripts/seed-from-csv.ts`. The default source is the actual `initial_collection.csv`; `--input` supports the long filename mentioned in the PRD. The source remains unchanged. Parsing uses a tested RFC-compatible CSV state machine, not splitting on lines or commas.

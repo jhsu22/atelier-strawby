@@ -381,3 +381,13 @@ export const providerState = sqliteTable("provider_state", {
   blockedUntil: text("blocked_until"),
 });
 
+
+// Fixed-window request counters for owner endpoints that call paid or
+// rate-limited services. Operational state; excluded from portable backups.
+export const requestLimits = sqliteTable("request_limits", {
+  bucket: text("bucket").primaryKey().notNull(),
+  windowStart: integer("window_start").notNull(),
+  count: integer("count").notNull(),
+}, () => [
+  check("request_limits_check_1", sql`count >= 0`),
+]);

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { MEDIUMS } from "./types.ts";
 import { TAGS, deriveTags } from "./normalization/tags.ts";
+import { validIsbn13 } from "./isbn.ts";
 
 export const key = (value: string) =>
   value.normalize("NFKC").trim().toLocaleLowerCase("en");
@@ -146,12 +147,31 @@ export const itemSchema = z
     tagsMode: z.enum(["auto", "manual"]).default("auto"),
     isSample: z.boolean().default(false),
     artwork: artworkSchema.nullable().default(null),
+    // A checksum-valid ISBN-13 for the volume edition. Callers convert ISBN-10.
+    isbn13: z
+      .string()
+      .nullable()
+      .default(null)
+      .refine((value) => value === null || validIsbn13(value), "Use a valid 13-digit ISBN"),
+    // The catalog record the owner confirmed for this ISBN, kept as provenance.
+    catalogSource: z
+      .object({
+        provider: z.enum(["googlebooks", "openlibrary"]),
+        sourceId: z.string().trim().min(1).max(100),
+        sourceUrl: z.string().url().max(2048),
+      })
+      .nullable()
+      .default(null),
   })
   .superRefine((item, ctx) => {
     const issue = (path: string, message: string) =>
       ctx.addIssue({ code: "custom", path: [path], message });
     if (item.kind === "manga" && !item.volume)
       issue("volume", "A volume number or label is required");
+    if (item.kind === "cd" && (item.isbn13 || item.catalogSource))
+      issue("isbn13", "ISBNs apply to books and manga only.");
+    if (item.catalogSource && !item.isbn13)
+      issue("catalogSource", "A catalog record is only kept with the scanned ISBN.");
     for (const field of ["authors", "artists"] as const) {
       if (new Set(item[field].map(key)).size !== item[field].length)
         issue(field, "Names must be unique.");

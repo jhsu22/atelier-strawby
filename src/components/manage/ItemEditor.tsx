@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { itemSchema, memoryTags } from "../../domain/item.ts";
+import { parseIsbn } from "../../domain/isbn.ts";
 import type { ItemInput } from "../../domain/item.ts";
 import type { Medium } from "../../domain/types.ts";
 import type { LibraryEntry } from "../../domain/library.ts";
@@ -27,6 +28,7 @@ export function ItemEditor({
     itemSchema.parse({ kind: "manga", title: "New item", ...seed }),
   );
   const [title, setTitle] = useState(seed?.title ?? "");
+  const [isbnText, setIsbnText] = useState(seed?.isbn13 ?? "");
   const [version, setVersion] = useState(0),
     [loading, setLoading] = useState(Boolean(id));
   const [busy, setBusy] = useState(false),
@@ -54,6 +56,7 @@ export function ItemEditor({
           if (!mounted.current) return;
           setItem(data.item);
           setTitle(data.item.title);
+          setIsbnText(data.item.isbn13 ?? "");
           setQuery(data.item.title);
           setArtistQuery(data.item.artists.join(" "));
           setVersion(data.version);
@@ -124,7 +127,22 @@ export function ItemEditor({
     event.preventDefault();
     setError("");
     setNotice("");
-    const parsed = itemSchema.safeParse({ ...item, title });
+    let isbn13: string | null = null;
+    if (item.kind === "manga" && isbnText.trim()) {
+      const isbn = parseIsbn(isbnText);
+      if (!isbn.ok) {
+        setError(`ISBN: ${isbn.message}`);
+        return;
+      }
+      isbn13 = isbn.isbn13;
+    }
+    const parsed = itemSchema.safeParse({
+      ...item,
+      title,
+      isbn13,
+      // Scan provenance describes the scanned ISBN only.
+      catalogSource: isbn13 && isbn13 === item.isbn13 ? item.catalogSource : null,
+    });
     if (!parsed.success) {
       setError(
         parsed.error.issues
@@ -360,6 +378,21 @@ export function ItemEditor({
                 maxLength={300}
                 onChange={(e) => update({ publisher: e.target.value })}
               />
+            </label>
+            <label className="filter-field">
+              ISBN
+              <input
+                aria-label="ISBN"
+                value={isbnText}
+                maxLength={20}
+                autoComplete="off"
+                spellCheck={false}
+                onChange={(e) => setIsbnText(e.target.value)}
+              />
+              <small>
+                Optional. ISBN-10 is converted to ISBN-13. Every copy of this
+                volume edition shares it.
+              </small>
             </label>
             <label className="filter-field">
               Edition format

@@ -49,7 +49,7 @@ export async function getItem(
       await db.all(
         `SELECT s.id AS seriesId,s.canonical_title AS title,r.edition_title AS editionTitle,
       r.language,r.language_basis AS languageBasis,r.format,r.numbering_basis AS numberingBasis,r.medium,
-      COALESCE(p.name,'') AS publisher,e.volume_label AS volume,e.cover_asset_id AS cover
+      COALESCE(p.name,'') AS publisher,e.volume_label AS volume,e.cover_asset_id AS cover,e.isbn13
       FROM volumes v JOIN volume_editions e ON e.id=v.volume_edition_id JOIN edition_runs r ON r.id=e.edition_run_id
       JOIN series s ON s.id=r.series_id LEFT JOIN publishers p ON p.id=r.publisher_id WHERE v.item_id=?`,
         [id],
@@ -411,17 +411,29 @@ export async function planItem(
     }
     const existingEdition = (
       await db.all(
-        "SELECT id,cover_asset_id FROM volume_editions WHERE edition_run_id=? AND volume_label=? LIMIT 1",
+        "SELECT id,cover_asset_id,isbn13 FROM volume_editions WHERE edition_run_id=? AND volume_label=? LIMIT 1",
         [run, item.volume],
       )
     )[0];
     target = String(
       existingEdition?.id ?? (await idFor("volume", [run, key(item.volume)])),
     );
+    // An ISBN belongs to the volume edition, so every copy shares it. Adding a
+    // copy never replaces a different recorded ISBN; the owner decides instead.
+    const recordedIsbn = (existingEdition?.isbn13 as string | null) ?? null;
+    if (!options.update && item.isbn13 && recordedIsbn && recordedIsbn !== item.isbn13)
+      throw new ApiError(
+        409,
+        `Volume ${item.volume} of this edition already records ISBN ${recordedIsbn}. A different ISBN usually means another printing or edition: change the edition name, or correct the ISBN.`,
+      );
+    const isbnChanged = options.update
+      ? recordedIsbn !== item.isbn13
+      : Boolean(item.isbn13 && !recordedIsbn);
     if (
       existingEdition &&
-      (options.update || item.artwork) &&
-      existingEdition.cover_asset_id !== coverId
+      (((options.update || item.artwork) &&
+        existingEdition.cover_asset_id !== coverId) ||
+        isbnChanged)
     ) {
       statements.push(
         s(
@@ -432,18 +444,42 @@ export async function planItem(
         ),
       );
     }
+    const updates = [
+      ...(options.update || item.artwork
+        ? ["cover_asset_id=excluded.cover_asset_id"]
+        : []),
+      ...(options.update
+        ? ["isbn13=excluded.isbn13"]
+        : item.isbn13
+          ? ["isbn13=COALESCE(volume_editions.isbn13,excluded.isbn13)"]
+          : []),
+    ];
     statements.push(
       s(
-        `INSERT INTO volume_editions(id,edition_run_id,volume_label,volume_sort,numbering_key,cover_asset_id) VALUES (?,?,?,?,?,?)
-      ON CONFLICT(id) ${options.update || item.artwork ? "DO UPDATE SET cover_asset_id=excluded.cover_asset_id" : "DO NOTHING"}`,
+        `INSERT INTO volume_editions(id,edition_run_id,volume_label,volume_sort,numbering_key,cover_asset_id,isbn13) VALUES (?,?,?,?,?,?,?)
+      ON CONFLICT(id) ${updates.length ? `DO UPDATE SET ${updates.join(",")}` : "DO NOTHING"}`,
         target,
         run,
         item.volume,
         /^\d+$/.test(item.volume) ? Number(item.volume) * 1000 : null,
         key(item.volume),
         coverId,
+        item.isbn13,
       ),
     );
+    if (item.catalogSource)
+      statements.push(
+        s(
+          `INSERT INTO external_refs(id,provider,provider_entity_type,external_id,source_url,fetched_at,match_basis,is_owner_confirmed,volume_edition_id)
+        VALUES (?,?,'edition',?,?,?,'isbn',1,?) ON CONFLICT DO NOTHING`,
+          await idFor("ref", [item.catalogSource.provider, "edition", item.catalogSource.sourceId]),
+          item.catalogSource.provider,
+          item.catalogSource.sourceId,
+          item.catalogSource.sourceUrl,
+          new Date().toISOString(),
+          target,
+        ),
+      );
   } else {
     // Album/release identities include editable catalog data. Changing one physical
     // copy's release never silently edits the metadata of its other owned copies.
