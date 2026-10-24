@@ -31,34 +31,14 @@ import {
 import { librarySchema } from "../../domain/library-schema.ts";
 import { MediaArtwork, Spine } from "../covers/MediaArtwork.tsx";
 import { Drawer } from "../ui/Drawer.tsx";
+import { BrandLockup } from "../brand/BrandMark.tsx";
+import { brand } from "../../config/brand.ts";
 import { EntryDetails } from "../details/EntryDetails.tsx";
 import { ItemEditor } from "../manage/ItemEditor.tsx";
 import { TransferPanel } from "../manage/TransferPanel.tsx";
 import type { ItemInput } from "../../domain/item.ts";
 
 type Panel = "filters" | "stats" | "timeline" | "add" | "transfer" | null;
-function StrawberryMark() {
-  return (
-    <svg viewBox="0 0 40 44" fill="none" aria-hidden="true">
-      <path
-        d="M8 13C1 20 10 35 18 40c2 1 3 1 5-1 10-8 16-22 8-27-6-4-9 1-12 1-4 0-6-4-11 0Z"
-        fill="currentColor"
-      />
-      <path
-        d="m20 14-6-8 7 2 5-6 1 8 8 1-9 4"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-      <path
-        d="m12 21 1 2m10-5-1 2m6 6-1 2m-9 1 1 2m0-9-1 2m4 10-1 2"
-        stroke="var(--page)"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
 function EntryCard({
   entry,
   onOpen,
@@ -368,16 +348,7 @@ export function LibraryIsland({
     <div className="library-app" data-hydrated={ready ? "true" : "false"}>
       <header className="site-header">
         <div className="header-inner">
-          <a
-            href="/"
-            className="brand-lockup"
-            aria-label="Atelier Strawby home"
-          >
-            <span className="brand-mark">
-              <StrawberryMark />
-            </span>
-            <span>Atelier Strawby</span>
-          </a>
+          <BrandLockup name={brand.project} />
           <nav className="desktop-nav" aria-label="Main navigation">
             <button
               type="button"

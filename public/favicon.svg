@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <style>
+    .spine { fill: #282822; }
+    .seed { fill: #faf8f5; }
+    @media (prefers-color-scheme: dark) {
+      .spine { fill: #eee9dd; }
+      .seed { fill: #141413; }
+    }
+  </style>
+  <g transform="translate(24 1) scale(.66) translate(-24 0)">
+    <path fill="#d9383a" d="M24 45.5C14.6 41.6 6.5 32.6 6.5 22.4 6.5 16.6 10.4 13 15.8 13h16.4c5.4 0 9.3 3.6 9.3 9.4 0 10.2-8.1 19.2-17.5 23.1Z"/>
+    <g class="seed">
+      <ellipse cx="17" cy="23" rx="1.5" ry="2.3"/>
+      <ellipse cx="31" cy="23" rx="1.5" ry="2.3"/>
+      <ellipse cx="24" cy="32" rx="1.5" ry="2.3"/>
+    </g>
+    <g fill="#5f8a6c" stroke="#5f8a6c" stroke-linejoin="round" stroke-width="1.6">
+      <path d="M24 16.5 12 15.2l5.6-3.4-2.4-5.6 8.8 4.2 8.8-4.2-2.4 5.6 5.6 3.4Z"/>
+      <path d="M24 10.4c.2-2.6 1-4.6 2.6-6.2" fill="none" stroke-width="2.6" stroke-linecap="round"/>
+    </g>
+  </g>
+  <rect class="spine" x="9" y="34" width="30" height="5.5" rx="2.75"/>
+  <rect class="spine" x="5" y="41.5" width="38" height="5.5" rx="2.75"/>
+</svg>
