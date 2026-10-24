@@ -29,6 +29,7 @@ const mangaRow = z.object({
   medium: z.enum(MEDIUMS),
   publisher: string,
   volume_label: string,
+  book_title: string,
   volume_sort: z.number().nullable(),
 });
 const cdRow = z.object({
@@ -141,6 +142,7 @@ export async function libraryData(read: ReadRows): Promise<LibraryData> {
       language: row.language,
       languageBasis: row.language_basis,
       volume: row.volume_label,
+      bookTitle: row.book_title,
       volumeSort: row.volume_sort,
       numberingBasis: row.numbering_basis,
       medium: row.medium,

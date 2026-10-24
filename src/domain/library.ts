@@ -18,6 +18,7 @@ export interface MangaCopy {
   language: Language;
   languageBasis: LanguageBasis;
   volume: string;
+  bookTitle?: string;
   volumeSort: number | null;
   numberingBasis: "printed" | "source_record" | "unknown";
   medium: Medium;
@@ -201,7 +202,7 @@ export function matchingCopies(
       if (state.publisher && state.publisher !== copy.publisher) return false;
       if (state.memory && !copy.tags.includes(state.memory)) return false;
       const haystack = searchText(
-        [common, copy.editionTitle, copy.publisher, copy.notes ?? ""].join(" "),
+        [common, copy.bookTitle ?? "", copy.editionTitle, copy.publisher, copy.notes ?? ""].join(" "),
       );
       return terms.every((term) => fuzzyTerm(term, haystack));
     });

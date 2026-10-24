@@ -24,6 +24,7 @@ const mangaCopy = z.object({
   language: z.enum(["EN", "JP", "KR"]),
   languageBasis: z.enum(["specified", "assumed", "confirmed"]),
   volume: string,
+  bookTitle: string.optional(),
   volumeSort: z.number().nullable(),
   numberingBasis: z.enum(["printed", "source_record", "unknown"]),
   medium: z.enum(MEDIUMS),

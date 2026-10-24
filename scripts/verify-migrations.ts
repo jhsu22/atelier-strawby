@@ -16,7 +16,7 @@ try {
   assert.match(repeat, /No migrations to apply/);
   const results = JSON.parse(run(["execute", "DB", "--command", "PRAGMA foreign_key_check; SELECT name FROM d1_migrations ORDER BY id; SELECT name FROM sqlite_master WHERE name='request_limits';", "--json"])) as {results: Record<string, unknown>[]}[];
   assert.deepEqual(results[0]!.results, []);
-  assert.deepEqual(results[1]!.results.map(row => row.name), ["0000_foundation.sql", "0001_edition_medium.sql", "0002_request_limits.sql"]);
+  assert.deepEqual(results[1]!.results.map(row => row.name), ["0000_foundation.sql", "0001_edition_medium.sql", "0002_request_limits.sql", "0003_book_titles.sql"]);
   assert.deepEqual(results[2]!.results.map(row => row.name), ["request_limits"]);
-  console.log("PASS: Wrangler applied all three migrations, recorded its journal, repeated without changes, and passed foreign-key checks on disposable D1.");
+  console.log("PASS: Wrangler applied all four migrations, recorded its journal, repeated without changes, and passed foreign-key checks on disposable D1.");
 } finally { await rm(directory, {recursive: true, force: true}); }

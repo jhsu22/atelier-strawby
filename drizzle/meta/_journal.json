@@ -22,6 +22,13 @@
       "when": 1792870104817,
       "tag": "0002_request_limits",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1792876386186,
+      "tag": "0003_book_titles",
+      "breakpoints": true
     }
   ]
 }

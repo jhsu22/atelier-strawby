@@ -70,6 +70,7 @@ export const itemSchema = z
     aliases: names.default([]),
     editionTitle: text.default(""),
     volume: text.max(40).default("1"),
+    bookTitle: text.default(""),
     language: z.enum(["EN", "JP", "KR"]).default("EN"),
     languageBasis: z
       .enum(["specified", "assumed", "confirmed"])
@@ -166,8 +167,11 @@ export const itemSchema = z
   .superRefine((item, ctx) => {
     const issue = (path: string, message: string) =>
       ctx.addIssue({ code: "custom", path: [path], message });
-    if (item.kind === "manga" && !item.volume)
+    if (item.kind === "manga" && !item.volume && !(item.medium === "book" && item.bookTitle))
       issue("volume", "A volume number or label is required");
+    if (item.kind === "manga" && item.medium === "book" && item.volume &&
+      (!/^\d+$/.test(item.volume) || !Number.isSafeInteger(Number(item.volume)) || Number(item.volume) < 1))
+      issue("volume", "Use a positive whole number for the number in series");
     if (item.kind === "cd" && (item.isbn13 || item.catalogSource))
       issue("isbn13", "ISBNs apply to books and manga only.");
     if (item.catalogSource && !item.isbn13)

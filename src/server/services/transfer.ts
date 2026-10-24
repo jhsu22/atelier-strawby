@@ -90,7 +90,7 @@ const signature = (
     | "acquiredOn"
     | "notes"
     | "medium"
-  >,
+  > & { bookTitle?: string },
 ) =>
   JSON.stringify(
     item.kind === "manga"
@@ -98,7 +98,7 @@ const signature = (
           "manga",
           key(item.title),
           key(item.editionTitle || item.title),
-          item.volume,
+          item.volume || item.bookTitle || "",
           item.language,
           key(item.publisher),
           item.acquiredOn,
@@ -190,6 +190,7 @@ export async function createImportPreview(
               kind: "manga",
               title: entry.title,
               volume: copy.volume,
+              bookTitle: copy.bookTitle,
               language: copy.language,
               editionTitle: copy.editionTitle,
               publisher: copy.publisher,
@@ -280,6 +281,7 @@ export async function createImportPreview(
             title: row["Canonical Title"] || identity.canonicalTitle,
             editionTitle: row["Edition Title"] || corrected.row.Title,
             volume: corrected.row.Volume.replace(/^vol(?:ume)?\.?\s*/i, ""),
+            bookTitle: row["Book Title"] || "",
             authors: split(corrected.row.Author),
             publisher: corrected.row.Publisher,
             language: row.Language || identity.language,
@@ -697,6 +699,7 @@ export async function exportCsv(
           "Tags",
           "Artwork URL",
           "Artwork Scope",
+          "Book Title",
         ]
       : [
           "Copy ID",
@@ -750,6 +753,7 @@ export async function exportCsv(
             copy.tags.join(" | "),
             copy.artwork?.sourceUrl,
             copy.artwork?.scope,
+            copy.bookTitle ?? "",
           ]
             .map(cell)
             .join(","),

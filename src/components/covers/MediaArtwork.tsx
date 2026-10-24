@@ -115,7 +115,7 @@ export function Spine({
     names.length ? ` by ${names.join(", ")}` : "";
   // Standalone books (a single "1") show no series number.
   const numbered =
-    entry.kind !== "book" || entry.copies.some((c) => c.volume !== "1");
+    entry.kind !== "book" || entry.copies.some((c) => c.volume && (c.volume !== "1" || c.bookTitle));
   return (
     <button
       type="button"
@@ -126,7 +126,7 @@ export function Spine({
         entry.kind === "cd"
           ? `${by(entry.artists)}, CD`
           : entry.kind === "book"
-            ? `${by(entry.authors)}, book${numbered ? ` ${copy.volume}` : ""}, ${copy.language}`
+            ? `${by(entry.authors)}, book${numbered && copy.volume ? ` ${copy.volume}` : ""}${copy.bookTitle ? `, ${copy.bookTitle}` : ""}, ${copy.language}`
             : `, volume ${copy.volume}, ${copy.language}${copy.medium === "light_novel" ? ", light novel" : ""}`
       }`}
       data-copy-id={copy.id}
@@ -137,7 +137,7 @@ export function Spine({
           <span className="spine-medium">LN</span>
         )}
       </span>
-      <span className="spine-title">{entry.title}</span>
+      <span className="spine-title">{entry.kind === "book" && copy.bookTitle ? copy.bookTitle : entry.title}</span>
       <span className="spine-publisher">
         {entry.kind === "cd"
           ? [
