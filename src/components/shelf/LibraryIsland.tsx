@@ -7,6 +7,7 @@ import {
   Grid2X2,
   History,
   LibraryBig,
+  LogIn,
   Moon,
   Plus,
   RefreshCw,
@@ -397,6 +398,12 @@ export function LibraryIsland({
             >
               {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
             </button>
+            {!canEdit && (
+              <a href="/edit" className="button button-primary header-sign-in">
+                <LogIn size={16} aria-hidden="true" />
+                Log in
+              </a>
+            )}
             {canEdit && <button
               type="button"
               className="button button-primary desktop-add"

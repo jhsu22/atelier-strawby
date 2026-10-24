@@ -66,8 +66,13 @@
 }
 .header-actions {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 14px;
+}
+.header-sign-in {
+  font-size: var(--text-xs);
+  white-space: nowrap;
 }
 .desktop-nav {
   display: flex;
