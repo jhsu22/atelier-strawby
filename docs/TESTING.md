@@ -1,5 +1,7 @@
 # Testing strategy and verification record
 
+**Current status: Stage 5 local release QA is complete; hosted production sign-off is blocked.** See [STAGE5.md](STAGE5.md) for current results, [REQUIREMENTS_MATRIX.md](REQUIREMENTS_MATRIX.md) for scope, and [DEPLOYMENT.md](DEPLOYMENT.md) for operations. The sections below retain historical Stage 1–4 evidence; their counts/advisory totals are not the current release assessment.
+
 Latest revalidation: [Stage 3 development assessment](DEVELOPMENT_STATUS.md). **57 unit + 32 integration + 5 actual D1 + 34 desktop/mobile browser tests pass**, plus checking/build, schema parity, persisted seed verification and built Pages smoke. No final suite failures/skips remain. The dependency audit still reports **13 findings: 6 moderate, 6 high, 1 critical**. Earlier Stage 1–2 results below are historical.
 
 ## Stage 3 verification

@@ -1,0 +1,30 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "atelier-strawby",
+  "pages_build_output_dir": "./dist",
+  "compatibility_date": "2026-01-16",
+  "compatibility_flags": ["nodejs_compat"],
+  "send_metrics": false,
+  "d1_databases": [{"binding": "DB", "database_name": "atelier-strawby-production", "database_id": "REPLACE_PRODUCTION_D1_UUID", "migrations_dir": "drizzle"}],
+  "r2_buckets": [{"binding": "COVERS", "bucket_name": "REPLACE_PRODUCTION_COVERS_BUCKET"}],
+  "vars": {
+    "APP_ENV": "production",
+    "APP_ORIGIN": "https://REPLACE_PRODUCTION_HOST",
+    "ACCESS_TEAM_DOMAIN": "REPLACE_TEAM.cloudflareaccess.com",
+    "ACCESS_AUDIENCE": "REPLACE_PRODUCTION_ACCESS_AUD",
+    "METADATA_CONTACT": "REPLACE_PUBLIC_CONTACT_URL"
+  },
+  "env": {
+    "preview": {
+      "d1_databases": [{"binding": "DB", "database_name": "atelier-strawby-preview", "database_id": "REPLACE_PREVIEW_D1_UUID", "migrations_dir": "drizzle"}],
+      "r2_buckets": [{"binding": "COVERS", "bucket_name": "REPLACE_PREVIEW_COVERS_BUCKET"}],
+      "vars": {
+        "APP_ENV": "preview",
+        "APP_ORIGIN": "https://preview.REPLACE_PROJECT.pages.dev",
+        "ACCESS_TEAM_DOMAIN": "REPLACE_TEAM.cloudflareaccess.com",
+        "ACCESS_AUDIENCE": "REPLACE_PREVIEW_ACCESS_AUD",
+        "METADATA_CONTACT": "REPLACE_PUBLIC_CONTACT_URL"
+      }
+    }
+  }
+}

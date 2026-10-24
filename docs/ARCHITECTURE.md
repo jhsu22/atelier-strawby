@@ -1,6 +1,6 @@
 # Atelier Strawby — architecture
 
-Status: Stages 1–3 are implemented and locally verified. Stage 3 retains the established schema, runtime and visual design; [STAGE3.md](STAGE3.md) records the implemented mutation, metadata, import/export and authentication boundaries. The remaining planning sections describe intended operating behavior and future release gates where not yet verified. Hosted readiness is unverified and existing dependency findings remain.
+Status: Stage 5 local release QA is documented in [STAGE5.md](STAGE5.md). The current directory map is [DIRECTORY_STRUCTURE.md](DIRECTORY_STRUCTURE.md). Stages 1–4 are implemented and locally verified. Stage 3 retains the established schema, runtime and visual design; [STAGE3.md](STAGE3.md) records the implemented mutation, metadata, import/export and authentication boundaries. The remaining planning sections describe intended operating behavior and future release gates where not yet verified. Hosted readiness is unverified and existing dependency findings remain.
 
 The authoritative requirements are [project_specification](../project_specification) plus the user's revised Stage 2–3 scope. The dataset is [initial_collection.csv](../initial_collection.csv). See [ROADMAP.md](ROADMAP.md), [DATA_MODEL.md](DATA_MODEL.md), [DECISIONS.md](DECISIONS.md) and [TESTING.md](TESTING.md).
 
@@ -52,7 +52,7 @@ flowchart LR
 
 Route handlers authenticate, validate, invoke services, and map typed results to HTTP. Services own import, matching, gap detection, and mutation rules. Repositories contain concrete queries; avoid generic repository frameworks. Provider adapters normalize external responses into explicit candidate types. UI modules import DTOs and validation schemas, never database bindings or provider secrets.
 
-SSR pages call services directly rather than making HTTP requests to their own API. Hydration receives the same DTO snapshot used to render HTML. Serialize initial data safely; notes such as `<3` remain text, never HTML. Initial shelf data contains summaries plus a compact authorized search index; full tracklists and volume detail load when opened.
+SSR pages call services directly rather than making HTTP requests to their own API. Hydration receives the same DTO snapshot used to render HTML. Serialize initial data safely; notes such as `<3` remain text, never HTML. Initial shelf data currently includes the complete authorized library, including copies and tracklists. There is no server pagination or lazy detail fetching; this is a documented scaling limitation.
 
 ## Proposed directory structure
 

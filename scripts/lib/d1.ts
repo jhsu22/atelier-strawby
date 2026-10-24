@@ -21,7 +21,7 @@ export async function openLocalD1(persistPath = '.wrangler/state/v3'): Promise<D
 /** Local D1 plus the COVERS R2 binding and vars, for the cover-cache utility. */
 export async function openLocalPlatform(persistPath = '.wrangler/state/v3') {
   const { getPlatformProxy } = await import('wrangler');
-  const proxy = await getPlatformProxy<{ DB: D1Database; COVERS?: R2Bucket; METADATA_CONTACT?: string }>({ configPath: 'wrangler.toml', persist: { path: persistPath } });
+  const proxy = await getPlatformProxy<{ DB: D1Database; COVERS?: R2Bucket; METADATA_CONTACT?: string; GOOGLE_BOOKS_API_KEY?: string }>({ configPath: 'wrangler.toml', persist: { path: persistPath } });
   const binding = proxy.env.DB;
   const db: Database = {
     async all<T extends Record<string, unknown>>(sql: string, params: Value[] = []) {
@@ -34,5 +34,5 @@ export async function openLocalPlatform(persistPath = '.wrangler/state/v3') {
     },
     async close() { await proxy.dispose(); },
   };
-  return { db, bucket: proxy.env.COVERS, contact: proxy.env.METADATA_CONTACT };
+  return { db, bucket: proxy.env.COVERS, contact: proxy.env.METADATA_CONTACT, googleBooksKey: proxy.env.GOOGLE_BOOKS_API_KEY };
 }

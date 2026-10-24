@@ -7,6 +7,6 @@ export const POST: APIRoute = ({ request, locals }) =>
     lookupMetadata(
       d1Store(locals.runtime.env.DB),
       await readJson(request, 16000),
-      { contact: locals.runtime.env.METADATA_CONTACT },
+      { contact: locals.runtime.env.METADATA_CONTACT, googleBooksKey: locals.runtime.env.GOOGLE_BOOKS_API_KEY },
     ),
   );

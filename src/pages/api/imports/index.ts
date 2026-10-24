@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { z } from "zod";
 import { api, readJson } from "../../../server/http/api.ts";
 import { d1Store } from "../../../server/db/store.ts";
+import { IMPORT_REQUEST_BYTES } from "../../../domain/transfer.ts";
 import {
   createImportPreview,
   commitImport,
@@ -14,7 +15,7 @@ export const POST: APIRoute = ({ request, locals }) =>
   api(async () =>
     createImportPreview(
       d1Store(locals.runtime.env.DB),
-      await readJson(request, 1100000),
+      await readJson(request, IMPORT_REQUEST_BYTES),
     ),
   );
 export const PUT: APIRoute = ({ request, locals }) =>

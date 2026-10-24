@@ -108,6 +108,7 @@ export function ItemEditor({
     }
   }
   function applyCandidate(candidate: MetadataCandidate) {
+    if (candidate.applicable === false) return;
     if (candidate.detail) {
       void lookup(candidate);
       return;
@@ -663,13 +664,14 @@ export function ItemEditor({
               {(item.kind === "cd"
                 ? ["musicbrainz", "itunes"]
                 : item.medium === "manga"
-                  ? ["mangadex", "openlibrary"]
-                  : ["openlibrary"]
+                  ? ["mangadex", "googlebooks", "openlibrary"]
+                  : ["googlebooks", "openlibrary"]
               ).map((p) => (
-                <option key={p}>{p}</option>
+                <option key={p} value={p}>{p === "googlebooks" ? "Google Books" : p}</option>
               ))}
             </select>
           </label>
+          {provider === "googlebooks" && <p className="google-books-credit"><a href="https://books.google.com" target="_blank" rel="noreferrer"><img src="/images/googlebooks-poweredby.png" alt="Powered by Google" width="62" height="30" /></a></p>}
           <label className="check-label">
             <input
               type="checkbox"
@@ -685,7 +687,7 @@ export function ItemEditor({
               disabled={metadataBusy || !(query || title).trim()}
               onClick={() => void lookup()}
             >
-              Find metadata
+              {provider === "googlebooks" ? "Search Books" : "Find metadata"}
             </button>
             <button
               type="button"
@@ -693,12 +695,13 @@ export function ItemEditor({
               disabled={metadataBusy || !(query || title).trim()}
               onClick={() => void lookup(undefined, true)}
             >
-              Retry unresolved lookup
+              {provider === "googlebooks" ? "Search Books again" : "Retry unresolved lookup"}
             </button>
           </div>
           {metadataBusy && <p role="status">Looking up metadata…</p>}
           {result && (
             <div className="metadata-results" aria-live="polite">
+              {result.candidates.some(candidate => candidate.provider === "googlebooks") && <div className="google-books-credit"><p>Google Books search results</p><a href="https://books.google.com" target="_blank" rel="noreferrer"><img src="/images/googlebooks-poweredby.png" alt="Powered by Google" width="62" height="30" /></a></div>}
               {result.warnings.map((warning, i) => (
                 <p key={i}>{warning}</p>
               ))}
@@ -712,12 +715,12 @@ export function ItemEditor({
                     target="_blank"
                     rel="noreferrer"
                   >
-                    View source
+                    {candidate.provider === "googlebooks" ? "View on Google Books" : "View source"}
                   </a>
                   <button
                     type="button"
                     className="button"
-                    disabled={metadataBusy}
+                    disabled={metadataBusy || candidate.applicable === false}
                     onClick={() => applyCandidate(candidate)}
                   >
                     {candidate.detail

@@ -148,11 +148,17 @@ export async function previewBackup(db: Store, raw: unknown) {
   const items = backup.tables.collection_items!,
     manga = backup.tables.volumes!,
     cds = backup.tables.cds!;
+  const countByItem = (rows: Record<string, Value>[]) => {
+    const counts = new Map<Value, number>();
+    for (const row of rows) counts.set(row.item_id!, (counts.get(row.item_id!) ?? 0) + 1);
+    return counts;
+  };
+  const mangaCounts = countByItem(manga), cdCounts = countByItem(cds);
   for (const item of items) {
     if (
-      manga.filter((v) => v.item_id === item.id).length !==
+      (mangaCounts.get(item.id!) ?? 0) !==
         Number(item.media_kind === "manga") ||
-      cds.filter((c) => c.item_id === item.id).length !==
+      (cdCounts.get(item.id!) ?? 0) !==
         Number(item.media_kind === "cd")
     )
       throw new ApiError(
@@ -181,15 +187,15 @@ export async function restoreBackup(
       409,
       "The collection changed. Preview the backup again.",
     );
-  // json_each keeps a whole table insert within one bound parameter and one D1
-  // statement. All 24 tables restore in one atomic batch with FK/CHECK validation.
+  // Bounded JSON parameters respect D1 value limits. Every table/chunk still
+  // restores in one atomic batch, including the revision and FK/CHECK guards.
   const writes = backupTables
     .filter((table) => preview.additions[table.name]!.length)
-    .map((table) =>
+    .flatMap((table) => chunkRows(preview.additions[table.name]!).map(chunk =>
       s(
         `INSERT INTO ${table.name}(${table.columns.join(",")}) SELECT ${table.columns.map((c) => `json_extract(value,'$.${c}')`).join(",")} FROM json_each(?)`,
-        JSON.stringify(preview.additions[table.name]),
-      ),
+        JSON.stringify(chunk),
+      )),
     );
   try {
     await db.batch([revisionGuard(expectedRevision), ...writes]);
@@ -200,4 +206,18 @@ export async function restoreBackup(
     );
   }
   return { complete: true, added: preview.copies, skipped: preview.skipped };
+}
+
+// Keep each bound value well below D1's 2 MB row/string limit, including UTF-8.
+function chunkRows(rows: Record<string, Value>[]) {
+  const chunks: Record<string, Value>[][] = [];
+  let chunk: Record<string, Value>[] = [], bytes = 2;
+  for (const row of rows) {
+    const size = new TextEncoder().encode(JSON.stringify(row)).length + 1;
+    if (size > 900000) throw new ApiError(413, "A backup row exceeds the restore limit.");
+    if (bytes + size > 900000 && chunk.length) { chunks.push(chunk); chunk = []; bytes = 2; }
+    chunk.push(row); bytes += size;
+  }
+  if (chunk.length) chunks.push(chunk);
+  return chunks;
 }

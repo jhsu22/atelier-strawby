@@ -11,3 +11,7 @@ dist/
 data/generated/
 *.tsbuildinfo
 *.log
+wrangler.hosted.json
+releases/
+playwright-report/
+test-results/

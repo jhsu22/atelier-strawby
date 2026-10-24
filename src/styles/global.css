@@ -16,4 +16,5 @@
 @import "./components/states.css";
 @import "./layout/responsive.css";
 @import "./components/management.css";
+@import "./components/insights.css";
 @import "./base/motion.css";
