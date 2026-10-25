@@ -34,6 +34,7 @@ const mangaRow = z.object({
   medium: z.enum(MEDIUMS),
   publisher: string,
   volume_label: string,
+  book_title: string,
   volume_sort: z.number().nullable(),
   isbn13: nullable,
 });
@@ -195,6 +196,7 @@ export async function libraryData(
       language: row.language,
       languageBasis: row.language_basis,
       volume: row.volume_label,
+      bookTitle: row.book_title,
       volumeSort: row.volume_sort,
       isbn13: row.isbn13,
       numberingBasis: row.numbering_basis,

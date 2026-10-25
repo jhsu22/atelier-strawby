@@ -15,7 +15,11 @@
   overscroll-behavior: contain;
   box-shadow: var(--shadow-panel);
   animation: panel-in var(--duration-slow) var(--ease-out);
+  overflow-x: hidden;
   overflow-y: auto;
+}
+.drawer:has(.item-editor) {
+  touch-action: pan-y pinch-zoom;
 }
 .drawer::backdrop {
   background: var(--scrim);

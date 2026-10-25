@@ -138,6 +138,7 @@ export const volumeEditions = sqliteTable("volume_editions", {
   isbn13: text("isbn13"),
   coverAssetId: text("cover_asset_id").references(() => coverAssets.id),
   metadataState: text("metadata_state", { enum: ['unverified', 'partial', 'confirmed'] }).notNull().default(sql`'unverified'`),
+  bookTitle: text("book_title").notNull().default(""),
 }, (t) => [
   check("volume_editions_check_1", sql`metadata_state IN ('unverified','partial','confirmed')`),
   check("volume_editions_check_2", sql`isbn13 IS NULL OR (length(isbn13) = 13 AND isbn13 NOT GLOB '*[^0-9]*')`),

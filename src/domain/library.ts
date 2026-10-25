@@ -26,6 +26,7 @@ export interface MangaCopy {
   language: Language;
   languageBasis: LanguageBasis;
   volume: string;
+  bookTitle?: string;
   volumeSort: number | null;
   /** The volume edition's recorded ISBN; lets the saved shelf answer scans offline. */
   isbn13?: string | null;
@@ -217,7 +218,7 @@ export function matchingCopies(
       if (state.publisher && state.publisher !== copy.publisher) return false;
       if (state.memory && !copy.tags.includes(state.memory)) return false;
       const haystack = searchText(
-        [common, copy.editionTitle, copy.publisher, copy.notes ?? "", copy.haul?.store ?? ""].join(" "),
+        [common, copy.bookTitle ?? "", copy.editionTitle, copy.publisher, copy.notes ?? "", copy.haul?.store ?? ""].join(" "),
       );
       return terms.every((term) => fuzzyTerm(term, haystack));
     });

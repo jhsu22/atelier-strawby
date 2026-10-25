@@ -315,6 +315,9 @@ export function ItemEditor({
             }}
           />
         </label>
+        {item.kind === "manga" && item.medium === "book" && (
+          <p className="field-help">For a book series, use the series name above and enter the individual book title below.</p>
+        )}
         <label className="filter-field">
           {item.kind === "manga" ? "Authors" : "Artists"}
           <input
@@ -352,12 +355,25 @@ export function ItemEditor({
               <label className="filter-field">
                 {item.medium === "book" ? "Number in series" : "Volume"}
                 <input
-                  required
+                  aria-label={item.medium === "book" ? "Number in series" : "Volume"}
+                  required={item.medium !== "book" || !item.bookTitle.trim()}
                   maxLength={40}
+                  inputMode={item.medium === "book" ? "numeric" : "decimal"}
+                  pattern={item.medium === "book" ? "[0-9]+" : undefined}
                   value={item.volume}
                   onChange={(e) => update({ volume: e.target.value })}
                 />
+                {item.medium === "book" && (
+                  <small>Used to sort books in series order. Leave blank if the order is unknown.</small>
+                )}
               </label>
+              {item.medium === "book" && (
+                <label className="filter-field">
+                  Book title
+                  <input aria-label="Book title" maxLength={300} value={item.bookTitle} onChange={(e) => update({ bookTitle: e.target.value })} />
+                  <small>The individual title of this book within the series.</small>
+                </label>
+              )}
               <label className="filter-field">
                 Edition language
                 <select

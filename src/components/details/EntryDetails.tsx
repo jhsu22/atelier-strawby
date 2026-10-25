@@ -35,7 +35,7 @@ function MangaDetails({
 }) {
   const book = entry.kind === "book";
   // A standalone book has no meaningful volume number to show or gap-check.
-  const numbered = !book || entry.copies.some((copy) => copy.volume !== "1");
+  const numbered = !book || entry.copies.some((copy) => copy.volume && (copy.volume !== "1" || copy.bookTitle));
   const [showGaps, setShowGaps] = useState(false);
   const [language, setLanguage] = useState("all");
   const languages = [...new Set(entry.copies.map((copy) => copy.language))];
@@ -44,6 +44,7 @@ function MangaDetails({
     .sort(
       (a, b) =>
         a.language.localeCompare(b.language) ||
+        (book ? (a.volumeSort ?? Number.MAX_SAFE_INTEGER) - (b.volumeSort ?? Number.MAX_SAFE_INTEGER) : 0) ||
         a.editionTitle.localeCompare(b.editionTitle) ||
         (a.volumeSort ?? Number.MAX_SAFE_INTEGER) -
           (b.volumeSort ?? Number.MAX_SAFE_INTEGER) ||
@@ -144,13 +145,14 @@ function MangaDetails({
                 </small>
               </div>
             )}
-            {numbered && (
+            {numbered && copy.volume && (
               <div className="volume-number">
                 <span>{book ? "NO." : "VOL."}</span>
                 <strong>{copy.volume.padStart(2, "0")}</strong>
               </div>
             )}
             <div className="volume-info">
+              {book && copy.bookTitle && <strong>{copy.bookTitle}</strong>}
               <div className="volume-heading">
                 <strong>{copy.editionTitle}</strong>
                 {copy.medium === "light_novel" && (

@@ -546,3 +546,6 @@
   border-radius: var(--radius-pill);
   color: var(--muted);
 }
+.haul-row-wide {
+  grid-column: 1 / -1;
+}

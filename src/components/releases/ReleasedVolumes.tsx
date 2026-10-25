@@ -57,7 +57,15 @@ export function ReleasedVolumes({entry, canLookup = false}: {entry: MangaSeries;
       {busy && <p role="status" className="release-status">Checking releases…</p>}
       {error && <p role="alert" className="form-error">{error}</p>}
       {currentCatalog && comparison ? <div className="release-comparison">
-        {comparison.missing.length ? <ul className="missing-release-list">{comparison.missing.map(volume => <li key={volume.number}><a href={volume.sourceUrl} target="_blank" rel="noreferrer">Vol. {volume.number}{volume.digital && <span>Digital listing</span>}</a></li>)}</ul> : <p className="release-status">{comparison.released.length ? "No missing volumes found in this lookup." : "No matching releases found. Try the lookup options."}</p>}
+        {comparison.missing.length ? <ul className="missing-release-list">{comparison.missing.map(volume => <li key={volume.number}>
+          <a
+            href={volume.sourceUrl}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={`Volume ${volume.number}${volume.digital ? " · Digital listing" : ""} · Open source`}
+            title={`Volume ${volume.number}${volume.digital ? " · Digital listing" : ""} · Open source`}
+          >{volume.number}</a>
+        </li>)}</ul> : <p className="release-status">{comparison.released.length ? "No missing volumes found in this lookup." : "No matching releases found. Try the lookup options."}</p>}
         {currentCatalog.nextOffset !== null && <div className="release-more"><span>Partial results</span>{canLookup && <button type="button" className="text-button" disabled={busy || loading} onClick={() => void lookup(true)}>Check more releases</button>}</div>}
       </div> : !loading && (canLookup ? <button type="button" className="button release-find" disabled={busy || !query.trim()} onClick={() => void lookup()}>{busy ? "Checking…" : "Find missing volumes"}</button> : <p className="release-status">No saved release lookup for this edition yet.</p>)}
     </>}

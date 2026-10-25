@@ -6,7 +6,7 @@ Latest revalidation: [Stage 3 development assessment](DEVELOPMENT_STATUS.md). **
 
 ## Private notes, Do I own this?, offline shelf and hauls (2026-10-24)
 
-`npm run release:verify` passed in full, together with the anonymous read-only spec:
+After merging `main` (book titles, `0003_book_titles`), `release:verify` passed again: 86/86 unit, 58/58 integration, 9/9 D1, schema parity for 29 tables after 6 migrations, Wrangler applying all six, 92 browser passed with 4 skipped, and the read-only spec 2/2. The pre-merge results were:
 
 - `npm run validate`: lint, `astro check` and `tsc` with 0 errors; **86/86 unit**; **56/56 integration**; schema parity for 29 tables after 5 migrations; build.
 - `npm run test:d1`: **9/9** on real local D1, including a 20-copy atomic haul, batch rollback, and private notes and stores after a restart.

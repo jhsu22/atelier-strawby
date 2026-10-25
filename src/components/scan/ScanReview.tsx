@@ -287,10 +287,16 @@ export function ScanReview({
         <div className="form-grid">
           <label className="filter-field">
             <span className="field-label">
-              Volume <Source value={sourceOf("volume", Boolean(fields.volume.trim()))} />
+              {fields.medium === "book" ? "Number in series" : "Volume"} <Source value={sourceOf("volume", Boolean(fields.volume.trim()))} />
             </span>
-            <input required maxLength={40} inputMode="decimal" value={fields.volume} onChange={(e) => update({ volume: e.target.value, numberingBasis: "printed" })} />
+            <input required={fields.medium !== "book" || !fields.bookTitle?.trim()} maxLength={40} inputMode={fields.medium === "book" ? "numeric" : "decimal"} pattern={fields.medium === "book" ? "[0-9]+" : undefined} value={fields.volume} onChange={(e) => update({ volume: e.target.value, numberingBasis: "printed" })} />
           </label>
+          {fields.medium === "book" && (
+            <label className="filter-field">
+              Book title
+              <input maxLength={300} value={fields.bookTitle ?? ""} onChange={(e) => update({ bookTitle: e.target.value })} />
+            </label>
+          )}
           <label className="filter-field">
             <span className="field-label">
               Language <Source value={draft.sources.language} />

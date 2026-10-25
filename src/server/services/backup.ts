@@ -53,6 +53,7 @@ const row = z.record(
 /** Columns added by later migrations, with the default older rows receive. */
 const addedColumns: Record<string, Record<string, Value>> = {
   edition_runs: { medium: "manga" },
+  volume_editions: { book_title: "" },
   collection_items: { notes_private: 1, acquisition_batch_id: null },
 };
 /** Tables added by later migrations; version 1 backups made before them omit them. */
@@ -118,6 +119,13 @@ export async function previewBackup(db: Store, raw: unknown) {
     for (const raw of backup.tables[table.name]!) {
       // Version 1 backups made before a later additive column get its default.
       const value = { ...(addedColumns[table.name] ?? {}), ...raw };
+      if (table.name === "volume_editions" && raw.book_title === undefined &&
+        typeof value.volume_label === "string" && /[^0-9]/.test(value.volume_label) &&
+        backup.tables.edition_runs?.some(run => run.id === value.edition_run_id && run.medium === "book")) {
+        value.book_title = value.volume_label;
+        value.volume_label = "";
+        value.volume_sort = null;
+      }
       if (Object.keys(value).sort().join() !== [...table.columns].sort().join())
         throw new ApiError(422, `Invalid columns in ${table.name}.`);
       const id = canonical(value, table.keys);

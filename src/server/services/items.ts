@@ -51,7 +51,7 @@ export async function getItem(
       await db.all(
         `SELECT s.id AS seriesId,s.canonical_title AS title,r.edition_title AS editionTitle,
       r.language,r.language_basis AS languageBasis,r.format,r.numbering_basis AS numberingBasis,r.medium,
-      COALESCE(p.name,'') AS publisher,e.volume_label AS volume,e.cover_asset_id AS cover,e.isbn13
+      COALESCE(p.name,'') AS publisher,e.volume_label AS volume,e.book_title AS bookTitle,e.cover_asset_id AS cover,e.isbn13
       FROM volumes v JOIN volume_editions e ON e.id=v.volume_edition_id JOIN edition_runs r ON r.id=e.edition_run_id
       JOIN series s ON s.id=r.series_id LEFT JOIN publishers p ON p.id=r.publisher_id WHERE v.item_id=?`,
         [id],
@@ -413,12 +413,12 @@ export async function planItem(
     }
     const existingEdition = (
       await db.all(
-        "SELECT id,cover_asset_id,isbn13 FROM volume_editions WHERE edition_run_id=? AND volume_label=? LIMIT 1",
-        [run, item.volume],
+        "SELECT id,cover_asset_id,isbn13,book_title FROM volume_editions WHERE edition_run_id=? AND numbering_key=? LIMIT 1",
+        [run, key(item.volume || item.bookTitle)],
       )
     )[0];
     target = String(
-      existingEdition?.id ?? (await idFor("volume", [run, key(item.volume)])),
+      existingEdition?.id ?? (await idFor("volume", [run, key(item.volume || item.bookTitle)])),
     );
     // An ISBN belongs to the volume edition, so every copy shares it. Adding a
     // copy never replaces a different recorded ISBN; the owner decides instead.
@@ -435,7 +435,8 @@ export async function planItem(
       existingEdition &&
       (((options.update || item.artwork) &&
         existingEdition.cover_asset_id !== coverId) ||
-        isbnChanged)
+        isbnChanged ||
+        (item.medium === "book" && (options.update || item.bookTitle) && existingEdition.book_title !== item.bookTitle))
     ) {
       statements.push(
         s(
@@ -447,6 +448,8 @@ export async function planItem(
       );
     }
     const updates = [
+      ...(item.medium === "book" && (options.update || item.bookTitle)
+        ? ["book_title=excluded.book_title"] : []),
       ...(options.update || item.artwork
         ? ["cover_asset_id=excluded.cover_asset_id"]
         : []),
@@ -458,15 +461,16 @@ export async function planItem(
     ];
     statements.push(
       s(
-        `INSERT INTO volume_editions(id,edition_run_id,volume_label,volume_sort,numbering_key,cover_asset_id,isbn13) VALUES (?,?,?,?,?,?,?)
+        `INSERT INTO volume_editions(id,edition_run_id,volume_label,volume_sort,numbering_key,cover_asset_id,isbn13,book_title) VALUES (?,?,?,?,?,?,?,?)
       ON CONFLICT(id) ${updates.length ? `DO UPDATE SET ${updates.join(",")}` : "DO NOTHING"}`,
         target,
         run,
         item.volume,
         /^\d+$/.test(item.volume) ? Number(item.volume) * 1000 : null,
-        key(item.volume),
+        key(item.volume || item.bookTitle),
         coverId,
         item.isbn13,
+        item.medium === "book" ? item.bookTitle : "",
       ),
     );
     if (item.catalogSource)

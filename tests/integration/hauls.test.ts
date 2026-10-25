@@ -109,6 +109,9 @@ test("a full haul stays inside the D1 query budget, and more copies than one sav
     };
     await saveHaul(counting, { haul: haul({ items: volumeRange(1, HAUL_MAX_COPIES).map(newSeries) }), requestId: crypto.randomUUID() });
     assert.ok(reads + writes < 1000, `${reads} reads + ${writes} writes must stay under D1's 1,000 queries per request`);
+    // A standalone book needs only its title, as in the editor (book titles, 0003_book_titles).
+    const book = await saveHaul(db, { haul: haul({ items: [{ kind: "manga", title: "Haul essays", medium: "book", volume: "", bookTitle: "Collected essays" }] }), requestId: crypto.randomUUID() });
+    assert.equal((await getItem(db, book.ids[0]!)).item.bookTitle, "Collected essays");
     await assert.rejects(
       saveHaul(db, { haul: haul({ items: Array.from({ length: HAUL_MAX_COPIES + 1 }, (_, index) => newSeries(String(index + 1))) }), requestId: crypto.randomUUID() }),
       /at most 20/,

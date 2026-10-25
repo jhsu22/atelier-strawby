@@ -55,6 +55,33 @@ test.afterEach(async ({ page, baseURL }) => {
     }
 });
 
+test("book series keep separate titles and series numbers when reopened", async ({ page, baseURL }, info) => {
+  const series = `${prefix}book titles ${info.project.name}`;
+  const title = "The Extremely Long but Entirely Valid Title of the First Book";
+  const created = await page.request.post("/api/items", {
+    headers: { Origin: new URL(baseURL!).origin, "X-Strawby-Request": "1" },
+    data: { item: { kind: "manga", medium: "book", title: series, volume: "10", bookTitle: "The Tenth Book" }, requestId: crypto.randomUUID() },
+  });
+  expect(created.status()).toBe(201);
+  await ready(page);
+  await add(page, info.project.name === "mobile");
+  await page.getByLabel("Copy media type").selectOption("book");
+  await page.getByLabel("Title", { exact: true }).fill(series);
+  const field = page.getByLabel("Book title", { exact: true });
+  await field.fill(title);
+  await page.getByLabel("Number in series", { exact: true }).fill("2");
+  await page.getByLabel("Edition name", { exact: true }).fill("Z paperback");
+  await page.getByRole("button", { name: "Add copy", exact: true }).click();
+  await saved(page);
+  await page.getByRole("button", { name: /^Books/ }).click();
+  await open(page, series);
+  await expect(page.locator(".volume-info").first()).toContainText(title);
+  await expect(page.locator(".volume-number strong")).toHaveText(["02", "10"]);
+  await page.getByRole("button", { name: "Edit book 2 · EN", exact: true }).click();
+  await expect(page.getByLabel("Book title", { exact: true })).toHaveValue(title);
+  await expect(page.getByLabel("Number in series", { exact: true })).toHaveValue("2");
+});
+
 test("manga add, metadata failure, edit, duplicate and confirmed delete persist across reloads", async ({
   page,
 }, info) => {

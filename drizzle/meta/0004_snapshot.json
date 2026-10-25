@@ -1,65 +1,9 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "207c2f30-1cbb-47ee-9bf2-efe88e9b6625",
-  "prevId": "d9e9632b-2725-4469-9987-276206421d38",
+  "id": "ac20f435-a4fe-4752-9b19-7120f5423b75",
+  "prevId": "a9767fb8-c708-40c4-8479-182943b8b221",
   "tables": {
-    "acquisition_batches": {
-      "name": "acquisition_batches",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "acquired_on": {
-          "name": "acquired_on",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "store": {
-          "name": "store",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "store_private": {
-          "name": "store_private",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "1"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "CURRENT_TIMESTAMP"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "acquisition_batches_check_1": {
-          "name": "acquisition_batches_check_1",
-          "value": "store_private IN (0,1)"
-        },
-        "acquisition_batches_check_2": {
-          "name": "acquisition_batches_check_2",
-          "value": "acquired_on IS NULL OR (acquired_on GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]' AND date(acquired_on, '+0 days') IS NOT NULL AND date(acquired_on, '+0 days') = acquired_on)"
-        }
-      }
-    },
     "album_creators": {
       "name": "album_creators",
       "columns": {
@@ -504,13 +448,6 @@
           "notNull": true,
           "autoincrement": false,
           "default": "1"
-        },
-        "acquisition_batch_id": {
-          "name": "acquisition_batch_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         }
       },
       "indexes": {
@@ -544,13 +481,6 @@
             "import_batch_id"
           ],
           "isUnique": false
-        },
-        "collection_items_acquisition_batch_id_idx": {
-          "name": "collection_items_acquisition_batch_id_idx",
-          "columns": [
-            "acquisition_batch_id"
-          ],
-          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -560,19 +490,6 @@
           "tableTo": "import_batches",
           "columnsFrom": [
             "import_batch_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "collection_items_acquisition_batch_id_acquisition_batches_id_fk": {
-          "name": "collection_items_acquisition_batch_id_acquisition_batches_id_fk",
-          "tableFrom": "collection_items",
-          "tableTo": "acquisition_batches",
-          "columnsFrom": [
-            "acquisition_batch_id"
           ],
           "columnsTo": [
             "id"
@@ -2511,6 +2428,14 @@
           "notNull": true,
           "autoincrement": false,
           "default": "'unverified'"
+        },
+        "book_title": {
+          "name": "book_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "''"
         }
       },
       "indexes": {

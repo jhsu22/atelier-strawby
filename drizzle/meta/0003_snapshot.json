@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "d9e9632b-2725-4469-9987-276206421d38",
+  "id": "a9767fb8-c708-40c4-8479-182943b8b221",
   "prevId": "5f1b8286-fb66-429a-b491-63354aa12fbb",
   "tables": {
     "album_creators": {
@@ -440,14 +440,6 @@
           "notNull": true,
           "autoincrement": false,
           "default": "CURRENT_TIMESTAMP"
-        },
-        "notes_private": {
-          "name": "notes_private",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "1"
         }
       },
       "indexes": {
@@ -512,10 +504,6 @@
         "collection_items_check_3": {
           "name": "collection_items_check_3",
           "value": "version >= 1"
-        },
-        "collection_items_check_5": {
-          "name": "collection_items_check_5",
-          "value": "notes_private IN (0,1)"
         },
         "collection_items_check_4": {
           "name": "collection_items_check_4",
@@ -2428,6 +2416,14 @@
           "notNull": true,
           "autoincrement": false,
           "default": "'unverified'"
+        },
+        "book_title": {
+          "name": "book_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "''"
         }
       },
       "indexes": {

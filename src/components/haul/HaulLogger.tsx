@@ -28,6 +28,8 @@ const today = () => {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 };
 const NEW_SERIES = "__new__";
+/** Mirrors the item schema: a volume number, or for a book its title alone. */
+const complete = (item: Draft) => Boolean(item.title.trim() && (item.volume.trim() || (item.medium === "book" && item.bookTitle?.trim())));
 let rowCount = 0;
 const rowKey = () => `row-${++rowCount}`;
 
@@ -74,7 +76,7 @@ export function HaulLogger({ series, onSaved }: { series: OwnedSeries[]; onSaved
   const limitReached = rows.length >= HAUL_MAX_COPIES;
   // The same volume listed twice is allowed (two copies) but is usually a slip.
   const listed = new Map<string, number>();
-  const volumeKey = (item: Draft) => [item.seriesId ?? item.title.trim().toLowerCase(), item.language, item.format, item.volume.trim()].join("|");
+  const volumeKey = (item: Draft) => [item.seriesId ?? item.title.trim().toLowerCase(), item.language, item.format, item.volume.trim(), item.bookTitle?.trim().toLowerCase() ?? ""].join("|");
   for (const row of rows) if (row.status !== "looking") listed.set(volumeKey(row.item), (listed.get(volumeKey(row.item)) ?? 0) + 1);
   const ownedOf = (entry: OwnedSeries | undefined, run: string | null, volume: string) => (entry ? ownedCopies(entry, run, volume).length : 0);
 
@@ -125,13 +127,13 @@ export function HaulLogger({ series, onSaved }: { series: OwnedSeries[]; onSaved
       const shelf = series.find((entry) => entry.id === draft.item.seriesId);
       const live = shelf ? ownedRun(shelf, draft.item.language ?? "EN", draft.item.format) : null;
       const owned = Math.max(result.duplicate.copies.length, ownedOf(shelf, live?.id ?? null, draft.item.volume));
-      const needs = !draft.item.title || !draft.item.volume;
+      const needs = !complete(draft.item);
       setRows((current) => current.map((row) => row.key === key ? {
         ...row,
         item: draft.item,
         status: needs ? "needs" : "ready",
         owned,
-        message: needs ? "Type the title and volume from the book." : match ? undefined : "Not matched to a series you own; it will start a new one.",
+        message: needs ? "Type the title and volume (or, for a book, its title) from the book." : match ? undefined : "Not matched to a series you own; it will start a new one.",
       } : row));
     } catch (failure) {
       setRows((current) => current.map((row) => row.key === key ? { ...row, status: "needs", message: `${(failure as Error).message} Type the title and volume from the book.` } : row));
@@ -142,14 +144,14 @@ export function HaulLogger({ series, onSaved }: { series: OwnedSeries[]; onSaved
     setRows((current) => current.map((row) => {
       if (row.key !== key) return row;
       const item = { ...row.item, ...patch };
-      return { ...row, item, status: item.title.trim() && item.volume.trim() ? "ready" : "needs" };
+      return { ...row, item, status: complete(item) ? "ready" : "needs" };
     }));
 
   async function save() {
     setError("");
     if (!rows.length) return setError("Add at least one copy to the haul.");
     if (rows.some((row) => row.status === "looking")) return setError("Wait for the scanned books to finish looking up.");
-    if (rows.some((row) => row.status === "needs")) return setError("Fill in the title and volume for every highlighted copy.");
+    if (rows.some((row) => row.status === "needs")) return setError("Fill in the title and volume (or book title) for every highlighted copy.");
     setBusy(true);
     try {
       await request("/api/hauls", "POST", {
@@ -288,10 +290,13 @@ export function HaulLogger({ series, onSaved }: { series: OwnedSeries[]; onSaved
               ) : row.status === "needs" || row.isbn ? (
                 <div className="haul-row-fields">
                   <label className="filter-field">Title<input aria-label={`Title for row ${rows.indexOf(row) + 1}`} value={row.item.title} onChange={(e) => editRow(row.key, { title: e.target.value, seriesId: undefined })} /></label>
-                  <label className="filter-field">Vol.<input aria-label={`Volume for row ${rows.indexOf(row) + 1}`} value={row.item.volume} onChange={(e) => editRow(row.key, { volume: e.target.value })} /></label>
+                  <label className="filter-field">{row.item.medium === "book" ? "No." : "Vol."}<input aria-label={`${row.item.medium === "book" ? "Number in series" : "Volume"} for row ${rows.indexOf(row) + 1}`} value={row.item.volume} onChange={(e) => editRow(row.key, { volume: e.target.value })} /></label>
+                  {row.item.medium === "book" && (
+                    <label className="filter-field haul-row-wide">Book title<input aria-label={`Book title for row ${rows.indexOf(row) + 1}`} maxLength={300} value={row.item.bookTitle ?? ""} onChange={(e) => editRow(row.key, { bookTitle: e.target.value })} /></label>
+                  )}
                 </div>
               ) : (
-                <p><strong>{row.item.title}</strong>, vol. {row.item.volume}</p>
+                <p><strong>{row.item.title}</strong>{row.item.volume ? `, ${row.item.medium === "book" ? "no." : "vol."} ${row.item.volume}` : ""}{row.item.bookTitle ? ` · ${row.item.bookTitle}` : ""}</p>
               )}
               <p className="haul-row-meta">
                 {[row.item.language, row.item.publisher, row.isbn && `ISBN ${row.isbn}`].filter(Boolean).join(" · ")}

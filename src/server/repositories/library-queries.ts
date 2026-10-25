@@ -4,7 +4,7 @@ const complete = "(i.import_batch_id IS NULL OR b.status = 'complete')";
 export const LIBRARY_QUERIES = {
   manga: `SELECT i.id, i.version, i.acquired_on, i.notes, i.notes_private, ab.id AS haul_id, ab.acquired_on AS haul_acquired_on, ab.store AS haul_store, ab.store_private AS haul_store_private, e.cover_asset_id, s.id AS series_id, s.canonical_title,
     r.id AS edition_run_id, r.edition_title, r.language, r.language_basis, r.format, r.numbering_basis, r.medium,
-    COALESCE(p.name, 'Unknown publisher') AS publisher, e.volume_label, e.volume_sort, e.isbn13
+    COALESCE(p.name, 'Unknown publisher') AS publisher, e.volume_label, e.volume_sort, e.book_title, e.isbn13
     FROM ${visibleItems} LEFT JOIN acquisition_batches ab ON ab.id = i.acquisition_batch_id JOIN volumes v ON v.item_id = i.id
     JOIN volume_editions e ON e.id = v.volume_edition_id JOIN edition_runs r ON r.id = e.edition_run_id
     JOIN series s ON s.id = r.series_id LEFT JOIN publishers p ON p.id = r.publisher_id

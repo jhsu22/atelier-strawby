@@ -81,6 +81,16 @@
   .header-actions {
     gap: 0;
   }
+  .header-inner:has(.header-sign-in) {
+    gap: var(--space-2);
+  }
+  .header-actions:has(.header-sign-in) {
+    gap: var(--space-1);
+  }
+  .header-sign-in {
+    padding: 10px 12px;
+    gap: 6px;
+  }
   .collection-heading {
     padding-top: 29px;
     margin-bottom: 18px;
@@ -508,6 +518,16 @@
 @media (max-width: 360px) {
   .media-switcher {
     gap: var(--space-2);
+  }
+}
+@media (max-width: 380px) {
+  .header-inner:has(.header-sign-in) .brand-lockup {
+    font-size: 18px;
+    gap: 6px;
+  }
+  .header-inner:has(.header-sign-in) .brand-mark {
+    width: 26px;
+    height: 26px;
   }
 }
 
