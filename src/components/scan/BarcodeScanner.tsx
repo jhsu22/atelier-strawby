@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Flashlight, FlashlightOff } from "lucide-react";
-import { enhanceContrast, loadDetector, pickIsbn } from "./detector.ts";
+import { enhanceContrast, loadDetector, pickCode, pickIsbn } from "./detector.ts";
 import type { Detector } from "./detector.ts";
 import { cameraProblem } from "./camera.ts";
 import type { CameraProblem } from "./camera.ts";
@@ -24,12 +24,16 @@ export function BarcodeScanner({
   onProblem,
   onHint,
   continuous = false,
+  accept = "isbn",
 }: {
+  /** An ISBN-13, or with accept "any" a CD barcode as a 13-digit GTIN. */
   onCode: (code: string) => void;
   onProblem: (problem: CameraProblem) => void;
   onHint: (message: string) => void;
   /** Keep the camera running after each code (scanning a stack of books). */
   continuous?: boolean;
+  /** "any" also reads CD barcodes; "isbn" explains that they aren't books. */
+  accept?: "isbn" | "any";
 }) {
   const video = useRef<HTMLVideoElement>(null);
   const [ready, setReady] = useState(false);
@@ -71,26 +75,36 @@ export function BarcodeScanner({
       context.drawImage(element, (width - cropWidth) / 2, (height - cropHeight) / 2, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
       try {
         // Alternate frames get a contrast-stretched pass for dim labels.
-        const picked = pickIsbn(await detector.detect(++frame % 2 ? canvas : enhanceContrast(canvas)));
-        if (picked?.ok) {
-          if (continuous && picked.isbn13 === reported && Date.now() - reportedSeenAt < REPEAT_AFTER_MS) {
+        const results = await detector.detect(++frame % 2 ? canvas : enhanceContrast(canvas));
+        let code: string | null = null, message = "";
+        if (accept === "any") {
+          const picked = pickCode(results);
+          if (picked?.kind === "problem") message = picked.message;
+          else if (picked) code = picked.code;
+        } else {
+          const picked = pickIsbn(results);
+          if (picked?.ok) code = picked.isbn13;
+          else if (picked) message = picked.message;
+        }
+        if (code) {
+          if (continuous && code === reported && Date.now() - reportedSeenAt < REPEAT_AFTER_MS) {
             reportedSeenAt = Date.now();
-          } else if (picked.isbn13 === last) {
+          } else if (code === last) {
             navigator.vibrate?.(40);
             if (!continuous) {
               stopped = true;
               stop();
-              callbacks.current.onCode(picked.isbn13);
+              callbacks.current.onCode(code);
               return;
             }
-            reported = picked.isbn13;
+            reported = code;
             reportedSeenAt = Date.now();
             last = "";
-            callbacks.current.onCode(picked.isbn13);
-          } else last = picked.isbn13;
-        } else if (picked) {
+            callbacks.current.onCode(code);
+          } else last = code;
+        } else if (message) {
           last = "";
-          callbacks.current.onHint(picked.message);
+          callbacks.current.onHint(message);
         }
       } catch {
         /* A failed frame is skipped; the next frame is tried. */

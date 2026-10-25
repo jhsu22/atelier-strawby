@@ -83,7 +83,7 @@ test("live camera scan of a Japanese edition: owned series via bridge, new JP ed
   await review.getByRole("textbox", { name: "Notes" }).fill(`e2e scan ${info.project.name}`);
   await review.getByRole("button", { name: "Add to collection", exact: true }).click();
   await expect(page.getByText("Added Chainsaw Man, volume 2.", { exact: false })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Scan next book" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Scan next" })).toBeVisible();
   const saved = copiesOf(await library(page), "Chainsaw Man").find((copy) => copy.notes === `e2e scan ${info.project.name}`);
   try {
     expect(saved).toMatchObject({ language: "JP", volume: "2", editionTitle: "チェンソーマン", acquiredOn: "2026-10-24" });
@@ -185,7 +185,7 @@ test("log a haul: a range and a scanned stack save together with a shared date, 
 test("do I own this? falls back to the saved shelf when the connection drops mid-lookup", async ({ page }, info) => {
   await openScanner(page, info, {}, "", "Do I own this?");
   await page.route("**/api/scan/isbn", (route) => route.abort("internetdisconnected"));
-  await page.getByRole("textbox", { name: "ISBN", exact: true }).fill("9781975329044");
+  await page.getByRole("textbox", { name: "ISBN or barcode", exact: true }).fill("9781975329044");
   await page.getByRole("button", { name: "Look up", exact: true }).click();
   const check = page.getByRole("region", { name: "Do I own this?" });
   await expect(check.getByRole("heading", { name: "Not found on this device." })).toBeVisible();
@@ -270,11 +270,11 @@ for (const [label, camera, message] of [
     await expect(page.getByRole("alert")).toContainText(message);
     await expect(page.getByText("Use a photo")).toBeVisible();
     await expect(page.getByRole("button", { name: "Open camera" })).toBeVisible();
-    await page.getByRole("textbox", { name: "ISBN", exact: true }).fill("978-1-9747-1546-7");
+    await page.getByRole("textbox", { name: "ISBN or barcode", exact: true }).fill("978-1-9747-1546-7");
     await page.getByRole("button", { name: "Look up" }).click();
     await expect(page.getByRole("alert")).toContainText("check digit");
     expect(lookups).toEqual([]);
-    await page.getByRole("textbox", { name: "ISBN", exact: true }).fill("1974715469");
+    await page.getByRole("textbox", { name: "ISBN or barcode", exact: true }).fill("1974715469");
     await page.getByRole("button", { name: "Look up" }).click();
     await expect(page.getByRole("form", { name: "Review scanned copy" })).toBeVisible();
     expect(lookups).toEqual([{ code: "9781974715466", source: "manual", retry: false }]);

@@ -9,6 +9,7 @@ import type {
 import { seriesGaps } from "../../domain/library.ts";
 import { ReleasedVolumes } from "../releases/ReleasedVolumes.tsx";
 import { MediaArtwork } from "../covers/MediaArtwork.tsx";
+import { formatBarcode } from "../../domain/barcode.ts";
 
 /** Shown to the owner only: the public shelf never receives private notes. */
 function PrivateNote() {
@@ -256,6 +257,12 @@ function CdDetails({
             {entry.catalogNumbers.join(" / ") || "Unknown"}
           </dd>
         </div>
+        {entry.barcode && (
+          <div>
+            <dt>Barcode</dt>
+            <dd className="mono">{formatBarcode(entry.barcode)}</dd>
+          </div>
+        )}
       </dl>
       <div className="section-heading detail-section-heading">
         <h3>Tracklist</h3>

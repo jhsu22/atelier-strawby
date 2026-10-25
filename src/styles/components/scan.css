@@ -549,3 +549,47 @@
 .haul-row-wide {
   grid-column: 1 / -1;
 }
+
+/* CD review: release facts from MusicBrainz and a collapsible tracklist. */
+.cd-release-facts {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3);
+  border-radius: var(--radius-card);
+  background: var(--surface-soft);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+.cd-release-facts div {
+  display: grid;
+  grid-template-columns: minmax(7rem, auto) minmax(0, 1fr);
+  gap: var(--space-3);
+}
+.cd-release-facts dt {
+  color: var(--muted);
+}
+.cd-release-facts dd {
+  margin: 0;
+  font-weight: var(--weight-semibold);
+}
+.cd-tracklist {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-sm);
+}
+.cd-tracklist summary {
+  cursor: pointer;
+  font-weight: var(--weight-semibold);
+  padding: var(--space-1) 0;
+}
+.cd-tracklist ol {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-5);
+  display: grid;
+  gap: var(--space-1);
+  line-height: 1.5;
+}
+.cd-tracklist .mono {
+  margin-right: var(--space-1-5);
+  color: var(--muted);
+}

@@ -56,6 +56,7 @@ const cdRow = z.object({
   title: string,
   release_id: string,
   release_date: nullable,
+  barcode: nullable,
   date_unknown: z.union([z.literal(0), z.literal(1)]),
   cover_unavailable: z.union([z.literal(0), z.literal(1)]),
 });
@@ -225,6 +226,7 @@ export async function libraryData(
         title: row.title,
         releaseId: row.release_id,
         releaseDate: row.release_date,
+        barcode: row.barcode,
         artists: [
           ...new Set(
             artistRows(row.album_id)

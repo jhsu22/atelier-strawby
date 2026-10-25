@@ -80,6 +80,8 @@ The stats page keeps hedging: assumed languages, unconfirmed numbering, missing 
 
 ### 9. Barcode scanning for CDs
 
+> **Implemented 2026-10-24** at the owner's request: the Add scanner and **Do I own this?** read EAN/UPC CD barcodes and look them up on MusicBrainz (`POST /api/scan/barcode`). Choosing a release fills its tracklist, discs, labels and catalog numbers; the barcode is stored on the release. See [SCANNING.md](SCANNING.md#cd-barcodes).
+
 Scanning only handles ISBNs. Extend it to EAN/UPC, look up the barcode in MusicBrainz, and fill in tracklists and catalog numbers automatically. Most CD fields are typed by hand today.
 
 - **Size:** medium.

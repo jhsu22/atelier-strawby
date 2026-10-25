@@ -66,6 +66,7 @@ export const librarySchema: z.ZodType<LibraryData> = z.object({
         artists: z.array(string),
         releaseId: string,
         releaseDate: nullable,
+        barcode: nullable.optional(),
         formats: z.array(string),
         labels: z.array(string),
         catalogNumbers: z.array(string),

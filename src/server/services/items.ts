@@ -81,7 +81,7 @@ export async function getItem(
     const r = (
       await db.all(
         `SELECT a.title,a.id AS albumId,r.id AS releaseId,r.release_date AS releaseDate,
-      COALESCE(r.edition_title,'') AS editionTitle,r.cover_asset_id AS cover FROM cds c JOIN album_releases r ON r.id=c.release_id
+      COALESCE(r.edition_title,'') AS editionTitle,r.barcode,r.cover_asset_id AS cover FROM cds c JOIN album_releases r ON r.id=c.release_id
       JOIN albums a ON a.id=r.album_id WHERE c.item_id=?`,
         [id],
       )
@@ -513,11 +513,13 @@ export async function planItem(
       item.media,
       item.tracks,
       cover.id,
+      // Releases saved before barcodes keep their identity.
+      ...(item.barcode ? [item.barcode] : []),
     ]);
     statements.push(
       s(
-        `INSERT INTO album_releases(id,album_id,edition_title,release_date,date_precision,cover_asset_id,metadata_state)
-      VALUES (?,?,?,?,?,?,'partial') ON CONFLICT(id) DO NOTHING`,
+        `INSERT INTO album_releases(id,album_id,edition_title,release_date,date_precision,cover_asset_id,barcode,metadata_state)
+      VALUES (?,?,?,?,?,?,?,'partial') ON CONFLICT(id) DO NOTHING`,
         target,
         album,
         item.editionTitle || null,
@@ -528,6 +530,7 @@ export async function planItem(
             ]!
           : null,
         cover.id,
+        item.barcode,
       ),
     );
     for (const [index, label] of item.labels.entries()) {
