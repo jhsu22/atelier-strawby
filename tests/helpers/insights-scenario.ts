@@ -14,7 +14,7 @@ export async function insightsScenario(db: Database) {
   const plan = normalizeCsv(csv);
   await persistPlan(db, plan);
   await seedSampleCds(db);
-  const data = await libraryData(sql => db.all(sql));
+  const data = await libraryData(sql => db.all(sql), { owner: true });
   const stats = collectionAnalytics(data.entries);
   const timeline = haulTimeline(acquisitions(data.entries));
   assert.deepEqual([stats.mangaCopies, stats.uniqueSeries, stats.cds, stats.samples], [177, 38, 0, 4]);

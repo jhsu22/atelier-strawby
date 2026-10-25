@@ -20,7 +20,7 @@ test("anonymous visitors can browse and view artwork, but cannot open editor dat
       assert.equal(result.isOwner, false);
     }
   }
-  for (const path of ["/edit", "/edit/", "/api/export", "/api/export?kind=manga", "/api/imports", "/api/items/id", "/api/metadata", "/api/artwork", "/api/future-admin-tool"]) {
+  for (const path of ["/edit", "/edit/", "/api/export", "/api/export?kind=manga", "/api/imports", "/api/items/id", "/api/metadata", "/api/artwork", "/api/library/owner", "/api/future-admin-tool"]) {
     assert.equal((await requestAccess(request(path), env)).response?.status, 403, path);
   }
   for (const method of ["POST", "PUT", "PATCH", "DELETE", "OPTIONS"]) {

@@ -11,11 +11,13 @@ Atelier Strawby is a personal library for manga, light novels, books, and CDs. I
 - **Browse visually.** Switch between cover grids and book spines, open copy details, and enjoy light and dark themes on desktop or mobile.
 - **Find the right copy.** Search titles, creators, publishers, and personal notes. Combine filters for media, language, year, edition, and memory tags. Share a URL with your current shelf view.
 - **See what’s missing.** Compare owned volumes within an edition and explore released-volume catalogs with source and coverage notes.
-- **Remember every haul.** Revisit purchases and gifts in the haul timeline, with artwork, dates, and the notes you saved along the way.
+- **Remember every haul.** Log a shopping trip in one go (a range of volumes, or a scanned stack) with its date, store and note. Revisit purchases and gifts in the haul timeline.
+- **Check before you buy.** Scan a book in the store to see whether you already own it, which volumes you have, and which one is next.
+- **Take it with you.** Install the shelf on your phone. It keeps working offline with the collection saved on the device.
 - **Watch your collection grow.** Explore collection totals, distributions, yearly acquisitions, and personal insights.
 - **Keep it yours.** Add and edit physical copies, review optional metadata suggestions, set your own artwork, and move your data with CSV imports, CSV exports, and full JSON backups.
 
-The shared shelf is read-only. Collection management lives at [`/edit`](https://atelier-strawby.pages.dev/edit), protected by owner-only Cloudflare Access. Write APIs, imports, and backups also verify the owner’s identity. [Access configuration](docs/PUBLIC_ACCESS.md).
+The shared shelf is read-only, and notes stay private unless you choose to share them. Collection management lives at [`/edit`](https://atelier-strawby.pages.dev/edit), protected by owner-only Cloudflare Access. Write APIs, imports, and backups also verify the owner’s identity. [Access configuration](docs/PUBLIC_ACCESS.md).
 
 ## Built with
 

@@ -176,6 +176,8 @@ All JSON endpoints use `{ data, meta: { requestId, revision? } }` on success and
 | `GET /api/timeline`, `/api/stats` | Derived acquisition groups and aggregates; no hardcoded totals |
 | `GET /media/:id/:variant` | Serve validated R2 bytes with dimensions, ETag, and private browser cache headers |
 
+Later additions (2026-10-24): the implemented routes are `GET /api/library` (public; private notes and private haul stores removed) and `GET /api/library/owner` (owner-only, full notes). `POST /api/hauls` saves one atomic haul of up to 20 copies; see [DATA_MODEL.md](DATA_MODEL.md#logged-hauls). The offline shelf is a static service worker, `public/sw.js`.
+
 Use Drizzle schema types for query safety and explicit runtime validation at boundaries. Generate SQL migrations, review their D1 compatibility, and apply through Wrangler. One tool owns migration execution. Use D1 `batch()` for bounded atomic writes; do not assume an interactive transaction callback is supported. D1 documents rollback of a failed batch. [D1 batch API](https://developers.cloudflare.com/d1/worker-api/d1-database/).
 
 Bulk imports are staged, resumable, and hidden from collection queries until marked complete. Cap statements and bind parameters to the selected D1 plan; the published parameter limit is currently 100 per statement. Reconcile partial failures by import record identity. Ordinary item mutations are small atomic batches. [D1 limits](https://developers.cloudflare.com/d1/platform/limits/).

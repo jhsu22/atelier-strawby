@@ -1,4 +1,4 @@
-import type { CdCopy, LibraryEntry, MangaCopy, MangaSeries } from "./library.ts";
+import type { CdCopy, CopyHaul, LibraryEntry, MangaCopy, MangaSeries } from "./library.ts";
 import { seriesGaps } from "./library.ts";
 import { TAGS } from "./normalization/tags.ts";
 
@@ -8,6 +8,8 @@ export type Acquisition =
 export interface Haul {
   date: string | null;
   items: Acquisition[];
+  /** Set when these copies were logged together as one haul. */
+  logged?: CopyHaul;
 }
 export interface TimelineFilters {
   year: string;
@@ -25,18 +27,25 @@ export function acquisitions(entries: LibraryEntry[]): Acquisition[] {
     ? entry.copies.filter(copy => !copy.isSample).map(copy => ({ entry, copy }))
     : entry.copies.map(copy => ({ entry, copy })));
 }
-/** Calendar strings remain untouched; the null bucket is not a haul or a date. */
+/**
+ * Copies logged together as a haul share one group; every other copy groups by
+ * its exact recorded date. Calendar strings remain untouched; the null bucket
+ * is not a haul or a date.
+ */
 export function haulTimeline(items: Acquisition[], filters = emptyTimelineFilters): Haul[] {
-  const groups = new Map<string | null, Acquisition[]>();
+  const groups = new Map<string, Haul>();
   for (const item of items) {
     if (filters.year && (item.copy.acquiredOn?.slice(0, 4) ?? "unknown") !== filters.year) continue;
     if (filters.media !== "all" && item.entry.kind !== filters.media) continue;
     if (filters.memory && !memoryTags(item.copy.tags ?? []).includes(filters.memory)) continue;
-    const date = item.copy.acquiredOn;
-    groups.set(date, [...(groups.get(date) ?? []), item]);
+    const logged = item.copy.haul ?? undefined;
+    const key = logged ? `haul:${logged.id}` : `date:${item.copy.acquiredOn ?? ""}`;
+    const group = groups.get(key) ?? { date: logged ? logged.acquiredOn : item.copy.acquiredOn, items: [], ...(logged ? { logged } : {}) };
+    group.items.push(item);
+    groups.set(key, group);
   }
-  return [...groups].sort(([a], [b]) => a === null ? 1 : b === null ? -1 : b.localeCompare(a))
-    .map(([date, items]) => ({ date, items: items.sort((a, b) =>
+  return [...groups.values()].sort((a, b) => a.date === b.date ? Number(Boolean(b.logged)) - Number(Boolean(a.logged)) : a.date === null ? 1 : b.date === null ? -1 : b.date.localeCompare(a.date))
+    .map(({ date, items, logged }) => ({ date, ...(logged ? { logged } : {}), items: items.sort((a, b) =>
       a.entry.title.localeCompare(b.entry.title, "en", { numeric: true }) ||
       ("volume" in a.copy ? a.copy.volume : "").localeCompare("volume" in b.copy ? b.copy.volume : "", "en", { numeric: true }) ||
       a.copy.id.localeCompare(b.copy.id)) }));

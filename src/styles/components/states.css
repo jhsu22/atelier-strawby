@@ -55,6 +55,22 @@
 .error-notice button {
   white-space: nowrap;
 }
+.offline-notice {
+  display: flex;
+  gap: var(--space-2-5);
+  align-items: flex-start;
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-5);
+  border-radius: var(--radius-card);
+  background: var(--caution-surface);
+  color: var(--caution-text);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+.offline-notice svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
 .skeleton-card > div {
   aspect-ratio: 1/1.46;
   background: var(--surface-soft);

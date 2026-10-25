@@ -31,6 +31,8 @@ export async function getItem(
     kind: row.media_kind,
     acquiredOn: row.acquired_on,
     notes: row.notes,
+    notesPrivate: row.notes_private !== 0,
+    acquisitionBatchId: row.acquisition_batch_id ?? null,
     isSample: row.is_sample === 1,
     tags: [
       ...new Set(
@@ -560,9 +562,11 @@ export async function planItem(
   if (options.update) {
     statements.push(
       s(
-        "UPDATE collection_items SET acquired_on=?,notes=?,is_sample=?,version=version+1,updated_at=? WHERE id=?",
+        "UPDATE collection_items SET acquired_on=?,notes=?,notes_private=?,acquisition_batch_id=?,is_sample=?,version=version+1,updated_at=? WHERE id=?",
         item.acquiredOn,
         item.notes,
+        item.notesPrivate ? 1 : 0,
+        item.acquisitionBatchId,
         item.isSample ? 1 : 0,
         new Date().toISOString(),
         id,
@@ -579,11 +583,13 @@ export async function planItem(
   } else {
     statements.push(
       s(
-        "INSERT INTO collection_items(id,media_kind,acquired_on,notes,is_sample,import_batch_id,idempotency_key) VALUES (?,?,?,?,?,?,?)",
+        "INSERT INTO collection_items(id,media_kind,acquired_on,notes,notes_private,acquisition_batch_id,is_sample,import_batch_id,idempotency_key) VALUES (?,?,?,?,?,?,?,?,?)",
         id,
         item.kind,
         item.acquiredOn,
         item.notes,
+        item.notesPrivate ? 1 : 0,
+        item.acquisitionBatchId,
         item.isSample ? 1 : 0,
         options.batchId ?? null,
         options.idempotencyKey ?? null,
@@ -640,6 +646,11 @@ export async function saveItem(
 ) {
   await assertNoImport(db);
   const item = itemSchema.parse(raw);
+  if (
+    item.acquisitionBatchId &&
+    !(await db.all("SELECT id FROM acquisition_batches WHERE id=?", [item.acquisitionBatchId])).length
+  )
+    throw new ApiError(422, "That haul no longer exists. Clear it from the copy and save again.");
   const before = await revision(db);
   if (options.id) {
     const current = await getItem(db, options.id);

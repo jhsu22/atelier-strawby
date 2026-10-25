@@ -38,7 +38,7 @@ export async function largeCollectionScenario(source: Database, restored: Databa
   const sorted = (rows: Record<string, unknown>[]) => rows.map(row => JSON.stringify(row)).sort();
   for (const table of Object.keys(backup.tables)) assert.deepEqual(sorted(exported.tables[table]!), sorted(backup.tables[table]!));
   const readStart = performance.now();
-  const library = await libraryData(sql => restored.all(sql));
+  const library = await libraryData(sql => restored.all(sql), { owner: true });
   const loadMs = performance.now() - readStart;
   assert.equal(library.entries.reduce((n, entry) => n + entry.copies.length, 0), 2124);
   const searchStart = performance.now();

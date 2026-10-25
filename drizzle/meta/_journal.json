@@ -22,6 +22,20 @@
       "when": 1792870104817,
       "tag": "0002_request_limits",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1792883151140,
+      "tag": "0003_private_notes",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1792885451304,
+      "tag": "0004_acquisition_batches",
+      "breakpoints": true
     }
   ]
 }

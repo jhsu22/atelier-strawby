@@ -14,6 +14,10 @@ const artwork = z
   })
   .nullable()
   .optional();
+const haul = z
+  .object({ id: string, acquiredOn: nullable, store: nullable, storePrivate: z.boolean().optional() })
+  .nullable()
+  .optional();
 const mangaCopy = z.object({
   version: z.number().int().positive().optional(),
   artwork,
@@ -25,11 +29,14 @@ const mangaCopy = z.object({
   languageBasis: z.enum(["specified", "assumed", "confirmed"]),
   volume: string,
   volumeSort: z.number().nullable(),
+  isbn13: nullable.optional(),
   numberingBasis: z.enum(["printed", "source_record", "unknown"]),
   medium: z.enum(MEDIUMS),
   format: string,
   acquiredOn: nullable,
   notes: nullable,
+  notesPrivate: z.boolean().optional(),
+  haul,
   tags: z.array(string),
 });
 const seriesEntry = <K extends "manga" | "book">(kind: K) =>
@@ -73,6 +80,8 @@ export const librarySchema: z.ZodType<LibraryData> = z.object({
             tags: z.array(string).optional(),
             acquiredOn: nullable,
             notes: nullable,
+            notesPrivate: z.boolean().optional(),
+            haul,
             isSample: z.boolean(),
           }),
         ),

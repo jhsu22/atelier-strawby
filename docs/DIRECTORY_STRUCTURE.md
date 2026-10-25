@@ -14,6 +14,9 @@ atelier_strawby/
   drizzle/
     0000_foundation.sql           Relational catalog, ownership, provenance and caches
     0001_edition_medium.sql       Additive manga/light-novel/book classification
+    0002_request_limits.sql       Barcode-scan rate-limit counters
+    0003_private_notes.sql        Per-copy note privacy (existing notes become private)
+    0004_acquisition_batches.sql  Logged hauls: shared date and store per acquisition
     meta/                        Drizzle snapshots and migration journal
   data/sample-cds.json            Four labeled demonstration CDs
   public/
@@ -21,6 +24,9 @@ atelier_strawby/
     templates/                   Manga and CD CSV import templates
     images/                      Provider attribution artwork
     favicon.svg / _headers       Public icon and static response headers
+    sw.js                        Offline shelf service worker (allowlisted cache)
+    manifest*.webmanifest        Installable app manifests (shared shelf and /edit)
+    icons/                       App icons rendered by scripts/generate-app-icons.ts
   src/
     config/brand.ts              Shared brand strings
     layouts/AppLayout.astro      HTML shell, theme setup and skip link
@@ -34,6 +40,8 @@ atelier_strawby/
       shelf/                     Media navigation, search/filter, grid and spines
       details/                   Manga/book/CD detail panels
       manage/                    Copy editor and transfer workflows
+      scan/                      Barcode scanning, review and "Do I own this?"
+      haul/                      Log a haul: shared details, ranges, stack scanning
       timeline/ / stats/         Acquisition feed and collection analytics
       releases/                  External released-volume lookup
       covers/ / brand/ / ui/     Artwork fallback, visual identity, drawer, error boundary
@@ -54,6 +62,7 @@ atelier_strawby/
     seed-sample-cds.ts            Optional demonstration data
     verify-*.ts                  Seed, insights, schema and Wrangler migration checks
     cache-covers.ts               Local resumable artwork enrichment
+    generate-app-icons.ts         Renders the installable-app icons from the brand mark
     deploy.ts                    Hosted-config guard, staging and Pages upload wrapper
     package-release.py           Source ZIP and checksum manifest (Python 3)
     browser-server.ts            Disposable built-worker browser-test server

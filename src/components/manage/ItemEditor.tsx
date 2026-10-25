@@ -46,6 +46,10 @@ export function ItemEditor({
   const [autoSuggest, setAutoSuggest] = useState(false);
   const update = (patch: Partial<ItemInput>) =>
     setItem((current) => ({ ...current, ...patch }));
+  // The haul this copy was saved with, as the shelf knows it.
+  const haul = id
+    ? entries.flatMap((entry): { id: string; haul?: { id: string; acquiredOn: string | null; store: string | null } | null }[] => entry.copies).find((copy) => copy.id === id)?.haul ?? null
+    : null;
   useEffect(() => {
     mounted.current = true;
     if (id)
@@ -838,6 +842,17 @@ export function ItemEditor({
           />
           <small>Leave blank if unknown.</small>
         </label>
+        {haul && (
+          <label className="check-label">
+            <input
+              type="checkbox"
+              checked={item.acquisitionBatchId === haul.id}
+              onChange={(e) => update({ acquisitionBatchId: e.target.checked ? haul.id : null })}
+            />
+            Part of the haul logged {haul.acquiredOn ?? "without a date"}
+            {haul.store ? ` at ${haul.store}` : ""} · uncheck to take this copy out of it
+          </label>
+        )}
         <label className="filter-field">
           Notes
           <textarea
@@ -846,6 +861,15 @@ export function ItemEditor({
             value={item.notes ?? ""}
             onChange={(e) => update({ notes: e.target.value || null })}
           />
+        </label>
+        <label className="check-label">
+          <input
+            type="checkbox"
+            checked={item.notesPrivate}
+            onChange={(e) => update({ notesPrivate: e.target.checked })}
+          />
+          Keep this note private · hidden on the public shelf, with its derived
+          memory tags
         </label>
         <label className="check-label">
           <input

@@ -64,7 +64,7 @@ Index every FK used in joins and filters. Additional indexes: series/album sort 
 
 | Table | Principal columns and constraints |
 | --- | --- |
-| `collection_items` | `id PK`, `media_kind CHECK manga/cd`, `acquired_on?`, `notes?`, `is_sample` boolean default 0, `version INTEGER >= 1`, `import_batch_id FK?`, `idempotency_key UQ?`, timestamps; `UQ(id, media_kind)` supports typed subtype FKs. |
+| `collection_items` | `id PK`, `media_kind CHECK manga/cd`, `acquired_on?`, `notes?`, `notes_private` boolean default 1 (added by `0003_private_notes`; a private note and its derived memory tags are withheld from the public shelf), `acquisition_batch_id FK?` → `acquisition_batches` (added by `0004_acquisition_batches`), `is_sample` boolean default 0, `version INTEGER >= 1`, `import_batch_id FK?`, `idempotency_key UQ?`, timestamps; `UQ(id, media_kind)` supports typed subtype FKs. |
 | `volumes` | `item_id PK`, `media_kind` fixed to `manga`, `volume_edition_id FK`; composite FK `(item_id, media_kind)` → collection items. **No unique constraint on volume edition**: several owned records can reference it. |
 | `cds` | `item_id PK`, `media_kind` fixed to `cd`, `release_id FK`; composite FK `(item_id, media_kind)` → collection items. **No unique constraint on release**. |
 | `tags` | `id PK`, `slug UQ`, `label`, `category` (`memory`, `edition`). Examples: Gifts from Sammy / memory; Box Set / edition. |
@@ -92,6 +92,10 @@ Default delete policy restricts deletion of referenced catalog rows; joins/media
 Keep asset bytes out of D1. R2 and D1 cannot commit in one transaction: upload to an immutable key first, then reference it in D1; preserve previous references on failure. An interrupted upload may leave an unreferenced object, which a conservative maintenance inventory can report. Never mark an asset ready before its bytes exist.
 
 The operational tables support required caching and deterministic imports. They are not a general job scheduler, user system, or event-sourcing framework.
+
+## Logged hauls
+
+`acquisition_batches` (`0004_acquisition_batches`) has `id PK` (a client-chosen UUID, so later parts of a large haul join it), `acquired_on?` (same calendar CHECK as copies), `store?`, `store_private` boolean default 1, and `created_at`. A haul save (`POST /api/hauls`, `src/server/services/hauls.ts`) creates or updates the haul row and plans every copy in one atomic D1 batch. Each copy also stores the haul's date and note in its own `acquired_on`, `notes` and `notes_private`, so the timeline, stats, search and note privacy work unchanged. Editing a copy keeps its haul unless the owner unchecks it. Deleting a copy leaves the haul row, which is harmless and kept in backups. A save holds at most 20 copies. A full 20-copy save measured 305 D1 queries (123 reads, 182 writes) for a new series and 225 for an existing one, under the 1,000-per-request paid limit. The server also refuses more than 650 planned writes. This is distinct from CSV `import_batches`. JSON backups made before 0004 restore without the table, and their copies have no haul.
 
 ## Barcode scans and request limits
 

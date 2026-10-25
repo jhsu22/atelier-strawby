@@ -1,7 +1,7 @@
 /* Barcode scanning: mode switch, viewfinder, fallbacks and the review card. */
 .add-modes {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-1);
   padding: var(--space-1);
   margin-bottom: var(--space-5);
@@ -14,6 +14,9 @@
   justify-content: center;
   gap: var(--space-2);
   min-height: 44px;
+  padding: var(--space-1) var(--space-2);
+  text-align: center;
+  line-height: 1.2;
   border-radius: var(--radius-pill);
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
@@ -386,4 +389,160 @@
 }
 .scan-stop {
   margin-top: var(--space-1);
+}
+
+/* "Do I own this?": a read-only verdict card. */
+.ownership-check {
+  animation: scan-rise var(--duration-slow) var(--ease-out);
+}
+.ownership-verdict {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-4);
+  border-radius: var(--radius-card);
+  background: var(--surface-soft);
+  color: var(--text);
+}
+.ownership-verdict[data-verdict="owned"] {
+  background: var(--sage-surface);
+  color: var(--sage-text);
+}
+.ownership-verdict[data-verdict="series"] {
+  background: var(--accent-surface);
+  color: var(--accent-text);
+}
+.ownership-verdict > svg {
+  flex-shrink: 0;
+  margin-top: var(--space-1);
+}
+.ownership-verdict h3 {
+  margin-top: var(--space-1);
+  font: var(--weight-semibold) var(--text-2xl) / 1.15 var(--font-heading);
+  letter-spacing: -0.03em;
+}
+.ownership-title {
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+.ownership-facts {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-md);
+  line-height: 1.55;
+}
+.ownership-facts li {
+  overflow-wrap: anywhere;
+}
+.ownership-facts .ownership-caution {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-card);
+  background: var(--caution-surface);
+  color: var(--caution-text);
+  font-size: var(--text-sm);
+}
+/* Four modes stack two by two where a row of four would crowd. */
+@media (max-width: 640px) {
+  .add-modes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-radius: var(--radius-card);
+  }
+  .add-modes button {
+    border-radius: calc(var(--radius-card) - 2px);
+  }
+}
+
+/* Log a haul */
+.haul-logger {
+  display: grid;
+  gap: var(--space-5);
+}
+.haul-shared,
+.haul-range,
+.haul-scan {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+.haul-shared legend,
+.haul-range h3,
+.haul-list-heading {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  padding: 0 var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+.haul-new-series {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-2);
+}
+.haul-range-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: end;
+}
+.haul-range-row .button {
+  min-height: 44px;
+}
+.haul-rows {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.haul-row {
+  position: relative;
+  padding: var(--space-3) calc(var(--space-3) + 44px) var(--space-3) var(--space-3);
+  border-radius: var(--radius-card);
+  background: var(--surface-soft);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+.haul-row[data-status="needs"] {
+  background: var(--caution-surface);
+}
+.haul-row-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+  gap: var(--space-2);
+}
+.haul-row-meta {
+  margin-top: var(--space-1);
+  color: var(--muted);
+  font: var(--text-2xs) var(--font-data);
+}
+.haul-row-warning {
+  display: flex;
+  gap: var(--space-1-5);
+  align-items: flex-start;
+  margin-top: var(--space-1-5);
+  color: var(--caution-text);
+}
+.haul-row-warning svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.haul-row-remove {
+  position: absolute;
+  top: var(--space-1);
+  right: var(--space-1);
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-pill);
+  color: var(--muted);
 }

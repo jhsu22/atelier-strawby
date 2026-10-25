@@ -16,7 +16,9 @@ test("library read service returns all real copies, multilingual editions, corre
     await migrateSqlite(db);
     await persistPlan(db, plan);
     await seedSampleCds(db);
-    const data = librarySchema.parse(await libraryData((sql) => db.all(sql)));
+    const data = librarySchema.parse(
+      await libraryData((sql) => db.all(sql), { owner: true }),
+    );
     const manga = data.entries.filter((entry) => entry.kind === "manga");
     const cds = data.entries.filter((entry) => entry.kind === "cd");
     assert.equal(manga.length, 38);
@@ -88,7 +90,7 @@ test("library reads hide incomplete imports and reflect later persisted changes"
         params: ["Updated memory <3", plan.copies[0]!.itemId],
       },
     ]);
-    let data = await libraryData((sql) => db.all(sql));
+    let data = await libraryData((sql) => db.all(sql), { owner: true });
     assert.ok(
       data.entries.some((entry) =>
         entry.copies.some((copy) => copy.notes === "Updated memory <3"),

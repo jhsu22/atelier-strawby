@@ -27,6 +27,7 @@ const tables = [
   schema.releaseMedia,
   schema.tracks,
   schema.importBatches,
+  schema.acquisitionBatches,
   schema.collectionItems,
   schema.volumes,
   schema.cds,
@@ -52,7 +53,10 @@ const row = z.record(
 /** Columns added by later migrations, with the default older rows receive. */
 const addedColumns: Record<string, Record<string, Value>> = {
   edition_runs: { medium: "manga" },
+  collection_items: { notes_private: 1, acquisition_batch_id: null },
 };
+/** Tables added by later migrations; version 1 backups made before them omit them. */
+const addedTables = new Set(["acquisition_batches"]);
 export const backupSchema = z
   .object({
     format: z.literal("strawby-collection"),
@@ -82,8 +86,15 @@ export async function exportBackup(db: Store): Promise<Backup> {
 const canonical = (value: Record<string, Value>, columns: string[]) =>
   JSON.stringify(columns.map((column) => value[column] ?? null));
 export async function previewBackup(db: Store, raw: unknown) {
-  const backup = backupSchema.parse(raw),
+  const parsed = backupSchema.parse(raw),
     additions: Backup["tables"] = {};
+  const backup = {
+    ...parsed,
+    tables: Object.fromEntries([
+      ...[...addedTables].map((name) => [name, []]),
+      ...Object.entries(parsed.tables),
+    ]) as Backup["tables"],
+  };
   let skipped = 0;
   if (
     Object.keys(backup.tables).sort().join() !==

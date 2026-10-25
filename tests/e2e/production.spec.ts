@@ -47,7 +47,7 @@ test("5,000 copies across 1,000 titles remain searchable and browsable", async (
   const entries = Array.from({length: 1000}, (_, index) => ({...source, id: `large-${index}`, title: `Scale series ${String(index).padStart(4, "0")}`, copies: Array.from({length: 5}, (_, copy) => ({...source.copies[0]!, artwork: null, id: `copy-${index}-${copy}`, editionRunId: `run-${index}`, volume: String(copy + 1), volumeSort: copy + 1}))}));
   await page.goto("/");
   await expect(page.locator("[data-hydrated=true]")).toBeVisible();
-  await page.route("**/api/library", route => route.fulfill({json: {entries}}));
+  await page.route("**/api/library/owner", route => route.fulfill({json: {entries}}));
   const start = Date.now();
   await page.getByRole("button", {name: "Refresh collection", exact: true}).click();
   await expect(page.locator(".entry-card")).toHaveCount(1000);

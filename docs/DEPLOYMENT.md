@@ -82,7 +82,7 @@ npm run db:migrate:preview
 npm run db:migrate:production
 ```
 
-Migrations are additive `drizzle/0000_foundation.sql`, `0001_edition_medium.sql` and `0002_request_limits.sql` (barcode-scan rate limits; apply it before deploying code that scans); Wrangler records them in `d1_migrations`. Do not edit applied files. `npm run db:generate` creates future migrations; review generated SQL, run `test:schema` and test migration from the prior production version before release. The local and hosted D1 commands use the same migration directory. [D1 migrations](https://developers.cloudflare.com/d1/reference/migrations/).
+Migrations are additive: `drizzle/0000_foundation.sql`, `0001_edition_medium.sql`, `0002_request_limits.sql` (barcode-scan rate limits), `0003_private_notes.sql` (makes every existing note private) and `0004_acquisition_batches.sql` (logged hauls). **Apply them before deploying the code that uses them.** The new code reads the new columns, so the shelf fails until they exist, and the public shelf keeps showing notes until 0003 runs. Wrangler records them in `d1_migrations`. Do not edit applied files. `npm run db:generate` creates future migrations; review generated SQL, run `test:schema` and test migration from the prior production version before release. The local and hosted D1 commands use the same migration directory. [D1 migrations](https://developers.cloudflare.com/d1/reference/migrations/).
 
 There is intentionally no automatic remote seed in the release command. For a new empty hosted collection, use the authenticated UI to import `initial_collection.csv` as Manga CSV and review its preview (177 rows). Alternatively import a full JSON backup from the desired local collection to preserve exact copy IDs, provenance, medium corrections and sample flags. JSON restore is additive: identical rows skip, conflicting identities block. Restore an earlier conflicting snapshot into a new empty migrated database, not over edited records. Sample CDs are optional; obtain them in a disposable local collection before exporting if desired. The local background cover utility does not enrich remote D1; hosted editor enrichment is available but needs a hosted acceptance test.
 
@@ -99,6 +99,10 @@ npm run deploy:production
 `deploy:prepare` builds and stages without network deployment. The upload commands rebuild and stage; they never migrate, seed or change Access policy automatically. For Pages Git builds, the committed `wrangler.toml` supplies bindings and vars; keep it in sync with `wrangler.hosted.json`. Git builds do not run migrations.
 
 Hosted acceptance must verify: anonymous read-only browsing; owner sign-in at `/edit` and CRUD with reload; anonymous and wrong-user denial for edits, backups and imports; forged JWT and direct-origin denial; same-origin mutation protection; private/no-store headers; preview/production isolation; R2 artwork; provider network/quotas; JSON export and restore to a separate preview database; narrow/mobile keyboard flows; response latency and CPU/memory limits. Inspect Pages logs for unexpected 5xx without logging JWTs, API keys or personal backup bodies.
+
+## Offline shelf (service worker)
+
+`public/sw.js` is served as a static file with `Cache-Control: no-cache` (see `public/_headers`), so browsers pick up a new worker on the next visit. It stores only `/`, `/edit`, `/api/library`, `/api/library/owner`, hashed `/_astro/` assets, fonts, icons and artwork. Bump `VERSION` in `sw.js` whenever its caching rules change; activation deletes every older cache. Cached owner pages stay in the owner's browser. Signing out of Cloudflare Access doesn't clear them, but writes still require a signed-in owner. To clear them on a device, remove the site's data in browser settings. Regenerate the app icons from the brand mark with `node scripts/generate-app-icons.ts`.
 
 ## Backup and rollback
 
