@@ -29,7 +29,7 @@ export function HaulTimeline({ entries, onOpen, filters, onFilters }: { entries:
     </div>
     <div className="timeline-results"><p role="status">{new Set(hauls.flatMap(haul => haul.date ? [haul.date] : [])).size} recorded dates{hauls.some(haul => haul.logged) && ` · ${hauls.filter(haul => haul.logged).length} logged hauls`} · {hauls.reduce((sum, haul) => sum + haul.items.length, 0)} matching copies</p>
       {(filters.year || filters.media !== "all" || filters.memory) && <button className="text-button" onClick={() => onFilters(emptyTimelineFilters)}>Reset timeline filters</button>}</div>
-    <p className="chart-rule">Copies logged together as a haul share one card. Other copies get one card per exact recorded date, so separate purchases on the same day appear together. Filters show matching copies within each card. Undated copies appear last. Sample CDs are excluded.</p>
+    <p className="chart-rule">Copies logged together as a haul share one card. Other copies get one card per exact recorded date, so separate purchases on the same day appear together. Filters show matching copies within each card. Undated copies appear last.</p>
     {!hauls.length && <div className="quiet-state"><CalendarDays size={28} /><p>No acquisitions match these filters.</p></div>}
     <ol className="haul-list">{hauls.map(haul => {
       const titles = new Map<string, { entry: LibraryEntry; items: Acquisition[] }>();

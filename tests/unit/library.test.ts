@@ -47,7 +47,7 @@ const series = (copies: MangaCopy[]): MangaSeries => ({
 const album: CdAlbum = {
   kind: "cd",
   id: "cd",
-  title: "A sample album",
+  title: "An album",
   artists: ["A band"],
   releaseId: "release",
   releaseDate: null,
@@ -55,7 +55,7 @@ const album: CdAlbum = {
   labels: [],
   catalogNumbers: [],
   tracks: [],
-  copies: [{ id: "cd-copy", acquiredOn: null, notes: null, isSample: true }],
+  copies: [{ id: "cd-copy", acquiredOn: null, notes: null }],
 };
 
 test("gap detector reports internal holes, never unowned earlier or future volumes", () => {
@@ -166,7 +166,7 @@ test("search covers alternate titles, creators, publishers and safely preserved 
     );
   }
 });
-test("media filtering includes labeled CD samples without invented manga attributes", () => {
+test("media filtering includes CDs without invented manga attributes", () => {
   const entries = [series([copy("1")]), album];
   assert.equal(browseEntries(entries, defaultBrowseState).length, 2);
   assert.deepEqual(
@@ -244,14 +244,13 @@ test("CD shelf view puts every visible CD copy on one shelf, alphabetical by art
       id: `${id}-${i}`,
       acquiredOn: null,
       notes: null,
-      isSample: false,
     })),
   });
   const entries = [
     cd("u", "Unknown album", []),
     cd("r", "Your Name OST", ["RADWIMPS"]),
     cd("k2", "We Will", ["Kessoku Band"]),
-    cd("s", "Sample", ["susumu Hirasawa"]),
+    cd("s", "Paranesian Circle", ["susumu Hirasawa"]),
     cd("k1", "Kessoku Band", ["kessoku band"], 2),
   ] as LibraryEntry[];
   const shelf = cdShelf(entries, { ...defaultBrowseState, view: "spines" });

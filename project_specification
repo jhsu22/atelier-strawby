@@ -59,7 +59,7 @@ Your parser MUST implement these exact data-cleaning rules on my CSV:
 ---
 
 # 4. Core Features & Views to Build
-1. **Unified Media Switcher:** Top-level toggle between **All Media**, **Manga** (grouped by Series), and **CDs** (grouped by Artist/Album). Seed the CD section with 4–5 sample Japanese/soundtrack CDs (e.g., *Kessoku Band*, *Radwimps - Your Name OST*, *Evangelion Finally*, *Susumu Hirasawa / J-Pop*) so the CD UI is immediately demonstrable, plus a CSV/Discogs import & manual entry form for my actual CDs.
+1. **Unified Media Switcher:** Top-level toggle between **All Media**, **Manga** (grouped by Series), and **CDs** (grouped by Artist/Album). Include a CSV/Discogs import & manual entry form for my actual CDs.
 2. **Series Detail Drawer (Manga):**
    - Clicking a Manga Series opens a drawer showing series metadata (Author, Publisher, Languages owned, Total Volumes owned).
    - Displays a visual grid of all owned volumes in numerical order with individual volume cover art, acquisition date, language badge (`EN`/`JP`/`KR`), edition tags (`Omnibus`, `Collector's Edition`, `Box Set`), and personal haul notes (e.g., `"from sammy <3"`, `"kinokuniya arcadia opened (massive lose money glitch unlocked)"`).

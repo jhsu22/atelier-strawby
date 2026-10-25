@@ -43,6 +43,20 @@
       "when": 1792887866032,
       "tag": "0004_acquisition_batches",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1792900000000,
+      "tag": "0005_remove_sample_cds",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1792892488046,
+      "tag": "0006_cleanup_queue",
+      "breakpoints": true
     }
   ]
 }

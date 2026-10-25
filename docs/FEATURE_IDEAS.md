@@ -71,6 +71,8 @@ Track per copy whether it's unread, reading or read, and optionally a rating or 
 
 ### 8. Data clean-up queue
 
+> **Implemented 2026-10-24** at the owner's request: migration `0006_cleanup_queue`, `POST /api/cleanup` and `POST /api/cleanup/covers`, and an owner-only **Clean up data** panel linked from the shelf and the stats caveats. At the owner's choice, "I don't know" dates and "no cover exists" are remembered, and volumes with no cover get a fifth queue. See [DATA_MODEL.md](DATA_MODEL.md#data-clean-up-queue) and the [user guide](USER_GUIDE.md#clean-up-data).
+
 The stats page keeps hedging: assumed languages, unconfirmed numbering, missing dates, representative-only covers. Add an owner-only queue that walks through these one at a time with one-tap confirm or fix. Each fix makes the stats more trustworthy and lets those caveats shrink.
 
 - **Builds on:** the counts already computed in `src/domain/collection-insights.ts`.
@@ -113,6 +115,6 @@ See [ROADMAP.md](ROADMAP.md#visual-recognition-phases). This becomes much cheape
 
 ## Suggested order, if and when requested
 
-**#3, #1, #2 and #4 (done)**, then **#5 and #6** together, then **#8**, then the rest.
+**#3, #1, #2 and #4 (done)**, then **#5 and #6** together, then **#8 (done)**, then the rest.
 
 Separately, a few release gates that aren't features remain open: hosted acceptance checks, testing on real iOS and Android devices (#1 and #4 depend on the camera), and the dependency advisories. See [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md).

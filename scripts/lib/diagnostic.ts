@@ -10,6 +10,6 @@ export function renderDiagnostic(summary: CollectionSummary): string {
 <p>These counts are queried from the SQLite database using the same collection queries as the Astro page. This diagnostic does not verify Astro or Cloudflare D1. Regenerate this file after changing the offline database.</p>
 <dl><dt>Physical manga copies</dt><dd>${summary.physicalCopies}</dd><dt>Unique series</dt><dd>${summary.uniqueSeries}</dd><dt>Acquisition dates</dt><dd>${summary.distinctAcquisitionDates}</dd><dt>Copies with notes</dt><dd>${summary.recordsWithNotes}</dd></dl>
 ${table('Copies by language', summary.languages)}
-<p>${summary.datedCopies} dated · ${summary.undatedCopies} undated · ${summary.sampleCds} sample CDs (excluded)</p>
+<p>${summary.datedCopies} dated · ${summary.undatedCopies} undated</p>
 ${table('Publishers', summary.publishers)}</main></body></html>\n`;
 }

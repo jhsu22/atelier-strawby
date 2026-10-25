@@ -4,18 +4,18 @@ import { readFileSync } from "node:fs";
 import { openSqlite, migrateSqlite } from "../../scripts/lib/sqlite.ts";
 import { normalizeCsv } from "../../scripts/lib/normalize.ts";
 import { persistPlan } from "../../scripts/lib/import.ts";
-import { seedSampleCds } from "../../scripts/lib/sample-cds.ts";
+import { seedTestCds } from "../helpers/test-cds.ts";
 import { libraryData } from "../../src/server/services/library.ts";
 import { seriesGaps } from "../../src/domain/library.ts";
 import { librarySchema } from "../../src/domain/library-schema.ts";
 
 const plan = normalizeCsv(readFileSync("initial_collection.csv", "utf8"));
-test("library read service returns all real copies, multilingual editions, corrected credits and unresolved sample CDs", async () => {
+test("library read service returns all real copies, multilingual editions, corrected credits and unresolved CDs", async () => {
   const db = openSqlite(":memory:");
   try {
     await migrateSqlite(db);
     await persistPlan(db, plan);
-    await seedSampleCds(db);
+    await seedTestCds(db);
     const data = librarySchema.parse(
       await libraryData((sql) => db.all(sql), { owner: true }),
     );
@@ -64,8 +64,7 @@ test("library read service returns all real copies, multilingual editions, corre
           entry.tracks.length === 0 &&
           entry.releaseDate === null &&
           entry.labels.length === 0 &&
-          entry.formats.length === 0 &&
-          entry.copies.every((copy) => copy.isSample),
+          entry.formats.length === 0,
       ),
     );
     assert.equal(
@@ -117,7 +116,7 @@ test("library read service orders populated multi-disc tracklists and retains re
   const db = openSqlite(":memory:");
   try {
     await migrateSqlite(db);
-    await seedSampleCds(db);
+    await seedTestCds(db);
     const before = await libraryData((sql) => db.all(sql));
     const release = before.entries.find(
       (entry) => entry.kind === "cd" && entry.title === "Kessoku Band",

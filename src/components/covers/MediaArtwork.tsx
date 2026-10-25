@@ -140,12 +140,7 @@ export function Spine({
       <span className="spine-title">{entry.kind === "book" && copy.bookTitle ? copy.bookTitle : entry.title}</span>
       <span className="spine-publisher">
         {entry.kind === "cd"
-          ? [
-              entry.copies.every((c) => c.isSample) && "SAMPLE",
-              entry.artists.join(" · ") || entry.labels.join(" · "),
-            ]
-              .filter(Boolean)
-              .join(" · ") || "CD"
+          ? entry.artists.join(" · ") || entry.labels.join(" · ") || "CD"
           : entry.kind === "book"
             ? entry.authors.join(" · ") || copy.publisher
             : copy.publisher}

@@ -28,7 +28,6 @@ test("real seeded shelf, grid densities, media switching and zero horizontal ove
   await expect(page.locator(".entry-card")).toHaveCount(38);
   await page.getByRole("button", { name: "CDs 4", exact: true }).click();
   await expect(page.locator(".entry-card")).toHaveCount(4);
-  await expect(page.locator(".sample-ribbon")).toHaveCount(4);
   await page.getByRole("button", { name: "All media 42", exact: true }).click();
   for (const width of info.project.name === "mobile"
     ? [320, 360, 390, 540, 650]
@@ -179,7 +178,7 @@ test("individual spine view preserves browsing state and opens detail", async ({
   ).toEqual([
     "Open Kessoku Band by Kessoku Band, CD",
     "Open Your Name OST by RADWIMPS, CD",
-    "Open Susumu Hirasawa sample (album unresolved) by Susumu Hirasawa, CD",
+    "Open Susumu Hirasawa (album unresolved) by Susumu Hirasawa, CD",
     "Open Evangelion Finally, CD",
   ]);
   await expect(page.locator(".spine-shelf")).toHaveCount(39);
@@ -238,7 +237,6 @@ test("CD drawer opens its case and honestly shows unknown release data", async (
     .getByRole("button", { name: "Open Kessoku Band", exact: true })
     .click();
   await settledPanel(page);
-  await expect(page.getByRole("dialog")).toContainText("Sample CD");
   await expect(page.getByRole("dialog")).toContainText("Unknown");
   await expect(page.getByRole("dialog")).toContainText("Unresolved");
   await expect(page.getByRole("dialog")).toContainText(

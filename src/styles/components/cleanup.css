@@ -1,0 +1,142 @@
+/* Data clean-up queue: one review card at a time, in the add flow's idiom. */
+.owner-links {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--space-5);
+}
+.cleanup-kinds {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-1);
+  padding: var(--space-1);
+  margin: var(--space-4) 0 var(--space-2);
+  background: var(--surface-soft);
+  border-radius: var(--radius-card);
+}
+.cleanup-kinds button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-field);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--muted);
+  text-align: left;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-base) var(--ease-standard);
+}
+.cleanup-kinds button strong {
+  font-size: var(--text-xs);
+}
+.cleanup-kinds button[aria-pressed="true"] {
+  background: var(--surface-raised);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+.cleanup-card {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  animation: scan-rise var(--duration-slow) var(--ease-out);
+}
+.cleanup-card > .scan-isbn {
+  margin-bottom: var(--space-3);
+}
+.cleanup-card h3:focus {
+  outline: none;
+}
+.cleanup-card h3:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 3px;
+}
+.cleanup-cd {
+  aspect-ratio: 1;
+}
+.cleanup-choice {
+  border: 0;
+  padding: 0;
+  margin: var(--space-4) 0 0;
+  min-width: 0;
+}
+.cleanup-choice legend {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+}
+.cleanup-choice .filter-field {
+  margin: var(--space-3) 0 0;
+}
+.cleanup-artwork {
+  margin: 0;
+}
+.cleanup-artwork img {
+  display: block;
+  width: min(220px, 100%);
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-cover);
+  background: var(--surface-soft);
+}
+.cleanup-artwork figcaption {
+  margin-top: var(--space-2);
+}
+.cleanup-candidates {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.cleanup-candidates button {
+  display: grid;
+  gap: var(--space-1-5);
+  width: 100%;
+  padding: var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  text-align: left;
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  transition: border-color var(--duration-fast) var(--ease-standard);
+}
+.cleanup-candidates button:hover:not(:disabled) {
+  border-color: var(--accent-text);
+}
+.cleanup-candidates img {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+}
+.cleanup-candidates small {
+  color: var(--sage-text);
+  font-weight: var(--weight-semibold);
+}
+.cleanup-skip {
+  margin-bottom: 0;
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-3);
+}
+.cleanup-done {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-card);
+  background: var(--sage-surface);
+  color: var(--sage-text);
+}

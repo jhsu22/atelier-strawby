@@ -25,7 +25,7 @@ test("existing notes migrate as private: the public view omits them and their de
     const owner = librarySchema.parse(await libraryData((sql) => db.all(sql), { owner: true }));
     const shelf = librarySchema.parse(await libraryData((sql) => db.all(sql)));
     const noted = copies(owner).filter((copy) => copy.notes);
-    const [{ n }] = await db.all("SELECT COUNT(notes) n FROM collection_items WHERE is_sample=0") as [{ n: number }];
+    const [{ n }] = await db.all("SELECT COUNT(notes) n FROM collection_items") as [{ n: number }];
     assert.ok(n > 0);
     assert.equal(noted.length, n);
     assert.ok(copies(owner).every((copy) => copy.notesPrivate === true));

@@ -21,7 +21,7 @@ catch { Astro.response.status = 503; }
     <table><caption class="mb-2 text-left font-semibold">Publisher distribution</caption><thead><tr><th scope="col">Publisher</th><th scope="col">Copies</th></tr></thead>
       <tbody>{summary.publishers.map(row => <tr><th scope="row">{row.label}</th><td>{row.count}</td></tr>)}</tbody>
     </table>
-    <p class="mt-6">{summary.personalCds} personal CDs · {summary.sampleCds} demonstration CDs (excluded from personal totals)</p>
+    <p class="mt-6">{summary.personalCds} CDs</p>
   </> : <p class="mt-6" role="alert">The collection database is unavailable. Apply local migrations and check the D1 binding using the README setup commands.</p>}
   </main>
 </AppLayout>

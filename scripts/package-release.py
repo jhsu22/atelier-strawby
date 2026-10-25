@@ -9,7 +9,7 @@ root = Path(__file__).resolve().parent.parent
 files = []
 for directory in ["src", "public", "scripts", "tests", "docs", "drizzle"]:
     files.extend(p for p in (root / directory).rglob("*") if p.is_file() and not p.is_symlink() and "__pycache__" not in p.parts)
-for name in ["README.md", "project_specification", "initial_collection.csv", "data/sample-cds.json", "package.json", "package-lock.json", "astro.config.mjs", "drizzle.config.ts", "tsconfig.json", "eslint.config.mjs", "playwright.config.ts", "wrangler.toml", "wrangler.hosted.json.example", ".dev.vars.example", ".npmrc", ".gitignore", ".gitattributes"]:
+for name in ["README.md", "project_specification", "initial_collection.csv", "package.json", "package-lock.json", "astro.config.mjs", "drizzle.config.ts", "tsconfig.json", "eslint.config.mjs", "playwright.config.ts", "wrangler.toml", "wrangler.hosted.json.example", ".dev.vars.example", ".npmrc", ".gitignore", ".gitattributes"]:
     files.append(root / name)
 manifest = {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(files)}
 output = root / "releases" / "atelier-strawby-stage5.zip"

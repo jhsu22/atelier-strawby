@@ -49,7 +49,7 @@ npm run dev
 
 Open **http://127.0.0.1:4321**. The example environment enables editing only on localhost. Preserve an existing `.dev.vars` and `.wrangler` directory when returning to an established checkout.
 
-The included CSV seeds 177 manga copies across 38 series. Repeating the same import preserves owner edits and does not add duplicate copies. To explore CD views with four clearly labeled examples, optionally run `npm run seed:sample-cds`; samples are excluded from personal totals.
+The included CSV seeds 177 manga copies across 38 series. Repeating the same import preserves owner edits and does not add duplicate copies.
 
 Local development uses emulated D1 and R2. Local state and the hosted collection are independent. An optional Google Books key belongs in `.dev.vars`; see the [Google Books setup guide](docs/GOOGLE_BOOKS.md).
 

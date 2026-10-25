@@ -127,12 +127,10 @@ atelier_strawby/
     env.d.ts
   scripts/
     seed-from-csv.ts
-    seed-sample-cds.ts
     cache-covers.ts
     verify-seed.ts
     restore-backup.ts
   data/
-    sample-cds.json                      # deliberately marked demonstration records
     generated/                          # ignored seed/report artifacts, not public assets
   drizzle/                              # reviewed versioned SQL migrations
   public/
@@ -165,18 +163,18 @@ All JSON endpoints use `{ data, meta: { requestId, revision? } }` on success and
 
 | Interface | Responsibility |
 | --- | --- |
-| `GET /api/collection` | Authorized summary DTOs, facets, search entries, collection revision; media and sample scope |
+| `GET /api/collection` | Authorized summary DTOs, facets, search entries, collection revision; media scope |
 | `GET /api/series/:id`, `/api/albums/:id` | Edition-aware detail including owned copies and per-copy notes |
 | `POST /api/items`, `PATCH /api/items/:id` | Validated manga/CD creation and editing, with a version check |
 | `GET /api/metadata/search`, `/api/metadata/resolve` | Bounded, authenticated candidates and exact provider record resolution |
 | `POST /api/covers/refresh` | Fetch/cache one selected candidate or retry one failed asset; no arbitrary URL proxy |
 | `POST /api/imports/preview` | Validate file, map columns, report inserts/conflicts/errors without changing ownership |
 | `POST /api/imports/commit`, `GET /api/imports/:id` | Commit a preview tied to its hash/revision; resume/report bounded import chunks |
-| `GET /api/exports/csv`, `/api/exports/json` | Authenticated downloadable backups with explicit schema version and sample scope |
+| `GET /api/exports/csv`, `/api/exports/json` | Authenticated downloadable backups with explicit schema version |
 | `GET /api/timeline`, `/api/stats` | Derived acquisition groups and aggregates; no hardcoded totals |
 | `GET /media/:id/:variant` | Serve validated R2 bytes with dimensions, ETag, and private browser cache headers |
 
-Later additions (2026-10-24): the implemented routes are `GET /api/library` (public; private notes and private haul stores removed) and `GET /api/library/owner` (owner-only, full notes). `POST /api/hauls` saves one atomic haul of up to 20 copies; see [DATA_MODEL.md](DATA_MODEL.md#logged-hauls). The offline shelf is a static service worker, `public/sw.js`.
+Later additions (2026-10-24): the implemented routes are `GET /api/library` (public; private notes and private haul stores removed) and `GET /api/library/owner` (owner-only, full notes). `POST /api/hauls` saves one atomic haul of up to 20 copies; see [DATA_MODEL.md](DATA_MODEL.md#logged-hauls). `POST /api/cleanup` applies one clean-up queue answer and `POST /api/cleanup/covers` returns cover choices for one volume, both owner-only; see [DATA_MODEL.md](DATA_MODEL.md#data-clean-up-queue). The offline shelf is a static service worker, `public/sw.js`.
 
 Use Drizzle schema types for query safety and explicit runtime validation at boundaries. Generate SQL migrations, review their D1 compatibility, and apply through Wrangler. One tool owns migration execution. Use D1 `batch()` for bounded atomic writes; do not assume an interactive transaction callback is supported. D1 documents rollback of a failed batch. [D1 batch API](https://developers.cloudflare.com/d1/worker-api/d1-database/).
 

@@ -218,15 +218,8 @@ function CdDetails({
   onEdit?: (id: string) => void;
 }) {
   const [openCase, setOpenCase] = useState(false);
-  const sample = entry.copies.every((copy) => copy.isSample);
   return (
     <>
-      {sample && (
-        <p className="sample-notice">
-          <Disc3 size={17} />
-          <span>Sample CD · excluded from collection totals.</span>
-        </p>
-      )}
       <button
         type="button"
         className={`case-presentation ${openCase ? "case-is-open" : ""}`}

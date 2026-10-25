@@ -21,10 +21,10 @@ const editionTags = new Set<string>(TAGS.filter(tag => tag.category === "edition
 export function memoryTags(tags: string[]) {
   return tags.filter(tag => !editionTags.has(tag));
 }
-/** One visible, personal owned record per acquisition. Never count sample releases. */
+/** One visible owned record per acquisition. */
 export function acquisitions(entries: LibraryEntry[]): Acquisition[] {
   return entries.flatMap((entry): Acquisition[] => entry.kind === "cd"
-    ? entry.copies.filter(copy => !copy.isSample).map(copy => ({ entry, copy }))
+    ? entry.copies.map(copy => ({ entry, copy }))
     : entry.copies.map(copy => ({ entry, copy })));
 }
 /**
@@ -75,7 +75,6 @@ export function collectionAnalytics(entries: LibraryEntry[]) {
     cds: cds.length,
     books: items.filter(item => item.entry.kind === "book").length,
     lightNovels: copies.filter(copy => copy.medium === "light_novel").length,
-    samples: entries.flatMap(entry => entry.kind === "cd" ? entry.copies.filter(copy => copy.isSample) : []).length,
     undated: items.filter(item => item.copy.acquiredOn === null).length,
     assumedLanguages: copies.filter(copy => copy.languageBasis === "assumed").length,
     uncertainNumbering: copies.filter(copy => copy.numberingBasis !== "printed" || copy.format === "unknown").length,

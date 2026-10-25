@@ -3,7 +3,6 @@ import { readFileSync } from "node:fs";
 import type { Database } from "../../scripts/lib/types.ts";
 import { normalizeCsv } from "../../scripts/lib/normalize.ts";
 import { persistPlan } from "../../scripts/lib/import.ts";
-import { seedSampleCds } from "../../scripts/lib/sample-cds.ts";
 import { parseCsv } from "../../src/domain/normalization/csv.ts";
 import { libraryData } from "../../src/server/services/library.ts";
 import { saveItem, deleteItem } from "../../src/server/services/items.ts";
@@ -13,11 +12,10 @@ const csv = readFileSync("initial_collection.csv", "utf8");
 export async function insightsScenario(db: Database) {
   const plan = normalizeCsv(csv);
   await persistPlan(db, plan);
-  await seedSampleCds(db);
   const data = await libraryData(sql => db.all(sql), { owner: true });
   const stats = collectionAnalytics(data.entries);
   const timeline = haulTimeline(acquisitions(data.entries));
-  assert.deepEqual([stats.mangaCopies, stats.uniqueSeries, stats.cds, stats.samples], [177, 38, 0, 4]);
+  assert.deepEqual([stats.mangaCopies, stats.uniqueSeries, stats.cds], [177, 38, 0]);
   assert.equal(stats.undated, 5);
   assert.equal(timeline.length, 56);
   // Independent grouping directly from the original CSV calendar cells, not normalized artifacts.
@@ -40,7 +38,7 @@ export async function insightsScenario(db: Database) {
     JOIN volumes v ON v.item_id=i.id JOIN volume_editions e ON e.id=v.volume_edition_id
     JOIN edition_runs r ON r.id=e.edition_run_id
     LEFT JOIN publishers p ON p.id=r.publisher_id
-    WHERE i.is_sample=0 AND (b.status='complete' OR i.import_batch_id IS NULL) AND r.medium IN ('manga','light_novel')`;
+    WHERE (b.status='complete' OR i.import_batch_id IS NULL) AND r.medium IN ('manga','light_novel')`;
   const count = async (sql: string) => Number((await db.all(sql))[0]!.n);
   assert.equal(stats.mangaCopies, await count(`SELECT COUNT(*) n ${from}`));
   assert.equal(stats.uniqueSeries, await count(`SELECT COUNT(DISTINCT r.series_id) n ${from}`));
@@ -54,9 +52,9 @@ export async function insightsScenario(db: Database) {
     FROM collection_items i JOIN volumes v ON v.item_id=i.id
     JOIN volume_editions e ON e.id=v.volume_edition_id JOIN edition_runs r ON r.id=e.edition_run_id
     JOIN series_creators sc ON sc.series_id=r.series_id JOIN creators c ON c.id=sc.creator_id
-    WHERE i.is_sample=0 GROUP BY c.display_name`);
+    GROUP BY c.display_name`);
   assert.deepEqual(Object.fromEntries(stats.authors.map(row => [row.label, row.count])), Object.fromEntries(authors.map(row => [row.label, row.count])));
-  const haulCounts = await db.all("SELECT acquired_on date, COUNT(*) count FROM collection_items WHERE is_sample=0 AND acquired_on IS NOT NULL GROUP BY acquired_on ORDER BY count DESC, date DESC");
+  const haulCounts = await db.all("SELECT acquired_on date, COUNT(*) count FROM collection_items WHERE acquired_on IS NOT NULL GROUP BY acquired_on ORDER BY count DESC, date DESC");
   assert.deepEqual(stats.largestHauls.map(haul => [haul.date, haul.items.length]), haulCounts.map(row => [row.date, row.count]));
   assert.equal(stats.gaps.find(gap => gap.series === "86: EIGHTY-SIX")!.count, 2);
   assert.ok(!stats.gaps.some(gap => gap.series === "Steins;Gate"));
@@ -67,7 +65,7 @@ export async function insightsScenario(db: Database) {
   const current = collectionAnalytics(updated.entries);
   assert.equal(current.cds, 2);
   assert.deepEqual(current.cdYears, [{label: "2021", count: 1}, {label: "Unknown date", count: 1}]);
-  assert.equal(current.cds, await count("SELECT COUNT(*) n FROM collection_items WHERE media_kind='cd' AND is_sample=0"));
+  assert.equal(current.cds, await count("SELECT COUNT(*) n FROM collection_items WHERE media_kind='cd'"));
   assert.equal(haulTimeline(acquisitions(updated.entries)).find(haul => haul.date === "2021-09-18")!.items.length, 2);
   await deleteItem(db, cd.id, 1);
   await deleteItem(db, second.id, 1);

@@ -1,5 +1,5 @@
 export const visibleItems = `collection_items i LEFT JOIN import_batches b ON b.id = i.import_batch_id`;
-export const personalScope = `i.is_sample = 0 AND (i.import_batch_id IS NULL OR b.status = 'complete')`;
+export const personalScope = `(i.import_batch_id IS NULL OR b.status = 'complete')`;
 const mangaJoins = `JOIN volumes v ON v.item_id = i.id
   JOIN volume_editions e ON e.id = v.volume_edition_id
   JOIN edition_runs r ON r.id = e.edition_run_id`;
@@ -19,6 +19,4 @@ export const SUMMARY_QUERIES = {
     FROM ${visibleItems} ${mangaJoins} WHERE ${personalScope} AND ${mangaOnly} GROUP BY label ORDER BY label`,
   cds: `SELECT COUNT(*) AS count FROM ${visibleItems} JOIN cds ON cds.item_id = i.id
     WHERE ${personalScope} AND i.media_kind = 'cd'`,
-  sampleCds: `SELECT COUNT(*) AS count FROM ${visibleItems} JOIN cds ON cds.item_id = i.id
-    WHERE i.is_sample = 1 AND (i.import_batch_id IS NULL OR b.status = 'complete')`,
 };

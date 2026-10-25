@@ -18,6 +18,7 @@
 @import "./components/management.css";
 @import "./components/scan.css";
 @import "./components/insights.css";
+@import "./components/cleanup.css";
 @import "./base/motion.css";
 
 /* iOS zooms focused fields with text below 16px, including Home Screen apps.

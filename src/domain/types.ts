@@ -12,7 +12,6 @@ export interface CollectionSummary {
   publishers: DistributionEntry[];
   years: DistributionEntry[];
   personalCds: number;
-  sampleCds: number;
 }
 export const MEDIUMS = ["manga", "light_novel", "book"] as const;
 export type Medium = (typeof MEDIUMS)[number];

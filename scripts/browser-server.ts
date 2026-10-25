@@ -6,7 +6,7 @@ import { openLocalD1 } from "./lib/d1.ts";
 import { migrationStatements } from "./lib/migrations.ts";
 import { normalizeCsv } from "./lib/normalize.ts";
 import { persistPlan } from "./lib/import.ts";
-import { seedSampleCds } from "./lib/sample-cds.ts";
+import { seedTestCds } from "../tests/helpers/test-cds.ts";
 
 // Browser mutation tests always get a fresh compiled worker and disposable D1/R2.
 const built = spawnSync("npm", ["run", "build"], { stdio: "inherit" });
@@ -22,7 +22,7 @@ try {
       db,
       normalizeCsv(await readFile("initial_collection.csv", "utf8")),
     );
-    await seedSampleCds(db);
+    await seedTestCds(db);
   } finally {
     await db.close();
   }

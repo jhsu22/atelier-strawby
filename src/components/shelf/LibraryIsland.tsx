@@ -47,10 +47,13 @@ import { ScanFlow } from "../scan/ScanFlow.tsx";
 import { TransferPanel } from "../manage/TransferPanel.tsx";
 import { HaulTimeline } from "../timeline/HaulTimeline.tsx";
 import { CollectionAnalytics } from "../stats/CollectionAnalytics.tsx";
+import { CleanupQueue } from "../cleanup/CleanupQueue.tsx";
+import { CLEANUP_KINDS, cleanupQueue } from "../../domain/cleanup.ts";
+import type { CleanupKind } from "../../domain/cleanup.ts";
 import { emptyTimelineFilters } from "../../domain/collection-insights.ts";
 import type { ItemInput } from "../../domain/item.ts";
 
-type Panel = "filters" | "stats" | "timeline" | "add" | "transfer" | null;
+type Panel = "filters" | "stats" | "timeline" | "add" | "transfer" | "cleanup" | null;
 // Entrance delays stop growing after the first rows so long shelves settle quickly.
 const stagger = (index: number) =>
   ({ "--stagger": Math.min(index, 12) }) as CSSProperties;
@@ -64,8 +67,6 @@ function EntryCard({
   onOpen: () => void;
 }) {
   const series = entry.kind !== "cd";
-  const sample =
-    entry.kind === "cd" && entry.copies.every((copy) => copy.isSample);
   const lightNovel =
     entry.kind === "manga" &&
     entry.copies.some((copy) => copy.medium === "light_novel");
@@ -86,7 +87,6 @@ function EntryCard({
           <span className="card-open-mark">
             <ArrowRight size={17} />
           </span>
-          {sample && <span className="sample-ribbon">SAMPLE CD</span>}
         </div>
         <div className="card-caption">
           <h2>{entry.title}</h2>
@@ -96,20 +96,18 @@ function EntryCard({
             ) || (series ? "Author unknown" : "Artist unresolved")}
           </p>
           <div className="card-metadata">
-            {(series || !sample) && (
-              <p className="card-count mono">
-                {entry.copies.length}{" "}
-                {entry.kind === "manga"
+            <p className="card-count mono">
+              {entry.copies.length}{" "}
+              {entry.kind === "manga"
+                ? entry.copies.length === 1
+                  ? "volume"
+                  : "volumes"
+                : entry.kind === "book"
                   ? entry.copies.length === 1
-                    ? "volume"
-                    : "volumes"
-                  : entry.kind === "book"
-                    ? entry.copies.length === 1
-                      ? "book"
-                      : "books"
-                    : "owned"}
-              </p>
-            )}
+                    ? "book"
+                    : "books"
+                  : "owned"}
+            </p>
             {series && (
               <div className="card-languages">
                 {lightNovel && (
@@ -194,12 +192,12 @@ export function LibraryIsland({
   const lightNovels = copies.filter(
     (copy) => copy.medium === "light_novel",
   ).length;
-  const personalCds = cds
-    .flatMap((entry) => entry.copies)
-    .filter((copy) => !copy.isSample).length;
-  const sampleCds = cds
-    .flatMap((entry) => entry.copies)
-    .filter((copy) => copy.isSample).length;
+  const cdCopies = cds.flatMap((entry) => entry.copies).length;
+  const cleanupCount = useMemo(() => {
+    if (!canEdit) return 0;
+    const queue = cleanupQueue(data.entries);
+    return CLEANUP_KINDS.reduce((sum, kind) => sum + queue[kind].length, 0);
+  }, [data, canEdit]);
   const publishers = [
     ...new Set([
       ...copies.map((copy) => copy.publisher),
@@ -251,6 +249,11 @@ export function LibraryIsland({
   // Offline (public/sw.js): the stored page may be older than the stored
   // library read, and its URL state is the stored page's, not this address.
   const reconnect = useRef<() => void>(() => {});
+  // Where the owner was when an edit began, restored once it is saved.
+  const returnTo = useRef<BrowseState | null>(null);
+  // An edit opened from the clean-up queue returns to the queue.
+  const fromCleanup = useRef(false);
+  const [cleanupKind, setCleanupKind] = useState<CleanupKind | undefined>();
   reconnect.current = () => void refresh();
   useEffect(() => {
     const offline = () => setOnline(false);
@@ -317,6 +320,8 @@ export function LibraryIsland({
     navigate({ item: entry.id });
   }
   function showPanel(next: Panel) {
+    returnTo.current = null;
+    fromCleanup.current = false;
     setEditing(null);
     navigate({ item: "", section: next === "timeline" || next === "stats" ? next : "shelf" });
     setPanel(next);
@@ -336,7 +341,12 @@ export function LibraryIsland({
       format: "",
     });
   }
+  function openCleanup(kind?: CleanupKind) {
+    setCleanupKind(kind);
+    showPanel("cleanup");
+  }
   function editCopy(id: string) {
+    returnTo.current = state;
     navigate({ item: "" });
     setPanel(null);
     setEditing({ id });
@@ -350,6 +360,7 @@ export function LibraryIsland({
       if (!response.ok)
         throw new Error("Could not load the copy. Refresh and try again.");
       const { item } = (await response.json()) as { item: ItemInput };
+      returnTo.current = state;
       navigate({ item: "" });
       setPanel(null);
       setEditing({
@@ -362,7 +373,6 @@ export function LibraryIsland({
           acquisitionBatchId: null,
           tags: [],
           tagsMode: "auto",
-          isSample: false,
         },
       });
     } catch (error) {
@@ -370,16 +380,36 @@ export function LibraryIsland({
     }
   }
   async function reloadLibrary() {
+    await loadLibrary();
+  }
+  async function loadLibrary() {
     const response = await fetch(libraryUrl, { cache: "no-store" });
     if (!response.ok)
       throw new Error(
         "Changes were saved, but refresh failed. Reload the page to see them.",
       );
-    setData(librarySchema.parse(await response.json()));
+    const next = librarySchema.parse(await response.json());
+    setData(next);
+    return next;
   }
   async function mutationFinished() {
-    await reloadLibrary();
+    const next = await loadLibrary();
+    const back = returnTo.current;
+    returnTo.current = null;
     setEditing(null);
+    if (fromCleanup.current) {
+      fromCleanup.current = false;
+      setPanel("cleanup");
+      return;
+    }
+    if (back) {
+      // Back to the tab, filters and entry the edit started from. A deleted
+      // entry (or one that moved, e.g. manga to books) closes instead.
+      const item = next.entries.some((entry) => entry.id === back.item) ? back.item : "";
+      setPanel(item || back.section === "shelf" ? null : back.section);
+      navigate({ ...back, item });
+      return;
+    }
     setPanel(null);
     navigate({
       item: "",
@@ -473,8 +503,7 @@ export function LibraryIsland({
                   [manga.length, "series", true],
                   [lightNovels, "light novel", lightNovels > 0],
                   [bookCopies.length, "book", true],
-                  [personalCds, "CD", true],
-                  [sampleCds, "sample CD", true],
+                  [cdCopies, "CD", true],
                 ] as const
               )
                 .filter(([, , shown]) => shown)
@@ -486,13 +515,22 @@ export function LibraryIsland({
                 ))}
             </div>
           </div>
-          {canEdit && <button
-            type="button"
-            className="text-button transfer-link"
-            onClick={() => showPanel("transfer")}
-          >
-            Import & export
-          </button>}
+          {canEdit && <div className="owner-links">
+            <button
+              type="button"
+              className="text-button transfer-link"
+              onClick={() => showPanel("transfer")}
+            >
+              Import & export
+            </button>
+            <button
+              type="button"
+              className="text-button transfer-link"
+              onClick={() => openCleanup()}
+            >
+              Clean up data{cleanupCount ? ` · ${cleanupCount}` : ""}
+            </button>
+          </div>}
           <div className="shelf-toolbar">
             <div
               className="media-switcher"
@@ -998,7 +1036,7 @@ export function LibraryIsland({
       )}
       {panel === "stats" && !state.item && (
         <Drawer title="Collection stats" onClose={closeSection} wide>
-          <CollectionAnalytics entries={data.entries} onOpen={entry => navigate({ item: entry.id })} onTimeline={() => showPanel("timeline")} />
+          <CollectionAnalytics entries={data.entries} onOpen={entry => navigate({ item: entry.id })} onTimeline={() => showPanel("timeline")} {...(canEdit ? { onCleanup: openCleanup } : {})} />
         </Drawer>
       )}
       {canEdit && (panel === "add" || editing) && (
@@ -1006,7 +1044,8 @@ export function LibraryIsland({
           title={editing?.id ? "Edit copy" : !editing && addMode === "check" && !checkAdding ? "Do I own this?" : !editing && addMode === "haul" ? "Log a haul" : "Add to collection"}
           onClose={() => {
             setEditing(null);
-            setPanel(null);
+            setPanel(fromCleanup.current ? "cleanup" : null);
+            fromCleanup.current = false;
           }}
           wide
         >
@@ -1058,10 +1097,24 @@ export function LibraryIsland({
               onSaved={mutationFinished}
               onClose={() => {
                 setEditing(null);
-                setPanel(null);
+                setPanel(fromCleanup.current ? "cleanup" : null);
+                fromCleanup.current = false;
               }}
             />
           )}
+        </Drawer>
+      )}
+      {canEdit && panel === "cleanup" && !editing && (
+        <Drawer title="Clean up data" onClose={() => setPanel(null)} wide>
+          <CleanupQueue
+            entries={data.entries}
+            initial={cleanupKind}
+            onChanged={reloadLibrary}
+            onEdit={(id) => {
+              fromCleanup.current = true;
+              setEditing({ id });
+            }}
+          />
         </Drawer>
       )}
       {canEdit && panel === "transfer" && (
