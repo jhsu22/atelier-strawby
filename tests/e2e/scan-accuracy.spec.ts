@@ -29,7 +29,8 @@ async function setup(page: Page) {
     }).observe(document, { subtree: true, childList: true, characterData: true });
   });
   const lookups: { code: string; at: number }[] = [];
-  await page.route("**/api/scan/isbn", async (route) => {
+  // A code read as a CD barcode is still a decoded read (and, here, a wrong one).
+  await page.route(/\/api\/scan\/(isbn|barcode)$/, async (route) => {
     lookups.push({ code: (route.request().postDataJSON() as { code: string }).code, at: Date.now() });
     await route.fulfill({ status: 503, json: { error: "Benchmark: lookup intentionally skipped." } });
   });
@@ -94,7 +95,7 @@ test("barcode decoding accuracy: synthetic photos, live camera frames and option
       );
       const before = lookups.length;
       const started = Date.now();
-      await page.getByRole("button", { name: /Open camera|Scan next book/ }).click();
+      await page.getByRole("button", { name: /Open camera|Scan next/ }).click();
       let decoded: string | null = null;
       try {
         await expect.poll(() => lookups.length, { timeout: 6_000 }).toBeGreaterThan(before);

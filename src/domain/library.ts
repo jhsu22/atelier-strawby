@@ -82,6 +82,8 @@ export interface CdAlbum {
   artists: string[];
   releaseId: string;
   releaseDate: string | null;
+  /** The release's retail barcode as a 13-digit GTIN, when recorded. */
+  barcode?: string | null;
   formats: string[];
   labels: string[];
   catalogNumbers: string[];

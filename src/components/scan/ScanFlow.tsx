@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Camera, CircleCheck, ImageUp, Keyboard, RotateCcw, ScanBarcode } from "lucide-react";
 import { parseIsbn } from "../../domain/isbn.ts";
+import { parseScanCode } from "../../domain/barcode.ts";
+import { cdLookupResultSchema, offlineCdLookup } from "../../domain/cd-scan.ts";
+import type { CdLookupResult } from "../../domain/cd-scan.ts";
+import type { CdAlbum } from "../../domain/library.ts";
 import { offlineLookup, scanLookupResultSchema } from "../../domain/scan.ts";
 import type { OwnedSeries, ScanLookupResult, ScanLookupRequest } from "../../domain/scan.ts";
 import type { ItemInput } from "../../domain/item.ts";
@@ -9,9 +13,11 @@ import { NetworkError, request } from "../manage/client.ts";
 import { BarcodeScanner } from "./BarcodeScanner.tsx";
 import { cameraMessages } from "./camera.ts";
 import type { CameraProblem } from "./camera.ts";
-import { detectInFile, loadDetector, pickIsbn } from "./detector.ts";
+import { loadDetector, pickCodeInFile } from "./detector.ts";
 import { ScanReview } from "./ScanReview.tsx";
 import { OwnershipCheck } from "./OwnershipCheck.tsx";
+import { CdScanReview } from "./CdScanReview.tsx";
+import { CdOwnershipCheck } from "./CdOwnershipCheck.tsx";
 
 type Stage =
   | { name: "camera" }
@@ -19,6 +25,8 @@ type Stage =
   | { name: "looking"; code: string }
   | { name: "review"; result: ScanLookupResult; key: number }
   | { name: "answer"; result: ScanLookupResult }
+  | { name: "cd-review"; result: CdLookupResult; key: number }
+  | { name: "cd-answer"; result: CdLookupResult }
   | { name: "saved"; title: string; volume: string };
 
 /** Lookup failed entirely: keep the scanned ISBN and continue by hand. */
@@ -41,6 +49,7 @@ function offlineResult(code: string, message: string): ScanLookupResult | null {
 export function ScanFlow({
   mode = "add",
   series,
+  albums = [],
   onSaved,
   onEditFully,
   onOpen,
@@ -49,6 +58,8 @@ export function ScanFlow({
   /** check: answer "do I own this?" first and save nothing unless asked. */
   mode?: "add" | "check";
   series: OwnedSeries[];
+  /** CDs on the shelf, for answering a CD check offline by barcode. */
+  albums?: CdAlbum[];
   /** Refresh the shelf after a save; the scanner stays open for the next book. */
   onSaved: () => Promise<void>;
   onEditFully: (seed: Partial<ItemInput>) => void;
@@ -57,7 +68,7 @@ export function ScanFlow({
   onAdding?: (adding: boolean) => void;
 }) {
   const [stage, setStage] = useState<Stage>({ name: "camera" });
-  const adding = mode === "check" && stage.name === "review";
+  const adding = mode === "check" && (stage.name === "review" || stage.name === "cd-review");
   useEffect(() => onAdding?.(adding), [adding, onAdding]);
   const [problem, setProblem] = useState("");
   const [hint, setHint] = useState("");
@@ -71,6 +82,7 @@ export function ScanFlow({
     setHint("");
     setLookupError(null);
     setStage({ name: "looking", code });
+    if (parseScanCode(code).kind === "cd") return lookupCd(code, source, retry);
     try {
       // A check in a store with weak signal falls back to the saved shelf rather than waiting.
       const data = await request<unknown>("/api/scan/isbn", "POST", { code, source, retry }, mode === "check" ? 10_000 : undefined);
@@ -97,16 +109,36 @@ export function ScanFlow({
       setStage({ name: "idle" });
     }
   }
+  async function lookupCd(code: string, source: ScanLookupRequest["source"], retry: boolean, review = mode !== "check") {
+    setStage({ name: "looking", code });
+    try {
+      const data = await request<unknown>("/api/scan/barcode", "POST", { code, source, retry }, mode === "check" ? 10_000 : undefined);
+      const parsed = cdLookupResultSchema.safeParse(data);
+      if (!parsed.success) throw new Error("The lookup returned an unexpected response.");
+      setStage(review ? { name: "cd-review", result: parsed.data, key: ++reviews.current } : { name: "cd-answer", result: parsed.data });
+    } catch (error) {
+      if (mode === "check" && (error instanceof NetworkError || !navigator.onLine)) {
+        setStage({ name: "cd-answer", result: offlineCdLookup(code, albums) });
+        return;
+      }
+      setLookupError({
+        code,
+        source,
+        message: navigator.onLine ? (error as Error).message : "You’re offline. Reconnect to look up this barcode.",
+      });
+      setStage({ name: "idle" });
+    }
+  }
   async function readPhoto(file: File | undefined) {
     if (!file) return;
     setProblem("");
     setHint("Reading the photo on this device…");
     try {
-      const picked = pickIsbn(await detectInFile(file, await loadDetector()));
+      const picked = await pickCodeInFile(file, await loadDetector());
       setHint("");
       if (!picked) setProblem("No barcode was found in that photo. Fill the frame with the barcode, keep it sharp and avoid glare.");
-      else if (!picked.ok) setProblem(picked.message);
-      else await lookup(picked.isbn13, "photo");
+      else if (picked.kind === "problem") setProblem(picked.message);
+      else await lookup(picked.code, "photo");
     } catch {
       setHint("");
       setProblem("That photo could not be read. Try another photo or type the ISBN.");
@@ -116,13 +148,13 @@ export function ScanFlow({
   }
   function submitTyped(event: FormEvent) {
     event.preventDefault();
-    const parsed = parseIsbn(typed);
-    if (!parsed.ok) {
+    const parsed = parseScanCode(typed);
+    if (parsed.kind === "problem") {
       setProblem(parsed.message);
       return;
     }
     setTyped("");
-    void lookup(parsed.isbn13, "manual");
+    void lookup(parsed.code, "manual");
   }
 
   const fallbacks = (
@@ -142,19 +174,19 @@ export function ScanFlow({
       <form className="scan-type" onSubmit={submitTyped}>
         <label className="filter-field">
           <span className="field-label">
-            <Keyboard size={15} aria-hidden="true" /> Type an ISBN
+            <Keyboard size={15} aria-hidden="true" /> Type an ISBN or CD barcode
           </span>
           <span className="scan-type-row">
             <input
               value={typed}
               onChange={(event) => setTyped(event.target.value)}
-              placeholder="978…"
+              placeholder="978… or the CD’s barcode"
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
               enterKeyHint="search"
               maxLength={20}
-              aria-label="ISBN"
+              aria-label="ISBN or barcode"
             />
             <button type="submit" className="button" disabled={!typed.trim()}>
               Look up
@@ -162,7 +194,7 @@ export function ScanFlow({
           </span>
         </label>
       </form>
-      <p className="field-help">Barcodes and photos are read on this device. Only the ISBN number is sent for lookup; photos are never uploaded.</p>
+      <p className="field-help">Barcodes and photos are read on this device. Only the number is sent for lookup; photos are never uploaded.</p>
     </div>
   );
 
@@ -174,6 +206,34 @@ export function ScanFlow({
         onRescan={() => setStage({ name: "camera" })}
         onAdd={() => setStage({ name: "review", result: stage.result, key: ++reviews.current })}
         onOpen={(id) => onOpen?.(id)}
+      />
+    );
+  if (stage.name === "cd-answer")
+    return (
+      <CdOwnershipCheck
+        result={stage.result}
+        onRescan={() => setStage({ name: "camera" })}
+        // The shelf answered without MusicBrainz; adding needs the release details.
+        onAdd={() =>
+          stage.result.local
+            ? void lookupCd(stage.result.barcode, "manual", true, true)
+            : setStage({ name: "cd-review", result: stage.result, key: ++reviews.current })
+        }
+        onOpen={(id) => onOpen?.(id)}
+      />
+    );
+  if (stage.name === "cd-review")
+    return (
+      <CdScanReview
+        key={stage.key}
+        result={stage.result}
+        onRescan={() => setStage({ name: "camera" })}
+        onRelease={() => void lookupCd(stage.result.barcode, "manual", true, true)}
+        onEditFully={onEditFully}
+        onSaved={async (saved) => {
+          setStage({ name: "saved", title: saved.title, volume: "" });
+          await onSaved().catch(() => setProblem("Saved. Reload the page to see it on the shelf."));
+        }}
       />
     );
   if (stage.name === "review")
@@ -196,13 +256,14 @@ export function ScanFlow({
         <div className="scan-saved" role="status">
           <CircleCheck size={22} aria-hidden="true" />
           <p>
-            <strong>Added {stage.title}{stage.volume ? `, volume ${stage.volume}` : ""}.</strong> Scan the next book, or close when you’re done.
+            <strong>Added {stage.title}{stage.volume ? `, volume ${stage.volume}` : ""}.</strong> Scan the next one, or close when you’re done.
           </p>
         </div>
       )}
       {stage.name === "camera" ? (
         <>
         <BarcodeScanner
+          accept="any"
           onCode={(code) => void lookup(code, "camera")}
           onHint={(message) => setHint((current) => (current === message ? current : message))}
           onProblem={(reason: CameraProblem) => {
@@ -224,7 +285,7 @@ export function ScanFlow({
         <div className="scanner scanner-idle">
           <button type="button" className="button button-primary" onClick={() => { setProblem(""); setStage({ name: "camera" }); }}>
             {stage.name === "saved" ? <ScanBarcode size={16} aria-hidden="true" /> : <Camera size={16} aria-hidden="true" />}
-            {stage.name === "saved" ? (mode === "check" ? "Check next book" : "Scan next book") : "Open camera"}
+            {stage.name === "saved" ? (mode === "check" ? "Check next" : "Scan next") : "Open camera"}
           </button>
         </div>
       )}
@@ -253,6 +314,18 @@ export function ScanFlow({
                   const result = offlineResult(lookupError.code, "The lookup service was unavailable.");
                   setLookupError(null);
                   if (result) setStage({ name: "review", result, key: ++reviews.current });
+                }}
+              >
+                Enter details by hand
+              </button>
+            )}
+            {parseScanCode(lookupError.code).kind === "cd" && (
+              <button
+                type="button"
+                className="text-button"
+                onClick={() => {
+                  setLookupError(null);
+                  onEditFully({ kind: "cd", barcode: lookupError.code });
                 }}
               >
                 Enter details by hand

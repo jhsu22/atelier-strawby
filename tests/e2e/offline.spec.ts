@@ -46,7 +46,7 @@ test("the installed shelf works offline: saved page and library, search, and do 
     await page.getByRole("button", { name: /^(Add|Add to collection)$/ }).first().click();
     await page.getByRole("button", { name: "Do I own this?", exact: true }).click();
     const check = page.getByRole("region", { name: "Do I own this?" });
-    await page.getByRole("textbox", { name: "ISBN", exact: true }).fill(ISBN);
+    await page.getByRole("textbox", { name: "ISBN or barcode", exact: true }).fill(ISBN);
     await page.getByRole("button", { name: "Look up", exact: true }).click();
     await expect(check.getByRole("heading", { name: "Yes, you own this." })).toBeVisible();
     await expect(check).toContainText(`${title}, vol. 1`);
@@ -55,7 +55,7 @@ test("the installed shelf works offline: saved page and library, search, and do 
     await expect(check.getByRole("button", { name: /Add (another|this) copy/ })).toHaveCount(0);
 
     await check.getByRole("button", { name: "Check another" }).click();
-    await page.getByRole("textbox", { name: "ISBN", exact: true }).fill("9781975329044");
+    await page.getByRole("textbox", { name: "ISBN or barcode", exact: true }).fill("9781975329044");
     await page.getByRole("button", { name: "Look up", exact: true }).click();
     await expect(check.getByRole("heading", { name: "Not found on this device." })).toBeVisible();
     await expect(check).toContainText("search the shelf by title");

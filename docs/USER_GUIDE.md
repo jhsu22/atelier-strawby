@@ -20,7 +20,9 @@ Local setup and owner authentication: [DEPLOYMENT.md](DEPLOYMENT.md). Current ve
 
 On the editing page, choose **Add**, then **Scan barcode**. Allow the camera and hold the book's barcode inside the frame; on Japanese books scan the upper barcode (978…), not the 192 price code. The app reads the barcode on your device and looks up only the ISBN.
 
-The review screen shows where each detail came from. Check anything marked **Needs your input** or **Assumed from ISBN**, choose the right series (or **A series I own** when the catalogs don't know the book), and press **Add to collection**. If you already own that volume, you'll see a note and the button reads **Add another copy**: duplicates are always allowed. After saving, **Scan next book** keeps going.
+The review screen shows where each detail came from. Check anything marked **Needs your input** or **Assumed from ISBN**, choose the right series (or **A series I own** when the catalogs don't know the book), and press **Add to collection**. If you already own that volume, you'll see a note and the button reads **Add another copy**: duplicates are always allowed. After saving, **Scan next** keeps going.
+
+**CDs scan the same way.** Hold the CD's barcode (EAN or UPC, usually on the back or the obi) in the frame, or type it. The app looks it up on MusicBrainz. When several pressings share a barcode, pick yours by label, catalog number and country. The tracklist, discs, label and catalog number are filled in for you, and the barcode is saved, so scanning it again later says you already own it. If MusicBrainz doesn't know the barcode, **Enter details** opens the editor with the barcode kept. In **Do I own this?**, a CD barcode answers *you own this CD*, *you own another edition of this album*, or *not in your collection*; offline, it answers from CDs on the saved shelf that have a barcode.
 
 ### Log a haul
 

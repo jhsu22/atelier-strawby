@@ -1,5 +1,7 @@
 import { parseIsbn } from "../../domain/isbn.ts";
 import type { IsbnParse } from "../../domain/isbn.ts";
+import { parseScanCode } from "../../domain/barcode.ts";
+import type { ScanCode } from "../../domain/barcode.ts";
 
 // Barcodes are decoded on the device. Neither frames nor photos are uploaded.
 export type Engine = "native" | "zxing";
@@ -11,7 +13,7 @@ export interface Detector {
   engine: Engine;
   detect(source: HTMLCanvasElement | ImageBitmap): Promise<Detected[]>;
 }
-// UPC codes are read only to explain that they are not ISBNs.
+// EAN-13 carries ISBNs and most CD barcodes; UPC-A/E are North American CDs.
 const FORMATS = ["ean_13", "upc_a", "upc_e"] as const;
 
 interface NativeDetector {
@@ -56,12 +58,18 @@ export function loadDetector(): Promise<Detector> {
   return loading;
 }
 
+// Some readers append a US price add-on ("9781974715466 51099"); the code is
+// the 12- or 13-digit symbol before it.
+const withoutAddOn = (value: string) => value.replace(/^(\d{12,13})[\s-]?\d{2}(?:\d{3})?$/, "$1");
 /** Choose the ISBN among decoded barcodes, or explain why there is none. */
 export function pickIsbn(results: Detected[]): IsbnParse | null {
-  // Some readers append a US price add-on ("9781974715466 51099"); the ISBN is
-  // the 13-digit symbol before it.
-  const parsed = results.map((result) => parseIsbn(result.rawValue.replace(/^(\d{13})[\s-]?\d{2}(?:\d{3})?$/, "$1")));
+  const parsed = results.map((result) => parseIsbn(withoutAddOn(result.rawValue)));
   return parsed.find((entry) => entry.ok) ?? parsed[0] ?? null;
+}
+/** Books and CDs: an ISBN wins over a retail code in the same frame. */
+export function pickCode(results: Detected[]): ScanCode | null {
+  const parsed = results.map((result) => parseScanCode(withoutAddOn(result.rawValue)));
+  return parsed.find((entry) => entry.kind === "isbn") ?? parsed.find((entry) => entry.kind === "cd") ?? parsed[0] ?? null;
 }
 
 /**
@@ -94,19 +102,39 @@ export function enhanceContrast(source: HTMLCanvasElement): HTMLCanvasElement {
 }
 
 const MAX_EDGE = 2000;
-/** Decode a still photo, downscaled so 12-megapixel images stay quick. */
-export async function detectInFile(file: Blob, detector: Detector): Promise<Detected[]> {
+async function photoCanvas(file: Blob, edge: number) {
   // EXIF orientation is applied by createImageBitmap's default imageOrientation.
   const bitmap = await createImageBitmap(file);
   try {
-    const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+    const scale = Math.min(1, edge / Math.max(bitmap.width, bitmap.height));
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, Math.round(bitmap.width * scale));
     canvas.height = Math.max(1, Math.round(bitmap.height * scale));
     canvas.getContext("2d", { willReadFrequently: true })!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    const results = await detector.detect(canvas);
-    return results.length ? results : await detector.detect(enhanceContrast(canvas));
+    return canvas;
   } finally {
     bitmap.close();
   }
+}
+/** Decode a still photo, downscaled so 12-megapixel images stay quick. */
+export async function detectInFile(file: Blob, detector: Detector): Promise<Detected[]> {
+  const canvas = await photoCanvas(file, MAX_EDGE);
+  const results = await detector.detect(canvas);
+  return results.length ? results : await detector.detect(enhanceContrast(canvas));
+}
+/**
+ * A book or CD code from a still photo. A blurred ISBN can decode as a
+ * different, checksum-valid retail code, so a CD code from one photo needs a
+ * second, independent read (contrast-stretched or at another scale) to agree.
+ * The live camera gets the same protection from two consecutive frames.
+ */
+export async function pickCodeInFile(file: Blob, detector: Detector): Promise<ScanCode | null> {
+  const picked = pickCode(await detectInFile(file, detector));
+  if (picked?.kind !== "cd") return picked;
+  const canvas = await photoCanvas(file, MAX_EDGE);
+  for (const source of [enhanceContrast(canvas), await photoCanvas(file, 1000)]) {
+    const again = pickCode(await detector.detect(source));
+    if (again?.kind === "cd" && again.code === picked.code) return picked;
+  }
+  return { kind: "problem", message: "That barcode could not be read reliably. Take a closer, sharper photo, or type the number." };
 }

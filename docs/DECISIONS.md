@@ -2,6 +2,14 @@
 
 Status: Stage 0 design decisions retained; reviewed 2026-10-21. Source of product authority: [project_specification](../project_specification). No application implementation occurred during planning; Stage 1 implementation and verification are recorded below and in [STAGE1_VALIDATION.md](STAGE1_VALIDATION.md).
 
+## CD barcode decisions (2026-10-24)
+
+- **One scanner, routed by code.** A valid ISBN goes to the book flow, any other valid retail barcode to the CD flow, so there is no separate CD mode to choose. The haul stack scanner stays books-only.
+- **Owner chooses the pressing.** MusicBrainz lists reissues and regional pressings under one barcode, so a barcode with several releases is never resolved automatically.
+- **One stored form.** Barcodes are kept as 13-digit GTINs, so UPC-A, UPC-E and EAN-13 reads of one pressing agree. No migration: `album_releases.barcode` already existed.
+- **Checks include CDs** (owner's choice), including offline answers from barcodes on the saved shelf. A miss offline is never "not owned".
+- **Separate rate limits** for CD lookups, because they spend MusicBrainz's budget, not the book catalogs'.
+
 ## Data clean-up queue decisions (2026-10-24)
 
 - **Same scope as the stats caveats.** Language and numbering cards cover manga and light novels, as the stats do. Dates cover every medium. Representative and missing covers cover volumes and CDs.

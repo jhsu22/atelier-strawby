@@ -21,6 +21,7 @@ import type { Store, Statement } from "../db/store.ts";
 import { ApiError } from "../http/api.ts";
 import type { ImportPreview, ImportKind } from "../../domain/transfer.ts";
 import { CSV_IMPORT_BYTES, BACKUP_IMPORT_BYTES } from "../../domain/transfer.ts";
+import { formatBarcode } from "../../domain/barcode.ts";
 import { MEDIUM_LABELS } from "../../domain/types.ts";
 import type { Medium } from "../../domain/types.ts";
 
@@ -337,6 +338,7 @@ export async function createImportPreview(
                   title: "",
                 })),
             tracks: row["Tracks JSON"] ? JSON.parse(row["Tracks JSON"]) : [],
+            barcode: row.Barcode || null,
           });
           if (input.kind === "discogs") {
             const added = row["Date Added"];
@@ -718,6 +720,7 @@ export async function exportCsv(
           "Tags",
           "Artwork URL",
           "Artwork Scope",
+          "Barcode",
         ];
   const rows = [headers.map(cell).join(",")];
   const [library, releaseLabels, releaseMedia] = await Promise.all([
@@ -790,6 +793,7 @@ export async function exportCsv(
             (copy.tags ?? []).join(" | "),
             entry.artwork?.sourceUrl,
             entry.artwork?.scope,
+            entry.barcode ? formatBarcode(entry.barcode) : "",
           ]
             .map(cell)
             .join(","),

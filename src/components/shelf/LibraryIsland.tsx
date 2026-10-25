@@ -1080,6 +1080,7 @@ export function LibraryIsland({
               mode={addMode === "check" ? "check" : "add"}
               onAdding={setCheckAdding}
               series={data.entries.flatMap((entry) => (entry.kind === "cd" ? [] : [entry]))}
+              albums={data.entries.flatMap((entry) => (entry.kind === "cd" ? [entry] : []))}
               onSaved={reloadLibrary}
               onEditFully={(seed) => setEditing({ seed })}
               onOpen={(id) => {

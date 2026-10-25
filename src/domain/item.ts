@@ -2,6 +2,7 @@ import { z } from "zod";
 import { MEDIUMS } from "./types.ts";
 import { TAGS, deriveTags } from "./normalization/tags.ts";
 import { validIsbn13 } from "./isbn.ts";
+import { parseProductBarcode } from "./barcode.ts";
 
 export const key = (value: string) =>
   value.normalize("NFKC").trim().toLocaleLowerCase("en");
@@ -157,6 +158,16 @@ export const itemSchema = z
       .nullable()
       .default(null)
       .refine((value) => value === null || validIsbn13(value), "Use a valid 13-digit ISBN"),
+    // A CD release's retail barcode (EAN/UPC) in its 13-digit GTIN form.
+    barcode: z
+      .string()
+      .nullable()
+      .default(null)
+      .refine((value) => value === null || parseProductBarcode(value).ok, "Use a valid 12- or 13-digit barcode")
+      .transform((value) => {
+        const parsed = value === null ? null : parseProductBarcode(value);
+        return parsed?.ok ? parsed.gtin13 : null;
+      }),
     // The catalog record the owner confirmed for this ISBN, kept as provenance.
     catalogSource: z
       .object({
@@ -177,6 +188,8 @@ export const itemSchema = z
       issue("volume", "Use a positive whole number for the number in series");
     if (item.kind === "cd" && (item.isbn13 || item.catalogSource))
       issue("isbn13", "ISBNs apply to books and manga only.");
+    if (item.kind === "manga" && item.barcode)
+      issue("barcode", "Barcodes apply to CDs; books use their ISBN.");
     if (item.catalogSource && !item.isbn13)
       issue("catalogSource", "A catalog record is only kept with the scanned ISBN.");
     for (const field of ["authors", "artists"] as const) {

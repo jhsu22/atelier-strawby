@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { itemSchema, memoryTags } from "../../domain/item.ts";
 import { parseIsbn } from "../../domain/isbn.ts";
+import { formatBarcode, parseProductBarcode } from "../../domain/barcode.ts";
 import type { ItemInput } from "../../domain/item.ts";
 import type { Medium } from "../../domain/types.ts";
 import type { LibraryEntry } from "../../domain/library.ts";
@@ -29,6 +30,7 @@ export function ItemEditor({
   );
   const [title, setTitle] = useState(seed?.title ?? "");
   const [isbnText, setIsbnText] = useState(seed?.isbn13 ?? "");
+  const [barcodeText, setBarcodeText] = useState(seed?.barcode ? formatBarcode(seed.barcode) : "");
   const [version, setVersion] = useState(0),
     [loading, setLoading] = useState(Boolean(id));
   const [busy, setBusy] = useState(false),
@@ -61,6 +63,7 @@ export function ItemEditor({
           setItem(data.item);
           setTitle(data.item.title);
           setIsbnText(data.item.isbn13 ?? "");
+          setBarcodeText(data.item.barcode ? formatBarcode(data.item.barcode) : "");
           setQuery(data.item.title);
           setArtistQuery(data.item.artists.join(" "));
           setVersion(data.version);
@@ -140,10 +143,20 @@ export function ItemEditor({
       }
       isbn13 = isbn.isbn13;
     }
+    let barcode: string | null = null;
+    if (item.kind === "cd" && barcodeText.trim()) {
+      const parsedBarcode = parseProductBarcode(barcodeText);
+      if (!parsedBarcode.ok) {
+        setError(`Barcode: ${parsedBarcode.message}`);
+        return;
+      }
+      barcode = parsedBarcode.gtin13;
+    }
     const parsed = itemSchema.safeParse({
       ...item,
       title,
       isbn13,
+      barcode,
       // Scan provenance describes the scanned ISBN only.
       catalogSource: isbn13 && isbn13 === item.isbn13 ? item.catalogSource : null,
     });
@@ -461,6 +474,19 @@ export function ItemEditor({
           </>
         ) : (
           <>
+            <label className="filter-field">
+              Barcode
+              <input
+                aria-label="Barcode"
+                value={barcodeText}
+                inputMode="numeric"
+                maxLength={20}
+                autoComplete="off"
+                spellCheck={false}
+                onChange={(e) => setBarcodeText(e.target.value)}
+              />
+              <small>Optional. The EAN or UPC under the CD’s barcode; rescanning it then finds this copy.</small>
+            </label>
             <label className="filter-field">
               Release date
               <input

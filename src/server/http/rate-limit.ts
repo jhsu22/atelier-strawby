@@ -12,6 +12,11 @@ export const SCAN_LIMITS: RateLimit[] = [
   { bucket: "scan-lookup:minute", limit: 30, windowMs: 60_000 },
   { bucket: "scan-lookup:hour", limit: 400, windowMs: 3_600_000 },
 ];
+/** CD barcode lookups reach MusicBrainz, not the book catalogs, so they have their own budget. */
+export const CD_SCAN_LIMITS: RateLimit[] = [
+  { bucket: "cd-lookup:minute", limit: 30, windowMs: 60_000 },
+  { bucket: "cd-lookup:hour", limit: 400, windowMs: 3_600_000 },
+];
 
 /** Fixed windows in D1. One atomic upsert per window, shared by every isolate. */
 export async function enforceRateLimits(
