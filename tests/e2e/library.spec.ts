@@ -334,7 +334,7 @@ test("refresh exposes a real skeleton, preserves data on failure and recovers", 
   page,
 }) => {
   await hydrated(page);
-  await page.route("**/api/library", async (route) => {
+  await page.route("**/api/library/owner", async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 300));
     await route.fulfill({
       status: 503,
@@ -350,7 +350,7 @@ test("refresh exposes a real skeleton, preserves data on failure and recovers", 
   ).toBeVisible();
   await expect(page.getByRole("alert")).toContainText("could not be refreshed");
   await expect(page.locator(".entry-card")).toHaveCount(42);
-  await page.unroute("**/api/library");
+  await page.unroute("**/api/library/owner");
   await page.getByRole("button", { name: "Try again", exact: true }).click();
   await expect(page.getByRole("alert")).toHaveCount(0);
   await expect(page.locator(".entry-card")).toHaveCount(42);
@@ -411,7 +411,7 @@ test("missing detail and empty API refresh are honest states", async ({
   await page
     .getByRole("button", { name: "Back to the shelf", exact: true })
     .click();
-  await page.route("**/api/library", (route) =>
+  await page.route("**/api/library/owner", (route) =>
     route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -494,7 +494,7 @@ test("CD detail renders populated release fields and an ordered multi-disc track
   page,
 }) => {
   await hydrated(page);
-  const response = await page.request.get("/api/library");
+  const response = await page.request.get("/api/library/owner");
   const data = await response.json();
   const album = data.entries.find(
     (entry: { title: string }) => entry.title === "Kessoku Band",
@@ -521,7 +521,7 @@ test("CD detail renders populated release fields and an ordered multi-disc track
       { medium: 2, position: 1, title: "Synthetic encore", durationMs: 61000 },
     ],
   });
-  await page.route("**/api/library", (route) =>
+  await page.route("**/api/library/owner", (route) =>
     route.fulfill({
       status: 200,
       contentType: "application/json",

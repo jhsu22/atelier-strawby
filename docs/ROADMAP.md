@@ -140,7 +140,7 @@ Scan option in Add; on-device live camera decoding (native BarcodeDetector or se
 
 ### Phase C — Multi-volume photos and acquisition batches (planned, not implemented)
 
-**Dependencies:** Phase B recognition; an acquisition-batch schema (new additive migration: batch date, store name, notes, and an item→batch link distinct from CSV `import_batches`).
+**Dependencies:** Phase B recognition. The acquisition-batch schema, atomic batch save, shared date/store/notes form, editable checklist and timeline grouping now exist as **Log a haul** (`0004_acquisition_batches`, implemented 2026-10-24; see [DATA_MODEL.md](DATA_MODEL.md#logged-hauls)). Phase C adds photo detection as another way to fill that checklist.
 
 **Deliver:**
 
@@ -155,6 +155,10 @@ Scan option in Add; on-device live camera decoding (native BarcodeDetector or se
 - Measured per-cover detection and recognition rates on multi-volume photos.
 - An atomic batch save, with no partial batches on failure.
 - CSV import/export unchanged; batches round-trip in JSON backup.
+
+## Feature ideas (not scheduled)
+
+Further product ideas are recorded in [FEATURE_IDEAS.md](FEATURE_IDEAS.md). They are proposals only: do not implement any of them unless the owner specifically asks for that item.
 
 ## Requirement traceability
 

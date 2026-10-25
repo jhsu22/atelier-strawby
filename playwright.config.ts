@@ -23,6 +23,8 @@ export default defineConfig({
         process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ??
         (existsSync("/usr/bin/chromium") ? "/usr/bin/chromium" : undefined),
     },
+    // A service worker's requests bypass page.route mocks; offline.spec.ts opts back in.
+    serviceWorkers: "block",
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
   },

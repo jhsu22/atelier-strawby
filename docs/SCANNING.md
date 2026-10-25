@@ -37,6 +37,21 @@ Status, 2026-10-24: **Phase A is implemented and verified locally** (unit, integ
 - `request_limits` (migration `0002_request_limits.sql`): fixed-window counters, 30 lookups/minute and 400/hour, shared across isolates. Operational state only; excluded from JSON backups.
 - CSV columns are **unchanged**. JSON backups carry ISBNs because they already export every `volume_editions` column; restore round-trips them (tested).
 
+## Do I own this? (check mode)
+
+A third Add mode runs the same decode and `/api/scan/isbn` lookup, then shows a read-only verdict instead of the review form (`ownershipAnswer` in `src/domain/scan.ts`, `OwnershipCheck.tsx`). It reuses the match, volume and language the add flow would preselect, so a check followed by **Add this copy** agrees with it. Adding reuses the lookup result without a second request.
+
+- **owned:** the server found an exact-ISBN or same-volume copy, or the shelf has that volume in the matched edition run.
+- **series:** the series is matched but that volume isn't owned. The card shows the owned run's volumes as ranges and the lowest whole volume missing. That number is withheld when any label isn't a whole number. It also lists the series' other owned runs.
+- **new:** no series match. This verdict is called reliable only when an ISBN-verified catalog record gave a title to match. Otherwise the card says only that no copy records this ISBN.
+- A top match below the 0.8 preselection threshold is labeled possible, with its reasons. It is never stated as fact.
+
+Nothing is written. Unit tests cover each verdict, live shelf duplicates, other-language editions, weak matches and range formatting. Browser tests cover owned → next book → add hand-off (axe and no overflow on desktop and mobile) and the no-catalog case. Real devices remain untested, as for Phase A.
+
+## Scanning a stack (Log a haul)
+
+`BarcodeScanner` has a `continuous` mode for the haul form. The camera keeps running, and each newly confirmed ISBN (the same code on two consecutive frames) is reported once. The same code is reported again only after it has been out of the frame for 2.5 s. That lets a second copy of the same book be logged on purpose without double-counting a book held still. Each code runs the normal lookup and preselected match. A row that lacks a title or volume is highlighted for typing. A row whose volume is already owned (exact ISBN, or the shelf's matched run) says so but is still allowed.
+
 ## Test set
 
 [`tests/fixtures/scan/isbn-cases.json`](../tests/fixtures/scan/isbn-cases.json) holds 28 ISBNs. All but two were found in Google Books or Open Library search results on 2026-10-24; the two labeled synthetic ISBNs have valid check digits and are unassigned. The set covers:
@@ -129,4 +144,4 @@ Real phone photos: **not measured**. Put photos named `<isbn>-anything.jpg` in a
 - WebKit and Firefox were not available to Playwright here.
 - The camera needs HTTPS. The hosted site qualifies; a phone opening the local dev server over a LAN IP does not.
 - Catalog coverage is the main accuracy limit. A Japanese bibliographic source such as openBD or NDL could be added later; neither was part of this phase.
-- Store names and shared acquisition batches belong to Phase C. Phase A records a per-copy date (defaulting to today, clearable) and notes.
+- Store names and shared acquisition batches now come from **Log a haul** (a range of volumes, or continuous scanning of a stack). Phase C would add photo detection. Single scans record a per-copy date (defaulting to today, clearable) and notes.

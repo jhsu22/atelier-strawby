@@ -5,11 +5,12 @@ import { readLibrary } from '../server/repositories/library.ts';
 import { parseBrowseState } from '../domain/library.ts';
 import type { LibraryData } from '../domain/library.ts';
 let data: LibraryData | undefined;
-try { data = await readLibrary(Astro.locals.runtime.env.DB); }
+// Private notes reach only the owner's editing view, never the public shelf.
+try { data = await readLibrary(Astro.locals.runtime.env.DB, { owner: Astro.locals.canEdit }); }
 catch { Astro.response.status = 503; }
 ---
 <AppLayout>
-  {data ? <LibraryBoundary initialData={data} initialState={parseBrowseState(Astro.url.searchParams)} canEdit={Astro.locals.canEdit} client:load />
+  {data ? <LibraryBoundary initialData={data} initialState={parseBrowseState(Astro.url.searchParams)} canEdit={Astro.locals.canEdit} renderedAt={Date.now()} client:load />
     : <main id="main" class="unavailable-page">
       <h1>Collection unavailable</h1><p role="alert">Check the database connection and setup.</p>
       <a href="/" class="button button-primary">Try the shelf again</a><a href="/foundation" class="text-button">Open the collection record</a>

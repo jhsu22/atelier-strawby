@@ -12,11 +12,14 @@ import {
 import { itemSchema } from "../../src/domain/item.ts";
 import {
   draftFromScan,
+  nextVolume,
+  ownershipAnswer,
   preselectedMatch,
   scanLookupRequestSchema,
   scanLookupResultSchema,
+  volumeRanges,
 } from "../../src/domain/scan.ts";
-import type { ScanEdition, ScanLookupResult, ScanMatch } from "../../src/domain/scan.ts";
+import type { OwnedSeries, ScanEdition, ScanLookupResult, ScanMatch } from "../../src/domain/scan.ts";
 import {
   editionConflicts,
   googleEditions,
@@ -363,4 +366,74 @@ test("only strong matches are preselected; request and result schemas are strict
   assert.equal(scanLookupRequestSchema.safeParse({ code: "x".repeat(33), source: "camera" }).success, false);
   assert.equal(scanLookupResultSchema.safeParse({ ...lookup(), extra: true }).success, false);
   assert.equal(scanLookupResultSchema.safeParse({ ...lookup(), isbn13: "1234567890123" }).success, false);
+});
+
+test("owned volumes collapse into ranges, and the next volume is the lowest whole number not owned", () => {
+  assert.equal(volumeRanges(["3", "1", "2", "2", "7", "Special", "4"]), "1–4, 7, Special");
+  assert.equal(volumeRanges(["5"]), "5");
+  assert.equal(nextVolume(["1", "2", "3", "4", "7"]), "5");
+  assert.equal(nextVolume(["2", "3"]), "1");
+  assert.equal(nextVolume(["1", "1.5"]), null, "half volumes make the next number uncertain");
+  assert.equal(nextVolume([]), null);
+});
+
+const shelf: OwnedSeries = {
+  id: "csm",
+  title: "Chainsaw Man",
+  aliases: [],
+  authors: ["Tatsuki Fujimoto"],
+  copies: [
+    ...["1", "2", "3", "4", "7"].map((volume) => ({
+      id: `en-${volume}`,
+      editionRunId: "run-en",
+      editionTitle: "Chainsaw Man",
+      publisher: "VIZ Media",
+      language: "EN" as const,
+      languageBasis: "assumed" as const,
+      volume,
+      numberingBasis: "printed" as const,
+      medium: "manga" as const,
+      format: "standard",
+      acquiredOn: volume === "1" ? "2023-01-02" : null,
+    })),
+    { id: "kr-1", editionRunId: "run-kr", editionTitle: "체인소 맨", publisher: "Haksan", language: "KR", languageBasis: "specified", volume: "1", numberingBasis: "printed", medium: "manga", format: "standard", acquiredOn: null },
+  ],
+};
+
+test("do I own this? answers owned, missing volume and new from the lookup plus the shelf, without guessing", () => {
+  const owned = ownershipAnswer(lookup({ editions: [edition({ volume: "1" })], matches: [match({ volume: "1" })], duplicate: { level: "same-volume", copies: [{ id: "en-1", acquiredOn: "2023-01-02", isbn13: null }] } }), [shelf]);
+  assert.equal(owned.verdict, "owned");
+  assert.equal(owned.confident, true);
+  assert.deepEqual(owned.copies, [{ id: "en-1", acquiredOn: "2023-01-02" }]);
+  assert.equal(owned.run?.volumes, "1–4, 7");
+  assert.equal(owned.run?.next, "5");
+  assert.deepEqual(owned.otherRuns.map((run) => [run.language, run.volumes]), [["KR", "1"]]);
+
+  // The server reported no duplicate, but the shelf has the volume in the matched run.
+  const live = ownershipAnswer(lookup({ editions: [edition({ volume: "3" })], matches: [match({ volume: "3" })] }), [shelf]);
+  assert.equal(live.verdict, "owned");
+  assert.deepEqual(live.copies.map((copy) => copy.id), ["en-3"]);
+
+  const missing = ownershipAnswer(lookup({ editions: [edition({ volume: "5" })], matches: [match({ volume: "5" })] }), [shelf]);
+  assert.deepEqual([missing.verdict, missing.volume, missing.language, missing.copies.length], ["series", "5", "EN", 0]);
+  assert.equal(missing.run?.volumes, "1–4, 7");
+
+  const otherLanguage = ownershipAnswer(lookup({ languageHint: "JP", editions: [edition({ language: "JP", volume: "2" })], matches: [match({ run: null, volume: "2" })] }), [shelf]);
+  assert.deepEqual([otherLanguage.verdict, otherLanguage.language, otherLanguage.run], ["series", "JP", null]);
+  assert.equal(otherLanguage.otherRuns.length, 2);
+
+  // Two English standard runs from different publishers: the match's publisher decides.
+  const twoRuns: OwnedSeries = { ...shelf, copies: [...shelf.copies, { ...shelf.copies[0]!, id: "alt-1", editionRunId: "run-alt", publisher: "Other Press", volume: "1" }] };
+  const alternate = ownershipAnswer(lookup({ editions: [edition({ volume: "2" })], matches: [match({ volume: "2", run: { ...match().run!, publisher: "Other Press" } })] }), [twoRuns]);
+  assert.deepEqual([alternate.verdict, alternate.run?.id, alternate.run?.volumes], ["series", "run-alt", "1"]);
+  assert.equal(ownershipAnswer(lookup({ editions: [edition({ volume: "2" })], matches: [match({ volume: "2" })] }), [twoRuns]).run?.id, "run-en");
+
+  const possible = ownershipAnswer(lookup({ editions: [edition()], matches: [match({ score: 0.6, reasons: ["Similar title."] })] }), [shelf]);
+  assert.equal(possible.confident, false, "a weak match is offered, never asserted");
+  assert.deepEqual(possible.reasons, ["Similar title."]);
+
+  const fresh = ownershipAnswer(lookup({ editions: [edition({ seriesTitle: "Dandadan", title: "Dandadan, Vol. 1" })] }), [shelf]);
+  assert.deepEqual([fresh.verdict, fresh.title, fresh.confident, fresh.seriesId], ["new", "Dandadan", true, null]);
+  const unknown = ownershipAnswer(lookup(), [shelf]);
+  assert.deepEqual([unknown.verdict, unknown.title, unknown.confident], ["new", null, false]);
 });

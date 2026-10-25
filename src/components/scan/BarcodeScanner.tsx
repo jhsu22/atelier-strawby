@@ -16,14 +16,20 @@ const INTERVAL = 120;
  * Live viewfinder. A code is accepted after two identical consecutive reads,
  * which filters partial-frame misreads without slowing a steady hand.
  */
+/** A held book is reported once; it must leave the frame this long to count again. */
+const REPEAT_AFTER_MS = 2500;
+
 export function BarcodeScanner({
   onCode,
   onProblem,
   onHint,
+  continuous = false,
 }: {
   onCode: (code: string) => void;
   onProblem: (problem: CameraProblem) => void;
   onHint: (message: string) => void;
+  /** Keep the camera running after each code (scanning a stack of books). */
+  continuous?: boolean;
 }) {
   const video = useRef<HTMLVideoElement>(null);
   const [ready, setReady] = useState(false);
@@ -38,6 +44,8 @@ export function BarcodeScanner({
     let timer = 0;
     let stopped = false;
     let last = "";
+    let reported = "";
+    let reportedSeenAt = 0;
     let frame = 0;
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d", { willReadFrequently: true })!;
@@ -65,14 +73,21 @@ export function BarcodeScanner({
         // Alternate frames get a contrast-stretched pass for dim labels.
         const picked = pickIsbn(await detector.detect(++frame % 2 ? canvas : enhanceContrast(canvas)));
         if (picked?.ok) {
-          if (picked.isbn13 === last) {
-            stopped = true;
+          if (continuous && picked.isbn13 === reported && Date.now() - reportedSeenAt < REPEAT_AFTER_MS) {
+            reportedSeenAt = Date.now();
+          } else if (picked.isbn13 === last) {
             navigator.vibrate?.(40);
-            stop();
+            if (!continuous) {
+              stopped = true;
+              stop();
+              callbacks.current.onCode(picked.isbn13);
+              return;
+            }
+            reported = picked.isbn13;
+            reportedSeenAt = Date.now();
+            last = "";
             callbacks.current.onCode(picked.isbn13);
-            return;
-          }
-          last = picked.isbn13;
+          } else last = picked.isbn13;
         } else if (picked) {
           last = "";
           callbacks.current.onHint(picked.message);

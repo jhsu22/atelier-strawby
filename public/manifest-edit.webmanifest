@@ -1,0 +1,31 @@
+{
+  "name": "Atelier Strawby — Edit",
+  "short_name": "Strawby",
+  "description": "Your manga, book and CD collection, and the stories behind it.",
+  "display": "standalone",
+  "background_color": "#faf8f5",
+  "theme_color": "#faf8f5",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "id": "/edit",
+  "start_url": "/edit"
+}

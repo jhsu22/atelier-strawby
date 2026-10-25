@@ -244,6 +244,19 @@ export const importBatches = sqliteTable("import_batches", {
   uniqueIndex("import_batches_initial_source_uq").on(t.sourceKind).where(sql`source_kind = 'initial-collection'`)
 ]);
 
+// Added by 0004_acquisition_batches: copies logged together as one haul
+// (shared date, store and note). Distinct from CSV import_batches.
+export const acquisitionBatches = sqliteTable("acquisition_batches", {
+  id: text("id").primaryKey().notNull(),
+  acquiredOn: text("acquired_on"),
+  store: text("store"),
+  storePrivate: integer("store_private").notNull().default(sql`1`),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, () => [
+  check("acquisition_batches_check_1", sql`store_private IN (0,1)`),
+  check("acquisition_batches_check_2", sql`acquired_on IS NULL OR (acquired_on GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]' AND date(acquired_on, '+0 days') IS NOT NULL AND date(acquired_on, '+0 days') = acquired_on)`),
+]);
+
 export const collectionItems = sqliteTable("collection_items", {
   id: text("id").primaryKey().notNull(),
   mediaKind: text("media_kind", { enum: ['manga', 'cd'] }).notNull(),
@@ -255,15 +268,20 @@ export const collectionItems = sqliteTable("collection_items", {
   idempotencyKey: text("idempotency_key"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  // Added by 0003_private_notes: a private note and its derived memory tags stay off the public shelf.
+  notesPrivate: integer("notes_private").notNull().default(sql`1`),
+  acquisitionBatchId: text("acquisition_batch_id").references(() => acquisitionBatches.id),
 }, (t) => [
   check("collection_items_check_1", sql`media_kind IN ('manga','cd')`),
   check("collection_items_check_2", sql`is_sample IN (0,1)`),
   check("collection_items_check_3", sql`version >= 1`),
+  check("collection_items_check_5", sql`notes_private IN (0,1)`),
   check("collection_items_check_4", sql`acquired_on IS NULL OR (acquired_on GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]' AND date(acquired_on, '+0 days') IS NOT NULL AND date(acquired_on, '+0 days') = acquired_on)`),
   uniqueIndex("collection_items_id_media_kind_uq").on(t.id, t.mediaKind),
   uniqueIndex("collection_items_idempotency_key_uq").on(t.idempotencyKey),
   index("collection_items_is_sample_media_kind_acquired_on_idx").on(t.isSample, t.mediaKind, t.acquiredOn),
-  index("collection_items_import_batch_id_idx").on(t.importBatchId)
+  index("collection_items_import_batch_id_idx").on(t.importBatchId),
+  index("collection_items_acquisition_batch_id_idx").on(t.acquisitionBatchId)
 ]);
 
 export const volumes = sqliteTable("volumes", {

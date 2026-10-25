@@ -8,6 +8,14 @@ export interface Artwork {
   sourceUrl: string;
 }
 
+/** The haul a copy was logged with; the store is null publicly when private. */
+export interface CopyHaul {
+  id: string;
+  acquiredOn: string | null;
+  store: string | null;
+  /** Owner view only. */
+  storePrivate?: boolean;
+}
 export interface MangaCopy {
   version?: number;
   artwork?: Artwork | null;
@@ -20,11 +28,16 @@ export interface MangaCopy {
   volume: string;
   bookTitle?: string;
   volumeSort: number | null;
+  /** The volume edition's recorded ISBN; lets the saved shelf answer scans offline. */
+  isbn13?: string | null;
   numberingBasis: "printed" | "source_record" | "unknown";
   medium: Medium;
   format: string;
   acquiredOn: string | null;
   notes: string | null;
+  /** Owner view only; the public shelf omits private notes entirely. */
+  notesPrivate?: boolean;
+  haul?: CopyHaul | null;
   tags: string[];
 }
 /** A series of volume-shaped copies: manga (incl. light novels) or books. */
@@ -42,6 +55,9 @@ export interface CdCopy {
   id: string;
   acquiredOn: string | null;
   notes: string | null;
+  /** Owner view only; the public shelf omits private notes entirely. */
+  notesPrivate?: boolean;
+  haul?: CopyHaul | null;
   isSample: boolean;
 }
 export interface CdTrack {
@@ -202,7 +218,7 @@ export function matchingCopies(
       if (state.publisher && state.publisher !== copy.publisher) return false;
       if (state.memory && !copy.tags.includes(state.memory)) return false;
       const haystack = searchText(
-        [common, copy.bookTitle ?? "", copy.editionTitle, copy.publisher, copy.notes ?? ""].join(" "),
+        [common, copy.bookTitle ?? "", copy.editionTitle, copy.publisher, copy.notes ?? "", copy.haul?.store ?? ""].join(" "),
       );
       return terms.every((term) => fuzzyTerm(term, haystack));
     });
@@ -233,7 +249,7 @@ export function matchingCopies(
     )
       return false;
     if (state.memory && !copy.tags?.includes(state.memory)) return false;
-    const haystack = searchText(`${common} ${copy.notes ?? ""}`);
+    const haystack = searchText(`${common} ${copy.notes ?? ""} ${copy.haul?.store ?? ""}`);
     return terms.every((term) => fuzzyTerm(term, haystack));
   });
 }

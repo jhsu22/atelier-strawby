@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import {
   ArrowDownUp,
@@ -12,6 +12,9 @@ import {
   Plus,
   RefreshCw,
   ScanBarcode,
+  ScanSearch,
+  ShoppingBag,
+  WifiOff,
   PencilLine,
   Search,
   SlidersHorizontal,
@@ -39,6 +42,7 @@ import { BrandLockup } from "../brand/BrandMark.tsx";
 import { brand } from "../../config/brand.ts";
 import { EntryDetails } from "../details/EntryDetails.tsx";
 import { ItemEditor } from "../manage/ItemEditor.tsx";
+import { HaulLogger } from "../haul/HaulLogger.tsx";
 import { ScanFlow } from "../scan/ScanFlow.tsx";
 import { TransferPanel } from "../manage/TransferPanel.tsx";
 import { HaulTimeline } from "../timeline/HaulTimeline.tsx";
@@ -148,10 +152,13 @@ export function LibraryIsland({
   initialData,
   initialState,
   canEdit = false,
+  renderedAt,
 }: {
   initialData: LibraryData;
   initialState: BrowseState;
   canEdit?: boolean;
+  /** When the server rendered this shelf; tells how old an offline copy is. */
+  renderedAt?: number;
 }) {
   const [data, setData] = useState(initialData);
   const [state, setState] = useState(initialState);
@@ -165,7 +172,10 @@ export function LibraryIsland({
     id?: string;
     seed?: Partial<ItemInput>;
   } | null>(null);
-  const [addMode, setAddMode] = useState<"manual" | "scan">("manual");
+  const [addMode, setAddMode] = useState<"manual" | "scan" | "check" | "haul">("manual");
+  const [checkAdding, setCheckAdding] = useState(false);
+  const [online, setOnline] = useState(true);
+  const [savedAt, setSavedAt] = useState(renderedAt ?? null);
   const entries = useMemo(
     () => browseEntries(data.entries, state),
     [data, state],
@@ -173,6 +183,8 @@ export function LibraryIsland({
   const cdSpines = useMemo(() => cdShelf(entries, state), [entries, state]);
   const bookSpines = useMemo(() => bookShelf(entries, state), [entries, state]);
   const selected = data.entries.find((entry) => entry.id === state.item);
+  // Only the owner's endpoint includes private notes.
+  const libraryUrl = canEdit ? "/api/library/owner" : "/api/library";
   const manga = data.entries.filter((entry) => entry.kind === "manga");
   const books = data.entries.filter((entry) => entry.kind === "book");
   const cds = data.entries.filter((entry) => entry.kind === "cd");
@@ -236,6 +248,38 @@ export function LibraryIsland({
     state.year,
     state.format,
   ].filter(Boolean).length;
+  // Offline (public/sw.js): the stored page may be older than the stored
+  // library read, and its URL state is the stored page's, not this address.
+  const reconnect = useRef<() => void>(() => {});
+  reconnect.current = () => void refresh();
+  useEffect(() => {
+    const offline = () => setOnline(false);
+    const back = () => {
+      setOnline(true);
+      reconnect.current();
+    };
+    window.addEventListener("offline", offline);
+    window.addEventListener("online", back);
+    if (!navigator.onLine) {
+      setOnline(false);
+      const next = parseBrowseState(new URLSearchParams(window.location.search));
+      setState(next);
+      setPanel(next.section === "shelf" ? null : next.section);
+      fetch(libraryUrl, { cache: "no-store" })
+        .then(async (response) => {
+          const stored = Number(response.headers.get("x-strawby-saved-at"));
+          if (!response.ok || !stored || (renderedAt && stored <= renderedAt)) return;
+          setData(librarySchema.parse(await response.json()));
+          setSavedAt(stored);
+        })
+        .catch(() => {});
+    }
+    return () => {
+      window.removeEventListener("offline", offline);
+      window.removeEventListener("online", back);
+    };
+    // Runs once on mount; the reconnect ref always holds the current refresh.
+  }, []);
   useEffect(() => {
     setReady(true);
     setTheme(document.documentElement.dataset.theme ?? "light");
@@ -313,6 +357,9 @@ export function LibraryIsland({
           ...item,
           acquiredOn: null,
           notes: null,
+          notesPrivate: true,
+          // Another copy is a new acquisition, not part of the original's haul.
+          acquisitionBatchId: null,
           tags: [],
           tagsMode: "auto",
           isSample: false,
@@ -323,7 +370,7 @@ export function LibraryIsland({
     }
   }
   async function reloadLibrary() {
-    const response = await fetch("/api/library", { cache: "no-store" });
+    const response = await fetch(libraryUrl, { cache: "no-store" });
     if (!response.ok)
       throw new Error(
         "Changes were saved, but refresh failed. Reload the page to see them.",
@@ -351,7 +398,7 @@ export function LibraryIsland({
     setRefreshing(true);
     setError("");
     try {
-      const response = await fetch("/api/library", {
+      const response = await fetch(libraryUrl, {
         signal: AbortSignal.timeout(15_000),
         cache: "no-store",
       });
@@ -594,6 +641,18 @@ export function LibraryIsland({
               </button>
             )}
           </div>
+          {!online && (
+            <div className="offline-notice" role="status">
+              <WifiOff size={16} aria-hidden="true" />
+              <p>
+                You’re offline. This is the shelf saved on this device
+                {savedAt
+                  ? `, as of ${new Date(savedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}`
+                  : ""}
+                . Search and details work; adding and editing need a connection.
+              </p>
+            </div>
+          )}
           {error && (
             <div className="error-notice" role="alert">
               <p>{error}</p>
@@ -944,7 +1003,7 @@ export function LibraryIsland({
       )}
       {canEdit && (panel === "add" || editing) && (
         <Drawer
-          title={editing?.id ? "Edit copy" : "Add to collection"}
+          title={editing?.id ? "Edit copy" : !editing && addMode === "check" && !checkAdding ? "Do I own this?" : !editing && addMode === "haul" ? "Log a haul" : "Add to collection"}
           onClose={() => {
             setEditing(null);
             setPanel(null);
@@ -952,7 +1011,7 @@ export function LibraryIsland({
           wide
         >
           {!editing && (
-            <div className="add-modes" role="group" aria-label="How to add">
+            <div className="add-modes" role="group" aria-label="Add or check">
               <button type="button" aria-pressed={addMode === "manual"} onClick={() => setAddMode("manual")}>
                 <PencilLine size={16} aria-hidden="true" />
                 Enter details
@@ -961,13 +1020,34 @@ export function LibraryIsland({
                 <ScanBarcode size={16} aria-hidden="true" />
                 Scan barcode
               </button>
+              <button type="button" aria-pressed={addMode === "check"} onClick={() => setAddMode("check")}>
+                <ScanSearch size={16} aria-hidden="true" />
+                Do I own this?
+              </button>
+              <button type="button" aria-pressed={addMode === "haul"} onClick={() => setAddMode("haul")}>
+                <ShoppingBag size={16} aria-hidden="true" />
+                Log a haul
+              </button>
             </div>
           )}
-          {!editing && addMode === "scan" ? (
+          {!editing && addMode === "haul" ? (
+            <HaulLogger
+              series={data.entries.flatMap((entry) => (entry.kind === "cd" ? [] : [entry]))}
+              onSaved={reloadLibrary}
+            />
+          ) : !editing && addMode !== "manual" ? (
             <ScanFlow
+              key={addMode}
+              mode={addMode === "check" ? "check" : "add"}
+              onAdding={setCheckAdding}
               series={data.entries.flatMap((entry) => (entry.kind === "cd" ? [] : [entry]))}
               onSaved={reloadLibrary}
               onEditFully={(seed) => setEditing({ seed })}
+              onOpen={(id) => {
+                setPanel(null);
+                // A series owned as both manga and books lists its books under "<id>~book".
+                navigate({ item: data.entries.some((entry) => entry.id === id) ? id : `${id}~book` });
+              }}
             />
           ) : (
             <ItemEditor
@@ -988,7 +1068,7 @@ export function LibraryIsland({
         <Drawer title="Import & export" onClose={() => setPanel(null)} wide>
           <TransferPanel
             onChanged={async () => {
-              const response = await fetch("/api/library", {
+              const response = await fetch(libraryUrl, {
                 cache: "no-store",
               });
               if (!response.ok)

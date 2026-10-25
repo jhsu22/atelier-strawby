@@ -29,6 +29,20 @@
       "when": 1792876386186,
       "tag": "0003_book_titles",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1792887860246,
+      "tag": "0003_private_notes",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1792887866032,
+      "tag": "0004_acquisition_batches",
+      "breakpoints": true
     }
   ]
 }

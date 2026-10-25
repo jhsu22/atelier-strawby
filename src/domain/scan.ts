@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MEDIUMS } from "./types.ts";
+import { parseIsbn } from "./isbn.ts";
 import type { ItemInput } from "./item.ts";
 
 // Strict boundary schemas for barcode lookups. Every client parse uses these, so
@@ -246,6 +247,7 @@ export interface OwnedSeries {
     medium: (typeof MEDIUMS)[number];
     format: string;
     acquiredOn: string | null;
+    isbn13?: string | null;
   }[];
 }
 const RUN_FORMATS = ["standard", "omnibus", "collectors", "artbook", "anthology", "unknown"] as const;
@@ -268,6 +270,17 @@ export function ownedRun(series: OwnedSeries, language: "EN" | "JP" | "KR", form
       numberingBasis: copy.numberingBasis,
     },
   };
+}
+/** The owned run with exactly these attributes, when the match names one. */
+export function exactRun(series: OwnedSeries, run: NonNullable<ScanMatch["run"]>) {
+  const copy = series.copies.find(
+    (entry) =>
+      entry.language === run.language &&
+      entry.format === run.format &&
+      entry.publisher === run.publisher &&
+      entry.editionTitle === run.editionTitle,
+  );
+  return copy ? ownedRun({ ...series, copies: [copy] }, copy.language, copy.format) : null;
 }
 /** Copies of one volume in one owned run: the live duplicate check. */
 export const ownedCopies = (series: OwnedSeries, runId: string | null, volume: string) =>
@@ -293,5 +306,142 @@ export function ownerMatch(series: OwnedSeries, language: "EN" | "JP" | "KR", vo
     basis: "owner",
     score: 1,
     reasons: [owned ? `You chose this series; your ${language} copies are its ${owned.run.publisher || "existing"} edition.` : `You chose this series; this starts its ${language} edition.`],
+  };
+}
+
+/** Owned volume labels as compact ranges, for example "1–4, 7, Special". */
+export function volumeRanges(labels: string[]): string {
+  const unique = [...new Set(labels)];
+  const numbers = unique.filter((label) => /^[1-9]\d*$/.test(label)).map(Number).sort((a, b) => a - b);
+  const ranges: string[] = [];
+  for (let index = 0; index < numbers.length; index++) {
+    const start = numbers[index]!;
+    while (numbers[index + 1] === numbers[index]! + 1) index++;
+    ranges.push(start === numbers[index] ? String(start) : `${start}–${numbers[index]}`);
+  }
+  return [...ranges, ...unique.filter((label) => !/^[1-9]\d*$/.test(label))].join(", ");
+}
+/** The lowest whole volume number not owned; null when labels aren't all whole numbers. */
+export function nextVolume(labels: string[]): string | null {
+  if (!labels.length || !labels.every((label) => /^[1-9]\d*$/.test(label))) return null;
+  const owned = new Set(labels.map(Number));
+  let next = 1;
+  while (owned.has(next)) next++;
+  return String(next);
+}
+
+export interface OwnershipRun {
+  id: string;
+  editionTitle: string;
+  language: "EN" | "JP" | "KR";
+  publisher: string;
+  /** Owned volumes as ranges, e.g. "1–4, 7". */
+  volumes: string;
+  copies: number;
+  next: string | null;
+}
+/** A read-only answer to "do I own this?". Nothing here is saved. */
+export interface OwnershipAnswer {
+  /** owned: this volume is on the shelf; series: the series is, this volume isn't; new: neither. */
+  verdict: "owned" | "series" | "new";
+  /** False when the series match is only a possible one; the owner should check the cover. */
+  confident: boolean;
+  title: string | null;
+  volume: string | null;
+  language: "EN" | "JP" | "KR";
+  seriesId: string | null;
+  copies: { id: string; acquiredOn: string | null }[];
+  /** The owned edition run in this language, when there is one. */
+  run: OwnershipRun | null;
+  /** The series' other owned editions (other languages or formats). */
+  otherRuns: OwnershipRun[];
+  reasons: string[];
+}
+
+function ownershipRuns(series: OwnedSeries): OwnershipRun[] {
+  const runs = new Map<string, OwnedSeries["copies"]>();
+  for (const copy of series.copies) runs.set(copy.editionRunId, [...(runs.get(copy.editionRunId) ?? []), copy]);
+  return [...runs].map(([id, copies]) => {
+    const labels = copies.map((copy) => copy.volume);
+    return {
+      id,
+      editionTitle: copies[0]!.editionTitle,
+      language: copies[0]!.language,
+      publisher: copies[0]!.publisher,
+      volumes: volumeRanges(labels),
+      copies: copies.length,
+      next: nextVolume(labels),
+    };
+  });
+}
+
+/**
+ * Answer "do I own this?" from a lookup and the shelf. It uses the same match,
+ * volume and language the add flow would preselect, so checking first and then
+ * adding agree.
+ */
+export function ownershipAnswer(result: ScanLookupResult, series: OwnedSeries[]): OwnershipAnswer {
+  const edition = result.editions.find((entry) => entry.isbnVerified) ?? null;
+  const match = preselectedMatch(result) ?? result.matches[0] ?? null;
+  const draft = draftFromScan(result, edition, match);
+  const language = draft.item.language ?? "EN";
+  const volume = draft.item.volume || null;
+  const shelf = match ? series.find((entry) => entry.id === match.seriesId) : undefined;
+  const owned = shelf
+    ? ((match?.run ? exactRun(shelf, match.run) : null) ?? ownedRun(shelf, language, match?.run?.format) ?? ownedRun(shelf, language))
+    : null;
+  const runs = shelf ? ownershipRuns(shelf) : [];
+  const exact = result.duplicate.copies.map(({ id, acquiredOn }) => ({ id, acquiredOn }));
+  const copies = exact.length ? exact : shelf && owned && volume ? ownedCopies(shelf, owned.id, volume).map(({ id, acquiredOn }) => ({ id, acquiredOn })) : [];
+  return {
+    verdict: copies.length ? "owned" : match ? "series" : "new",
+    // "New" is only reliable when a catalog title was available to match against
+    // the shelf; otherwise all we know is that no copy records this ISBN.
+    confident: result.duplicate.level === "exact-isbn" || (match ? match.score >= CONFIDENT_MATCH : edition !== null),
+    title: draft.item.title || null,
+    volume,
+    language,
+    seriesId: match?.seriesId ?? null,
+    copies,
+    run: runs.find((run) => run.id === owned?.id) ?? null,
+    otherRuns: runs.filter((run) => run.id !== owned?.id),
+    reasons: match?.reasons ?? [],
+  };
+}
+
+/** Marks a result answered from the shelf saved on this device, without the network. */
+export const OFFLINE_PROVIDER = "offline";
+export const answeredOffline = (result: ScanLookupResult) =>
+  result.failures.some((failure) => failure.provider === OFFLINE_PROVIDER);
+
+/**
+ * Answer a scan with no connection, from copies whose ISBN is recorded on the
+ * saved shelf. Copies added without an ISBN can only be found by title search,
+ * so a miss here is never called "not owned".
+ */
+export function offlineLookup(code: string, series: OwnedSeries[]): ScanLookupResult | null {
+  const isbn = parseIsbn(code);
+  if (!isbn.ok) return null;
+  const hits = series.flatMap((entry) => entry.copies.filter((copy) => copy.isbn13 === isbn.isbn13).map((copy) => ({ entry, copy })));
+  const first = hits[0];
+  return {
+    isbn13: isbn.isbn13,
+    isbn10: isbn.isbn10,
+    languageHint: isbn.hint,
+    editions: [],
+    matches: first
+      ? [{
+          ...ownerMatch(first.entry, first.copy.language, first.copy.volume, first.copy.format),
+          basis: "isbn",
+          recordedIsbn: isbn.isbn13,
+          reasons: ["This ISBN is recorded on a copy in the shelf saved on this device."],
+        }]
+      : [],
+    duplicate: first
+      ? { level: "exact-isbn", copies: hits.map(({ copy }) => ({ id: copy.id, acquiredOn: copy.acquiredOn, isbn13: isbn.isbn13 })) }
+      : { level: "none", copies: [] },
+    local: true,
+    warnings: ["The server couldn’t be reached, so this was answered from the shelf saved on this device. Catalogs weren’t checked."],
+    failures: [{ provider: OFFLINE_PROVIDER, status: 0 }],
   };
 }

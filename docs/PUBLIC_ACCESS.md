@@ -1,6 +1,6 @@
 # Public viewing and owner editing
 
-Share `https://atelier-strawby.pages.dev/`. Visitors can browse/search the shelf, open copy details, view acquisition notes, tags, the haul timeline, collection statistics, artwork and previously saved release comparisons. The public view has no add, edit, delete, import, export or provider lookup controls. The owner opens `/edit` to manage the collection, and can use the footer's Public view link to return to the shareable shelf.
+Share `https://atelier-strawby.pages.dev/`. Visitors can browse/search the shelf, open copy details, view acquisition notes the owner has made public, tags, the haul timeline, collection statistics, artwork and previously saved release comparisons. The public view has no add, edit, delete, import, export or provider lookup controls. The owner opens `/edit` to manage the collection, and can use the footer's Public view link to return to the shareable shelf.
 
 ## Cloudflare Access
 
@@ -18,11 +18,19 @@ Cloudflare references: [application paths](https://developers.cloudflare.com/clo
 
 ## Application enforcement
 
-Only GET/HEAD for `/`, `/foundation`, `/api/library`, `/api/artwork/:id` and `/api/releases` are public. Other routes, including `/edit`, item editor data, import previews and full backups/CSV exports require a verified owner JWT. All non-read methods require owner authentication plus the existing same-origin and `X-Strawby-Request: 1` checks. Missing or invalid tokens, other emails, wrong audience/issuer, expired tokens and cross-origin requests are rejected. Unknown future APIs require owner authentication by default.
+Only GET/HEAD for `/`, `/foundation`, `/api/library`, `/api/artwork/:id` and `/api/releases` are public. Other routes, including `/edit`, the owner's library view `/api/library/owner`, item editor data, import previews and full backups/CSV exports require a verified owner JWT. All non-read methods require owner authentication plus the existing same-origin and `X-Strawby-Request: 1` checks. Missing or invalid tokens, other emails, wrong audience/issuer, expired tokens and cross-origin requests are rejected. Unknown future APIs require owner authentication by default.
 
 The canonical HTTPS origin and environment must be configured even for public reads; deployment aliases fail closed. Public reads do not fetch JWKS or require the owner identity service. Responses remain `private, no-store`, preventing editor HTML or owner data from entering a shared cache. Editing requires `ACCESS_OWNER_EMAIL`, `ACCESS_TEAM_DOMAIN` and `ACCESS_AUDIENCE`. Only localhost can use the explicit local editing flags.
 
 The R2 bucket remains private; visitors receive selected artwork through the application. No schema migration, data import or changes to collection records are required.
+
+## Private notes
+
+Notes are private by default (`collection_items.notes_private`, migration `0003_private_notes`). The server removes them before anything reaches a visitor. `/` and `/api/library` send `notes: null` for each private note and drop the derived memory tags (`item_tags.source = 'derived'`, `tags.category = 'memory'`). Manual and edition tags remain. The privacy flag itself is never sent publicly. Only the owner's `/edit` page and the owner-only `/api/library/owner` include private notes. Owner tools (item editor, CSV/JSON export, import duplicate checks) read the full notes. `libraryData()` defaults to the public view, so any new caller must opt in with `{ owner: true }` before it can see private notes.
+
+A logged haul's store follows the same rule. `acquisition_batches.store_private` (default on, set by the haul form's privacy box) blanks the store in the public payload, and the flag itself is sent only to the owner. Haul saves (`POST /api/hauls`) are owner-only like every other write.
+
+The offline service worker caches `/` and `/api/library` for visitors and `/edit` and `/api/library/owner` for the owner, in each person's own browser. It never caches item editor data, imports, exports, scans, metadata or any write. Responses that aren't successful, same-origin and un-redirected, such as an Access login redirect or a 403, are never stored.
 
 ## Verification
 

@@ -1,22 +1,24 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Camera, CircleCheck, ImageUp, Keyboard, RotateCcw, ScanBarcode } from "lucide-react";
 import { parseIsbn } from "../../domain/isbn.ts";
-import { scanLookupResultSchema } from "../../domain/scan.ts";
+import { offlineLookup, scanLookupResultSchema } from "../../domain/scan.ts";
 import type { OwnedSeries, ScanLookupResult, ScanLookupRequest } from "../../domain/scan.ts";
 import type { ItemInput } from "../../domain/item.ts";
-import { request } from "../manage/client.ts";
+import { NetworkError, request } from "../manage/client.ts";
 import { BarcodeScanner } from "./BarcodeScanner.tsx";
 import { cameraMessages } from "./camera.ts";
 import type { CameraProblem } from "./camera.ts";
 import { detectInFile, loadDetector, pickIsbn } from "./detector.ts";
 import { ScanReview } from "./ScanReview.tsx";
+import { OwnershipCheck } from "./OwnershipCheck.tsx";
 
 type Stage =
   | { name: "camera" }
   | { name: "idle" }
   | { name: "looking"; code: string }
   | { name: "review"; result: ScanLookupResult; key: number }
+  | { name: "answer"; result: ScanLookupResult }
   | { name: "saved"; title: string; volume: string };
 
 /** Lookup failed entirely: keep the scanned ISBN and continue by hand. */
@@ -37,16 +39,26 @@ function offlineResult(code: string, message: string): ScanLookupResult | null {
 }
 
 export function ScanFlow({
+  mode = "add",
   series,
   onSaved,
   onEditFully,
+  onOpen,
+  onAdding,
 }: {
+  /** check: answer "do I own this?" first and save nothing unless asked. */
+  mode?: "add" | "check";
   series: OwnedSeries[];
   /** Refresh the shelf after a save; the scanner stays open for the next book. */
   onSaved: () => Promise<void>;
   onEditFully: (seed: Partial<ItemInput>) => void;
+  onOpen?: (seriesId: string) => void;
+  /** Check mode: true while a checked book is being added (the review form shows). */
+  onAdding?: (adding: boolean) => void;
 }) {
   const [stage, setStage] = useState<Stage>({ name: "camera" });
+  const adding = mode === "check" && stage.name === "review";
+  useEffect(() => onAdding?.(adding), [adding, onAdding]);
   const [problem, setProblem] = useState("");
   const [hint, setHint] = useState("");
   const [typed, setTyped] = useState("");
@@ -60,12 +72,28 @@ export function ScanFlow({
     setLookupError(null);
     setStage({ name: "looking", code });
     try {
-      const data = await request<unknown>("/api/scan/isbn", "POST", { code, source, retry });
+      // A check in a store with weak signal falls back to the saved shelf rather than waiting.
+      const data = await request<unknown>("/api/scan/isbn", "POST", { code, source, retry }, mode === "check" ? 10_000 : undefined);
       const parsed = scanLookupResultSchema.safeParse(data);
       if (!parsed.success) throw new Error("The lookup returned an unexpected response.");
-      setStage({ name: "review", result: parsed.data, key: ++reviews.current });
+      setStage(
+        mode === "check"
+          ? { name: "answer", result: parsed.data }
+          : { name: "review", result: parsed.data, key: ++reviews.current },
+      );
     } catch (error) {
-      setLookupError({ code, source, message: (error as Error).message });
+      // With no connection (or one too weak to reach the server), a check can
+      // still be answered from the saved shelf.
+      const offline = mode === "check" && (error instanceof NetworkError || !navigator.onLine) ? offlineLookup(code, series) : null;
+      if (offline) {
+        setStage({ name: "answer", result: offline });
+        return;
+      }
+      setLookupError({
+        code,
+        source,
+        message: navigator.onLine ? (error as Error).message : "You’re offline. Reconnect to look up this ISBN.",
+      });
       setStage({ name: "idle" });
     }
   }
@@ -138,6 +166,16 @@ export function ScanFlow({
     </div>
   );
 
+  if (stage.name === "answer")
+    return (
+      <OwnershipCheck
+        result={stage.result}
+        series={series}
+        onRescan={() => setStage({ name: "camera" })}
+        onAdd={() => setStage({ name: "review", result: stage.result, key: ++reviews.current })}
+        onOpen={(id) => onOpen?.(id)}
+      />
+    );
   if (stage.name === "review")
     return (
       <ScanReview
@@ -186,7 +224,7 @@ export function ScanFlow({
         <div className="scanner scanner-idle">
           <button type="button" className="button button-primary" onClick={() => { setProblem(""); setStage({ name: "camera" }); }}>
             {stage.name === "saved" ? <ScanBarcode size={16} aria-hidden="true" /> : <Camera size={16} aria-hidden="true" />}
-            {stage.name === "saved" ? "Scan next book" : "Open camera"}
+            {stage.name === "saved" ? (mode === "check" ? "Check next book" : "Scan next book") : "Open camera"}
           </button>
         </div>
       )}

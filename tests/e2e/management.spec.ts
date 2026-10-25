@@ -32,7 +32,7 @@ async function saved(page: Page) {
 }
 
 test.afterEach(async ({ page, baseURL }) => {
-  const response = await page.request.get("/api/library");
+  const response = await page.request.get("/api/library/owner");
   if (!response.ok()) return;
   const library = (await response.json()) as LibraryData;
   const headers = {

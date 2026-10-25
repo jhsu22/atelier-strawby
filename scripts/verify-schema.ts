@@ -74,10 +74,10 @@ try {
   for (const { sql } of migrations) reviewed.exec(sql);
   for (const statement of statements) generated.exec(statement);
   const actual = describe(reviewed);
-  assert.equal(actual.length, 28);
+  assert.equal(actual.length, 29);
   assert.deepEqual(actual, describe(generated), 'Reviewed migrations differ from Drizzle-generated SQL');
   assert.deepEqual(reviewed.prepare('SELECT * FROM collection_state').all().map(row => ({ ...row })), [{ id: 1, revision: 0 }]);
-  console.log(`Schema parity passed: 28 tables after ${migrations.length} reviewed migrations; columns, defaults, keys, indexes, CHECK constraints and the ${latest.tag} snapshot agree.`);
+  console.log(`Schema parity passed: 29 tables after ${migrations.length} reviewed migrations; columns, defaults, keys, indexes, CHECK constraints and the ${latest.tag} snapshot agree.`);
   console.log('The reviewed baseline additionally initializes collection_state to revision 0.');
 } finally {
   reviewed.close();

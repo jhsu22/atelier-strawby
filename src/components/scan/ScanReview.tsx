@@ -77,6 +77,7 @@ export function ScanReview({
   const [useCover, setUseCover] = useState(Boolean(draft.item.artwork) && !owned);
   const [acquiredOn, setAcquiredOn] = useState<string | null>(today());
   const [notes, setNotes] = useState("");
+  const [notesPrivate, setNotesPrivate] = useState(true);
   const [busy, setBusy] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
   const [error, setError] = useState("");
@@ -116,6 +117,7 @@ export function ScanReview({
     catalogSource: edition ? { provider: edition.provider, sourceId: edition.sourceId, sourceUrl: edition.sourceUrl } : null,
     acquiredOn,
     notes: notes.trim() || null,
+    notesPrivate,
   });
   function item(): ItemInput | null {
     const parsed = itemSchema.safeParse(values());
@@ -349,6 +351,10 @@ export function ScanReview({
           <label className="filter-field">
             Notes
             <textarea rows={2} maxLength={10000} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Where you found it, who it was from…" />
+          </label>
+          <label className="check-label">
+            <input type="checkbox" checked={notesPrivate} onChange={(e) => setNotesPrivate(e.target.checked)} />
+            Keep this note private · hidden on the public shelf
           </label>
         </div>
         {error && (

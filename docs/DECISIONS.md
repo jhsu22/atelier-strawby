@@ -2,6 +2,31 @@
 
 Status: Stage 0 design decisions retained; reviewed 2026-10-21. Source of product authority: [project_specification](../project_specification). No application implementation occurred during planning; Stage 1 implementation and verification are recorded below and in [STAGE1_VALIDATION.md](STAGE1_VALIDATION.md).
 
+## Offline shelf and haul decisions (2026-10-24)
+
+- **A hand-written, allowlisted service worker.** It caches two pages, two library reads, hashed assets, fonts, icons and artwork (capped at 800). Pages and library reads are network-first with a 4 s fallback, because bookstore signal is often slow rather than absent. Everything else is network-only. A page lists what it already loaded, so first-visit assets are stored too. The worker is registered only in built pages. Browser tests block service workers (`page.route` mocks can't see their requests), except `offline.spec.ts`.
+- **Two manifests.** The owner's install starts at `/edit` and a visitor's at `/`, chosen by `canEdit` when the page renders.
+- **The fresher offline copy wins.** Stored library reads carry `x-strawby-saved-at`, and pages carry their render time. Offline, the shelf uses whichever is newer and says how old it is. URL state comes from the address, not the stored page.
+- **Offline "do I own this?" is by recorded ISBN only.** Copies now carry `isbn13` in the library payload. A miss offline says the title search is needed. It never says "not owned", because most seeded copies have no ISBN.
+- **Hauls are a grouping plus a store.** Each copy keeps its own date and note, copied from the haul, so the timeline, stats, search and note privacy needed no second source of truth. The store is private by default, like notes.
+- **Atomic up to 20 copies, measured.** 20 copies cost 225–305 D1 queries. Larger hauls save in parts that share the client-chosen haul id, rather than through a resumable import. Retries are idempotent by request id.
+- **Range and stack scanning, no photos.** These are the parts of Phase C that work without recognition. Photo detection remains Phase C.
+
+## Do I own this? decisions (2026-10-24)
+
+- **Owner-only, inside Add.** The check uses the owner-only ISBN lookup: provider requests, rate limits, and ISBNs that the public payload doesn't carry. So it is a third Add mode on `/edit` rather than a public feature. A visitor version (for example, for gift-givers) would need ISBNs in the public data or a public, rate-limited, collection-only endpoint.
+- **No new endpoint or schema.** The verdict is computed on the client from the existing lookup result plus the shelf already loaded. Live shelf duplicates catch volumes whose ISBN was never recorded.
+- **Honest verdicts.** Weak matches are labeled possible. "Not in your collection" is labeled reliable only when a catalog title could be compared. The next missing volume is the lowest whole number not owned, and is withheld for non-integer labels.
+
+## Private notes decisions (2026-10-24)
+
+- **Existing notes become private.** The owner chose this. Migration `0003_private_notes` adds `notes_private` with default 1, so the shared shelf stops showing every seeded note. Notes are made public one at a time in the editor.
+- **New notes default to private.** This covers the editor, scan review, CSV imports and older JSON backups. Being private is the safe failure.
+- **Derived memory tags follow the note.** The owner chose this. On a private-note copy, tags derived from the note text in the `memory` category are hidden publicly. Edition tags (Box Set, Omnibus, Collector's Edition) describe the physical copy and stay. Manual tags are the owner's deliberate labels and stay.
+- **Redaction happens on the server.** The public payload contains no private text or privacy flag, so client search, the timeline and the drawer can't leak a note. The editor refreshes from the owner-only `/api/library/owner`, because `/api/library` stays a public read that does no JWT verification.
+- **The migration is hand-written.** Drizzle Kit proposed a full `collection_items` rebuild for the new CHECK. The reviewed `ADD COLUMN ... CHECK` matches 0001 and leaves rows, identities and foreign keys untouched.
+- **CSV doesn't carry privacy.** CSV is for exchange, and its templates are unchanged. The full JSON backup is the lossless format.
+
 ## Visual recognition Phase A decisions (2026-10-24)
 
 - **Phase split.** The request named Phase A without defining it. Phase A is barcode scanning end to end; cover recognition (B) and multi-volume batches (C) are roadmap items only.

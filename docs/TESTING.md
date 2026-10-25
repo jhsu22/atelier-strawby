@@ -4,6 +4,18 @@
 
 Latest revalidation: [Stage 3 development assessment](DEVELOPMENT_STATUS.md). **57 unit + 32 integration + 5 actual D1 + 34 desktop/mobile browser tests pass**, plus checking/build, schema parity, persisted seed verification and built Pages smoke. No final suite failures/skips remain. The dependency audit still reports **13 findings: 6 moderate, 6 high, 1 critical**. Earlier Stage 1–2 results below are historical.
 
+## Private notes, Do I own this?, offline shelf and hauls (2026-10-24)
+
+After merging `main` (book titles, `0003_book_titles`), `release:verify` passed again: 86/86 unit, 58/58 integration, 9/9 D1, schema parity for 29 tables after 6 migrations, Wrangler applying all six, 92 browser passed with 4 skipped, and the read-only spec 2/2. The pre-merge results were:
+
+- `npm run validate`: lint, `astro check` and `tsc` with 0 errors; **86/86 unit**; **56/56 integration**; schema parity for 29 tables after 5 migrations; build.
+- `npm run test:d1`: **9/9** on real local D1, including a 20-copy atomic haul, batch rollback, and private notes and stores after a restart.
+- `npm run test:migrations`: Wrangler applied all five migrations, repeated without changes, and passed foreign-key checks.
+- `npm run test:e2e`: **90 passed, 4 skipped** (desktop and mobile). This covers check mode (owned, other edition, no catalog, dropped connection, hand-off to adding), Log a haul (range plus scanned stack, accessibility, no overflow, timeline card), and the offline spec (service worker, saved page and library, offline search, offline ISBN check, no cached writes). The skipped tests are the read-only-server spec and the opt-in scan-accuracy spec.
+- `STRAWBY_TEST_READ_ONLY=true … public-access.spec.ts`: **2/2**. Anonymous visitors get no note text and no `notesPrivate`, and `/api/library/owner` returns 403.
+
+Measured: a 20-copy haul costs 305 D1 queries for a new series and 225 for an existing one. Not verified: real iOS and Android devices (camera, install, offline), Safari and Firefox, and hosted D1 or Access with these changes.
+
 ## Visual recognition Phase A verification (2026-10-24)
 
 Commands run on Node 26.11.1 / Chromium 155, all passing:

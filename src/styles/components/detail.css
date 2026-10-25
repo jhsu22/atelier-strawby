@@ -236,6 +236,21 @@
   color: var(--accent-text);
   margin-top: var(--space-1);
 }
+.note-privacy {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+  margin-left: var(--space-2);
+  font: 500 var(--text-2xs)/1 var(--font-ui);
+  font-style: normal;
+  color: var(--muted);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.volume-note .note-privacy svg {
+  color: inherit;
+  margin-top: 0;
+}
 .item-tags {
   display: flex;
   gap: 5px;

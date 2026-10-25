@@ -3,6 +3,8 @@ import '../styles/global.css';
 import { brand } from '../config/brand.ts';
 interface Props { pageTitle?: string }
 const { pageTitle = 'Collection' } = Astro.props;
+// The owner's install opens the editing shelf; everyone else's opens the shared one.
+const manifest = Astro.locals.canEdit ? '/manifest-edit.webmanifest' : '/manifest.webmanifest';
 ---
 <!doctype html>
 <html lang="en">
@@ -12,6 +14,11 @@ const { pageTitle = 'Collection' } = Astro.props;
     <meta name="description" content="Browse your manga and CD collection." />
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href={manifest} />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="theme-color" content="#faf8f5" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#141413" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-title" content="Strawby" />
     <title>{brand.project} — {pageTitle}</title>
     <script is:inline>
       try {
@@ -24,5 +31,16 @@ const { pageTitle = 'Collection' } = Astro.props;
   <body>
     <a href="#main" class="skip-link">Skip to the collection</a>
     <slot />
+    {import.meta.env.PROD && <script is:inline>
+      // Offline shelf (public/sw.js). Built pages only, so development never serves stale assets.
+      if ('serviceWorker' in navigator) {
+        addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(() => navigator.serviceWorker.ready).then((registration) => {
+            const urls = [location.href, ...performance.getEntriesByType('resource').map((entry) => entry.name)];
+            registration.active?.postMessage({ type: 'strawby:store', urls });
+          }).catch(() => {});
+        });
+      }
+    </script>}
   </body>
 </html>

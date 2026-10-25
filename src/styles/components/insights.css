@@ -103,3 +103,6 @@
 .release-evidence small { display: block; margin-top: 4px; color: var(--muted); }
 .release-evidence li > span { color: var(--muted); flex-shrink: 0; }
 @media (max-width: 450px) { .released-volumes { padding: 12px; } }
+.haul-store { display: flex; gap: 6px; align-items: center; margin-top: 4px; font-size: var(--text-sm); color: var(--muted); overflow-wrap: anywhere; }
+.haul-store svg { flex-shrink: 0; }
+.haul-store .note-privacy { margin-left: 2px; }

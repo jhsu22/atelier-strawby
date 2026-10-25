@@ -178,7 +178,8 @@ export async function createImportPreview(
       throw new ApiError(422, "CSV contains duplicate column headers.");
     if (records.length > 1000)
       throw new ApiError(413, "Import at most 1,000 CSV records at a time.");
-    const library = await libraryData((sql) => db.all(sql)),
+    // Duplicate signatures include notes, so compare against the owner's view.
+    const library = await libraryData((sql) => db.all(sql), { owner: true }),
       signatures = new Set<string>(),
       ids = new Set<string>();
     for (const entry of library.entries)
@@ -721,7 +722,7 @@ export async function exportCsv(
         ];
   const rows = [headers.map(cell).join(",")];
   const [library, releaseLabels, releaseMedia] = await Promise.all([
-    libraryData((sql) => db.all(sql)),
+    libraryData((sql) => db.all(sql), { owner: true }),
     db.all(
       "SELECT rl.release_id,l.name,rl.catalog_number FROM release_labels rl JOIN labels l ON l.id=rl.label_id ORDER BY rl.credit_order",
     ),

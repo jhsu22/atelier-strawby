@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BookOpen, CalendarDays, Disc3, Heart, Layers3 } from "lucide-react";
+import { BookOpen, CalendarDays, Disc3, Heart, Layers3, Lock } from "lucide-react";
 import type {
   LibraryEntry,
   MangaSeries,
@@ -10,6 +10,15 @@ import { seriesGaps } from "../../domain/library.ts";
 import { ReleasedVolumes } from "../releases/ReleasedVolumes.tsx";
 import { MediaArtwork } from "../covers/MediaArtwork.tsx";
 
+/** Shown to the owner only: the public shelf never receives private notes. */
+function PrivateNote() {
+  return (
+    <span className="note-privacy" title="Hidden on the public shelf">
+      <Lock size={10} aria-hidden="true" />
+      Private
+    </span>
+  );
+}
 export function DateLabel({ value }: { value: string | null }) {
   return value ? (
     <time dateTime={value}>{value}</time>
@@ -162,11 +171,15 @@ function MangaDetails({
               <p className="volume-date mono">
                 <CalendarDays size={12} />
                 <DateLabel value={copy.acquiredOn} />
+                {copy.haul?.store && <span> · {copy.haul.store}</span>}
               </p>
               {copy.notes && (
                 <p className="volume-note">
                   <Heart size={12} aria-hidden="true" />
-                  <span>{copy.notes}</span>
+                  <span>
+                    {copy.notes}
+                    {copy.notesPrivate && <PrivateNote />}
+                  </span>
                 </p>
               )}
               {copy.tags.length > 0 && (
@@ -285,8 +298,12 @@ function CdDetails({
         <div key={copy.id} className="acquisition-note">
           <p className="mono">
             <DateLabel value={copy.acquiredOn} />
+            {copy.haul?.store && <span> · {copy.haul.store}</span>}
           </p>
-          <p>{copy.notes || "No acquisition note recorded."}</p>
+          <p>
+            {copy.notes || "No acquisition note recorded."}
+            {copy.notes && copy.notesPrivate && <PrivateNote />}
+          </p>
           {!!copy.tags?.length && <p>{copy.tags.join(" · ")}</p>}
           {onEdit && (
             <button

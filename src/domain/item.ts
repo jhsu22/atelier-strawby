@@ -144,6 +144,10 @@ export const itemSchema = z
         "Use a valid acquisition date",
       ),
     notes: z.string().max(10000).nullable().default(null),
+    // Private notes and their derived memory tags are hidden on the public shelf.
+    notesPrivate: z.boolean().default(true),
+    /** The haul this copy was logged with (acquisition_batches), if any. */
+    acquisitionBatchId: z.string().max(100).nullable().default(null),
     tags: z.array(text.min(1).max(80)).max(30).default([]),
     tagsMode: z.enum(["auto", "manual"]).default("auto"),
     isSample: z.boolean().default(false),

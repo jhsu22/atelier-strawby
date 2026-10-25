@@ -18,6 +18,11 @@ const mangaRow = z.object({
   id: string,
   acquired_on: nullable,
   notes: nullable,
+  notes_private: z.union([z.literal(0), z.literal(1)]),
+  haul_id: nullable,
+  haul_acquired_on: nullable,
+  haul_store: nullable,
+  haul_store_private: z.union([z.literal(0), z.literal(1)]).nullable(),
   series_id: string,
   canonical_title: string,
   edition_run_id: string,
@@ -31,6 +36,7 @@ const mangaRow = z.object({
   volume_label: string,
   book_title: string,
   volume_sort: z.number().nullable(),
+  isbn13: nullable,
 });
 const cdRow = z.object({
   version: z.number().int().positive(),
@@ -39,6 +45,11 @@ const cdRow = z.object({
   id: string,
   acquired_on: nullable,
   notes: nullable,
+  notes_private: z.union([z.literal(0), z.literal(1)]),
+  haul_id: nullable,
+  haul_acquired_on: nullable,
+  haul_store: nullable,
+  haul_store_private: z.union([z.literal(0), z.literal(1)]).nullable(),
   is_sample: z.union([z.literal(0), z.literal(1)]),
   album_id: string,
   title: string,
@@ -46,7 +57,15 @@ const cdRow = z.object({
   release_date: nullable,
 });
 const credit = z.object({ display_name: string });
-export async function libraryData(read: ReadRows): Promise<LibraryData> {
+const tagRow = z.object({ label: string, source: string, category: string });
+/**
+ * The public shelf (the default) never receives a private note, nor the memory
+ * tags derived from it; only the owner's view carries notes and their privacy.
+ */
+export async function libraryData(
+  read: ReadRows,
+  { owner = false }: { owner?: boolean } = {},
+): Promise<LibraryData> {
   const [
     manga,
     authors,
@@ -79,6 +98,41 @@ export async function libraryData(read: ReadRows): Promise<LibraryData> {
   const mediumRows = group(media!, "release_id");
   const trackRows = group(tracks!, "release_id");
   const covers = new Map(artwork!.map(row => [row.id, row]));
+  const privacy = (row: {
+    id: string;
+    notes: string | null;
+    notes_private: 0 | 1;
+    haul_id: string | null;
+    haul_acquired_on: string | null;
+    haul_store: string | null;
+    haul_store_private: 0 | 1 | null;
+  }) => {
+    const hidden = !owner && row.notes_private === 1;
+    return {
+      notes: hidden ? null : row.notes,
+      ...(owner ? { notesPrivate: row.notes_private === 1 } : {}),
+      // A private haul keeps its store off the public shelf, like a private note.
+      haul: row.haul_id
+        ? {
+            id: row.haul_id,
+            acquiredOn: row.haul_acquired_on,
+            store: owner || row.haul_store_private === 0 ? row.haul_store : null,
+            ...(owner ? { storePrivate: row.haul_store_private !== 0 } : {}),
+          }
+        : null,
+      tags: [
+        ...new Set(
+          tagRows(row.id)
+            .map((tag) => tagRow.parse(tag))
+            .filter(
+              (tag) =>
+                !hidden || tag.source !== "derived" || tag.category !== "memory",
+            )
+            .map((tag) => tag.label),
+        ),
+      ],
+    };
+  };
   const cover = (id: string | null): Artwork | null => {
     const value = covers.get(id);
     return value
@@ -144,17 +198,12 @@ export async function libraryData(read: ReadRows): Promise<LibraryData> {
       volume: row.volume_label,
       bookTitle: row.book_title,
       volumeSort: row.volume_sort,
+      isbn13: row.isbn13,
       numberingBasis: row.numbering_basis,
       medium: row.medium,
       format: row.format,
       acquiredOn: row.acquired_on,
-      notes: row.notes,
-      tags: [
-        ...new Set(
-          tagRows(row.id)
-            .map((tag) => string.parse(tag.label)),
-        ),
-      ],
+      ...privacy(row),
     });
   }
   const albums = new Map<string, CdAlbum>();
@@ -205,15 +254,9 @@ export async function libraryData(read: ReadRows): Promise<LibraryData> {
     entry.copies.push({
       id: row.id,
       acquiredOn: row.acquired_on,
-      notes: row.notes,
       isSample: row.is_sample === 1,
       version: row.version,
-      tags: [
-        ...new Set(
-          tagRows(row.id)
-            .map((tag) => string.parse(tag.label)),
-        ),
-      ],
+      ...privacy(row),
     });
   }
   return { entries: [...series.values(), ...albums.values()] };
