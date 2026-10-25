@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { LibraryEntry } from "../../domain/library.ts";
 import { calendarLabel, collectionAnalytics } from "../../domain/collection-insights.ts";
+import type { CleanupKind } from "../../domain/cleanup.ts";
 
 function Bars({ title, rule, rows, onOpen }: { title: string; rule: string; rows: {label: string; count: number; id?: string}[]; onOpen?: (id: string) => void }) {
   const max = Math.max(1, ...rows.map(row => row.count));
@@ -11,7 +12,7 @@ function Bars({ title, rule, rows, onOpen }: { title: string; rule: string; rows
     </li>)}</ul> : <p className="chart-rule">No personal copies recorded.</p>}
   </section>;
 }
-export function CollectionAnalytics({ entries, onOpen, onTimeline }: { entries: LibraryEntry[]; onOpen: (entry: LibraryEntry) => void; onTimeline: () => void }) {
+export function CollectionAnalytics({ entries, onOpen, onTimeline, onCleanup }: { entries: LibraryEntry[]; onOpen: (entry: LibraryEntry) => void; onTimeline: () => void; onCleanup?: (kind: CleanupKind) => void }) {
   const stats = useMemo(() => collectionAnalytics(entries), [entries]);
   const open = (id: string) => { const entry = entries.find(entry => entry.id === id); if (entry) onOpen(entry); };
   const publisher = stats.publishers.filter(row => row.label !== "Unknown publisher");
@@ -20,10 +21,12 @@ export function CollectionAnalytics({ entries, onOpen, onTimeline }: { entries: 
   const most = stats.mostCollected.filter(row => row.count === stats.mostCollected[0]?.count);
   const growth = stats.mangaYears.filter(row => row.label !== "Unknown date");
   const latest = growth.at(-1), previous = growth.at(-2);
+  // Owner only: each caveat links to the clean-up queue that shrinks it.
+  const review = (kind: CleanupKind, count: number) => onCleanup && count > 0 && <> <button type="button" className="text-button" onClick={() => onCleanup(kind)}>Review in clean-up</button></>;
   return <div className="collection-analytics">
     <div className="journal-intro"><span className="journal-eyebrow">A PORTRAIT OF YOUR SHELVES</span><p>The collection, in numbers.</p><span>Calculated from your current owned records. Every copy has a place.</span></div>
-    <div className="stats-grid analytics-totals">{[[stats.mangaCopies, "Physical manga volumes"], [stats.uniqueSeries, "Unique manga series"], [stats.cds, "Personal CDs"], [stats.books, "Books (separate)"]].map(([count, label]) => <div key={label} data-metric={label}><strong>{count}</strong><span>{label}</span></div>)}</div>
-    <p className="chart-rule">Manga includes {stats.lightNovels} light novel copies. {stats.samples} sample CDs excluded. {stats.undated} personal copies have no acquisition date.</p>
+    <div className="stats-grid analytics-totals">{[[stats.mangaCopies, "Physical manga volumes"], [stats.uniqueSeries, "Unique manga series"], [stats.cds, "CDs"], [stats.books, "Books (separate)"]].map(([count, label]) => <div key={label} data-metric={label}><strong>{count}</strong><span>{label}</span></div>)}</div>
+    <p className="chart-rule">Manga includes {stats.lightNovels} light novel copies. {stats.undated} copies have no acquisition date.{review("date", stats.undated)}</p>
     <section className="collection-insights" aria-label="Personal collection insights">
       <h3>Little things your shelves tell us</h3>
       <ul>
@@ -49,9 +52,9 @@ export function CollectionAnalytics({ entries, onOpen, onTimeline }: { entries: 
       {stats.gaps.length ? <ol className="gap-ranking">{stats.gaps.slice(0, 5).map(gap => <li key={`${gap.entryId}:${gap.group.key}:${gap.start}`}><button type="button" className="text-button" onClick={() => open(gap.entryId)}>{gap.series}</button><strong>{gap.start === gap.end ? gap.start : `${gap.start}–${gap.end}`} · {gap.count} unowned numbers</strong><small>{gap.group.title} · {gap.group.language} · {gap.group.publisher} · {gap.group.format}</small></li>)}</ol> : <p className="chart-rule">No observable gaps in comparable sequences.</p>}
     </section>
     <details className="counting-rules"><summary>How these numbers are counted</summary><div>
-      <p>Each visible, committed owned record counts once. Multiple copies of one volume count separately. Canonical series count once across languages, alternate editions and light novels; books are separate. Empty catalog entries and samples do not count.</p>
-      <p>An omnibus counts as one owned record when its physical packaging is confirmed. Ambiguous source records are retained individually rather than converted into invented physical totals. {stats.uncertainNumbering} manga / LN records have unconfirmed numbering or format; the physical volume total is therefore a record-based total pending review.</p>
-      <p>Language and publisher totals use recorded metadata. {stats.assumedLanguages} manga / LN language values are assumed. These are not verified edition facts. Author credits use the recorded series names, with no invented splits of collective credits.</p>
+      <p>Each visible, committed owned record counts once. Multiple copies of one volume count separately. Canonical series count once across languages, alternate editions and light novels; books are separate. Empty catalog entries do not count.</p>
+      <p>An omnibus counts as one owned record when its physical packaging is confirmed. Ambiguous source records are retained individually rather than converted into invented physical totals. {stats.uncertainNumbering} manga / LN records have unconfirmed numbering or format; the physical volume total is therefore a record-based total pending review.{review("numbering", stats.uncertainNumbering)}</p>
+      <p>Language and publisher totals use recorded metadata. {stats.assumedLanguages} manga / LN language values are assumed. These are not verified edition facts.{review("language", stats.assumedLanguages)} Author credits use the recorded series names, with no invented splits of collective credits.</p>
       <p>Acquisitions use exact calendar dates without timezone shifts. Unknown dates stay unknown. Notes are preserved verbatim; repeated notes are displayed once per date with their copy count. A recorded date is a grouping convention, not proof of one shopping trip. Deleting a copy removes it from these views.</p>
       <p>Gap detection requires positive safe integer printed labels and known edition metadata. It compares printed omnibus numbers only when the omnibus format and numbering basis are explicit; content ranges, specials, source-record numbering and incomplete metadata are withheld. No volumes before the first or after the last owned number are inferred. Language assumptions and unverified bibliographic metadata still limit confidence.</p>
     </div></details>

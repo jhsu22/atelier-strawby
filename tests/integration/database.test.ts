@@ -5,7 +5,8 @@ import { openSqlite, migrateSqlite } from '../../scripts/lib/sqlite.ts';
 import { normalizeCsv } from '../../scripts/lib/normalize.ts';
 import { persistPlan, ReconciliationRequired } from '../../scripts/lib/import.ts';
 import { verifySeed } from '../../scripts/lib/verify.ts';
-import { seedSampleCds } from '../../scripts/lib/sample-cds.ts';
+import { seedTestCds, TEST_CD_COUNT } from '../helpers/test-cds.ts';
+import { migrationFiles } from '../../scripts/lib/migrations.ts';
 import { collectionSummary } from '../../src/server/services/collection-summary.ts';
 import { renderDiagnostic } from '../../scripts/lib/diagnostic.ts';
 import type { Database } from '../../scripts/lib/types.ts';
@@ -98,7 +99,7 @@ test('failed atomic batches roll back successful earlier statements', async () =
 test('subtype foreign keys reject manga/CD mismatches and permit legitimate repeated ownership', async () => {
   const db = await database();
   try {
-    await persistPlan(db, plan); await seedSampleCds(db);
+    await persistPlan(db, plan); await seedTestCds(db);
     const cd = (await db.all('SELECT item_id FROM cds LIMIT 1'))[0]!.item_id as string;
     const release = (await db.all('SELECT id FROM album_releases LIMIT 1'))[0]!.id as string;
     await assert.rejects(db.batch([statement('INSERT INTO volumes(item_id, volume_edition_id) VALUES (?, ?)', [cd, plan.copies[0]!.volumeEditionId])]));
@@ -117,7 +118,7 @@ test('database constraints reject invalid enums, dates, booleans, versions and d
     await persistPlan(db, plan);
     for (const sql of [
       "UPDATE edition_runs SET language = 'FR'", "UPDATE edition_runs SET language_basis = 'guess'",
-      "UPDATE collection_items SET is_sample = 2", "UPDATE collection_items SET version = 0",
+      "UPDATE collection_items SET version = 0",
       "UPDATE collection_items SET acquired_on = '2024-02-30'", "UPDATE collection_items SET acquired_on = '2024-13-01'",
       "UPDATE collection_items SET acquired_on = '1/2/2024'", "UPDATE volumes SET media_kind = 'cd'",
     ]) await assert.rejects(db.batch([statement(sql)]), sql);
@@ -136,22 +137,31 @@ test('multiple creator credits and item tags do not multiply ownership aggregate
     await verifySeed(db);
   } finally { await db.close(); }
 });
-test('four idempotent demonstration CDs exclude unverified release data and personal totals', async () => {
+test('migration 0005 deletes retired sample CDs and their tags without touching owned copies', async () => {
   const db = await database();
   try {
-    await persistPlan(db, plan); await seedSampleCds(db); await seedSampleCds(db);
-    const s = await verifySeed(db); assert.equal(s.personalCds, 0); assert.equal(s.sampleCds, 4);
-    assert.equal((await db.all('SELECT COUNT(*) AS n FROM collection_items'))[0]!.n, 181);
-    assert.equal((await db.all('SELECT COUNT(*) AS n FROM tracks'))[0]!.n, 0);
-    assert.equal((await db.all('SELECT COUNT(*) AS n FROM release_labels'))[0]!.n, 0);
-    assert.ok((await db.all('SELECT acquired_on FROM collection_items WHERE is_sample = 1')).every(r => r.acquired_on === null));
-    assert.ok((await db.all('SELECT release_date, barcode, metadata_state FROM album_releases')).every(r => r.release_date === null && r.barcode === null && r.metadata_state === 'unverified'));
+    await persistPlan(db, plan); await seedTestCds(db);
+    const release = (await db.all('SELECT id FROM album_releases LIMIT 1'))[0]!.id as string;
+    await db.batch([
+      statement("INSERT INTO collection_items(id, media_kind, is_sample) VALUES ('old-sample', 'cd', 1)"),
+      statement("INSERT INTO cds(item_id, release_id) VALUES ('old-sample', ?)", [release]),
+      statement("INSERT INTO tags(id, slug, label, category) VALUES ('t', 'test-gifts', 'Test gifts', 'memory')"),
+      statement("INSERT INTO item_tags(item_id, tag_id, source) VALUES ('old-sample', 't', 'manual')"),
+    ]);
+    const revision = async () => (await db.all('SELECT revision FROM collection_state'))[0]!.revision as number;
+    const before = await revision();
+    const migration = (await migrationFiles()).find(file => file.name === '0005_remove_sample_cds.sql')!;
+    await db.batch(migration.sql.split('--> statement-breakpoint').map(sql => statement(sql.replace(/^--.*$/gm, '').trim())).filter(s => s.sql));
+    assert.deepEqual(await db.all("SELECT id FROM collection_items WHERE id = 'old-sample'"), []);
+    assert.deepEqual(await db.all("SELECT item_id FROM item_tags WHERE item_id = 'old-sample'"), []);
+    const s = await verifySeed(db); assert.equal(s.personalCds, TEST_CD_COUNT);
+    assert.equal(await revision(), before + 1, 'cached shelves refresh');
   } finally { await db.close(); }
 });
 test('CD schema supports artists, labels, preserved catalog numbers, multi-disc formats and ordered tracklists', async () => {
   const db = await database();
   try {
-    await seedSampleCds(db);
+    await seedTestCds(db);
     const release = (await db.all('SELECT id FROM album_releases LIMIT 1'))[0]!.id as string;
     await db.batch([
       statement("INSERT INTO labels(id,name,normalized_name) VALUES ('test-label','Synthetic label','synthetic label')"),

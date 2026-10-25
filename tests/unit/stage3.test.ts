@@ -89,7 +89,6 @@ test("Stage 3 search combines fuzzy titles, edition, publisher/label, acquisitio
           version: 1,
           acquiredOn: null,
           notes: "gift from family",
-          isSample: false,
           tags: ["Gifts"],
         },
       ],

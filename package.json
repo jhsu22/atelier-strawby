@@ -25,7 +25,6 @@
     "seed:csv": "node scripts/seed-from-csv.ts",
     "seed:local": "node scripts/seed-from-csv.ts --target d1-local",
     "seed:sqlite": "node scripts/seed-from-csv.ts --target sqlite",
-    "seed:sample-cds": "node scripts/seed-sample-cds.ts",
     "metadata:google-check": "node scripts/check-google-books.ts",
     "covers:cache": "node scripts/cache-covers.ts",
     "verify:seed": "node scripts/verify-seed.ts",

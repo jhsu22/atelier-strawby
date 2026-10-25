@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { openSqlite, migrateSqlite } from "../../scripts/lib/sqlite.ts";
 import { normalizeCsv } from "../../scripts/lib/normalize.ts";
 import { persistPlan } from "../../scripts/lib/import.ts";
-import { seedSampleCds } from "../../scripts/lib/sample-cds.ts";
+import { seedTestCds } from "../helpers/test-cds.ts";
 import { crudScenario, transferScenario } from "../helpers/stage3-scenarios.ts";
 import {
   exportBackup,
@@ -42,7 +42,7 @@ test("original 177-copy format previews safely and full seeded JSON restores ide
     await migrateSqlite(restored);
     const csv = readFileSync("initial_collection.csv", "utf8");
     await persistPlan(db, normalizeCsv(csv));
-    await seedSampleCds(db);
+    await seedTestCds(db);
     const preview = await createImportPreview(db, {
       kind: "manga",
       filename: "initial_collection.csv",

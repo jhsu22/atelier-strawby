@@ -39,6 +39,8 @@ const mangaCopy = z.object({
   notesPrivate: z.boolean().optional(),
   haul,
   tags: z.array(string),
+  dateUnknown: z.boolean().optional(),
+  coverUnavailable: z.boolean().optional(),
 });
 const seriesEntry = <K extends "manga" | "book">(kind: K) =>
   z.object({
@@ -57,6 +59,7 @@ export const librarySchema: z.ZodType<LibraryData> = z.object({
       z.object({
         kind: z.literal("cd"),
         artwork,
+        coverUnavailable: z.boolean().optional(),
         editionTitle: string.optional(),
         id: string,
         title: string,
@@ -83,7 +86,7 @@ export const librarySchema: z.ZodType<LibraryData> = z.object({
             notes: nullable,
             notesPrivate: z.boolean().optional(),
             haul,
-            isSample: z.boolean(),
+            dateUnknown: z.boolean().optional(),
           }),
         ),
       }),

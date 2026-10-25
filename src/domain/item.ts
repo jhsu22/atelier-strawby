@@ -150,7 +150,6 @@ export const itemSchema = z
     acquisitionBatchId: z.string().max(100).nullable().default(null),
     tags: z.array(text.min(1).max(80)).max(30).default([]),
     tagsMode: z.enum(["auto", "manual"]).default("auto"),
-    isSample: z.boolean().default(false),
     artwork: artworkSchema.nullable().default(null),
     // A checksum-valid ISBN-13 for the volume edition. Callers convert ISBN-10.
     isbn13: z

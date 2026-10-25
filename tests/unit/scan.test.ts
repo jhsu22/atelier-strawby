@@ -359,6 +359,22 @@ test("drafts keep only the scanned ISBN, prefer collection data, and flag every 
   assert.equal(itemSchema.safeParse(draft.item).success, true);
 });
 
+test("a scanned cover is edition artwork when the ISBN match is clean, a fallback otherwise", () => {
+  const cover = "https://covers.openlibrary.org/b/id/1-L.jpg?default=false";
+  const clean = edition({ cover });
+  const good = draftFromScan(lookup({ editions: [clean] }), clean, match());
+  assert.equal(good.item.artwork?.scope, "edition");
+  assert.doesNotMatch(good.item.artwork!.attribution, /unverified/);
+  const ebook = edition({ cover, ebook: true });
+  assert.equal(draftFromScan(lookup({ editions: [ebook] }), ebook, null).item.artwork?.scope, "representative");
+  const japanese = edition({ cover, language: "JP" });
+  assert.equal(draftFromScan(lookup({ editions: [japanese] }), japanese, match()).item.artwork?.scope, "representative", "catalog language contradicts the owned run");
+  const disputed = draftFromScan(lookup({ editions: [clean, edition({ provider: "googlebooks", volume: "3" })] }), clean, null);
+  assert.equal(disputed.item.artwork?.scope, "representative", "catalogs disagree about the volume");
+  const reprint = draftFromScan(lookup({ editions: [clean] }), clean, match({ recordedIsbn: "9781974709939" }));
+  assert.equal(reprint.item.artwork?.scope, "representative");
+});
+
 test("only strong matches are preselected; request and result schemas are strict", () => {
   assert.equal(preselectedMatch(lookup({ matches: [match({ score: 0.79 })] })), null);
   assert.equal(preselectedMatch(lookup({ matches: [match({ score: 0.8 })] }))?.seriesId, "csm");

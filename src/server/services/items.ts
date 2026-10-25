@@ -33,7 +33,6 @@ export async function getItem(
     notes: row.notes,
     notesPrivate: row.notes_private !== 0,
     acquisitionBatchId: row.acquisition_batch_id ?? null,
-    isSample: row.is_sample === 1,
     tags: [
       ...new Set(
         tags.filter((t) => t.source === "manual").map((t) => String(t.label)),
@@ -451,7 +450,11 @@ export async function planItem(
       ...(item.medium === "book" && (options.update || item.bookTitle)
         ? ["book_title=excluded.book_title"] : []),
       ...(options.update || item.artwork
-        ? ["cover_asset_id=excluded.cover_asset_id"]
+        ? [
+            "cover_asset_id=excluded.cover_asset_id",
+            // A cover found later clears an earlier "no cover exists".
+            "cover_unavailable=CASE WHEN excluded.cover_asset_id IS NULL THEN volume_editions.cover_unavailable ELSE 0 END",
+          ]
         : []),
       ...(options.update
         ? ["isbn13=excluded.isbn13"]
@@ -566,12 +569,13 @@ export async function planItem(
   if (options.update) {
     statements.push(
       s(
-        "UPDATE collection_items SET acquired_on=?,notes=?,notes_private=?,acquisition_batch_id=?,is_sample=?,version=version+1,updated_at=? WHERE id=?",
+        // A recorded date clears an earlier "date unknown".
+        "UPDATE collection_items SET acquired_on=?,date_unknown=CASE WHEN ? IS NULL THEN date_unknown ELSE 0 END,notes=?,notes_private=?,acquisition_batch_id=?,version=version+1,updated_at=? WHERE id=?",
+        item.acquiredOn,
         item.acquiredOn,
         item.notes,
         item.notesPrivate ? 1 : 0,
         item.acquisitionBatchId,
-        item.isSample ? 1 : 0,
         new Date().toISOString(),
         id,
       ),
@@ -587,14 +591,13 @@ export async function planItem(
   } else {
     statements.push(
       s(
-        "INSERT INTO collection_items(id,media_kind,acquired_on,notes,notes_private,acquisition_batch_id,is_sample,import_batch_id,idempotency_key) VALUES (?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO collection_items(id,media_kind,acquired_on,notes,notes_private,acquisition_batch_id,import_batch_id,idempotency_key) VALUES (?,?,?,?,?,?,?,?)",
         id,
         item.kind,
         item.acquiredOn,
         item.notes,
         item.notesPrivate ? 1 : 0,
         item.acquisitionBatchId,
-        item.isSample ? 1 : 0,
         options.batchId ?? null,
         options.idempotencyKey ?? null,
       ),

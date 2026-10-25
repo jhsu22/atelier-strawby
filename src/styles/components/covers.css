@@ -245,18 +245,6 @@
   left: 11px;
   top: 11px;
 }
-.sample-ribbon {
-  position: absolute;
-  bottom: 20px;
-  left: -3px;
-  background: var(--sage-surface);
-  color: var(--sage-text);
-  border: 1px solid var(--sage);
-  padding: 4px 7px;
-  font: 7px var(--font-data);
-  letter-spacing: 0.08em;
-  transform: rotate(-3deg);
-}
 .cd-card .card-stage {
   padding-bottom: 9px;
 }

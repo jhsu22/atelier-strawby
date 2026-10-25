@@ -9,9 +9,8 @@ const copy = (volume: string, extra: Partial<MangaCopy> = {}): MangaCopy => ({
 });
 const series = (copies: MangaCopy[]): MangaSeries => ({kind: "manga", id: "series", title: "Story", authors: ["Writer", "Artist", "Writer"], aliases: [], copies});
 const cd: CdAlbum = { kind: "cd", id: "album", title: "Album", releaseId: "release", artists: [], releaseDate: null, formats: ["CD", "CD"], labels: [], catalogNumbers: [], tracks: [], copies: [
-  { id: "cd-1", acquiredOn: "2024-02-29", notes: "gift <3", isSample: false, tags: ["Gifts"] },
-  { id: "cd-2", acquiredOn: null, notes: null, isSample: false },
-  { id: "sample", acquiredOn: "2099-01-01", notes: "sample", isSample: true },
+  { id: "cd-1", acquiredOn: "2024-02-29", notes: "gift <3", tags: ["Gifts"] },
+  { id: "cd-2", acquiredOn: null, notes: null },
 ] };
 
 test("timeline combines all personal media by exact date, preserves copies and notes, puts unknown dates last", () => {
@@ -28,10 +27,10 @@ test("timeline combines all personal media by exact date, preserves copies and n
   assert.deepEqual(haulTimeline(items, {...emptyTimelineFilters, year: "2023"}), []);
 });
 
-test("analytics counts records, canonical series and multi-disc CD copies, excludes samples, keeps unknown dates", () => {
+test("analytics counts records, canonical series and multi-disc CD copies, keeps unknown dates", () => {
   const entry = series([copy("1"), copy("1", {id: "duplicate"}), copy("3", { language: "JP", editionRunId: "jp" }), copy("4", {medium: "light_novel", acquiredOn: null})]);
   const stats = collectionAnalytics([entry, cd, {...entry, kind: "book", id: "book", copies: [copy("1", {medium: "book"})]}]);
-  assert.deepEqual([stats.mangaCopies, stats.uniqueSeries, stats.cds, stats.samples, stats.books, stats.lightNovels, stats.undated], [4, 1, 2, 1, 1, 1, 2]);
+  assert.deepEqual([stats.mangaCopies, stats.uniqueSeries, stats.cds, stats.books, stats.lightNovels, stats.undated], [4, 1, 2, 1, 1, 2]);
   assert.deepEqual(stats.languages, [{label: "EN", count: 3}, {label: "JP", count: 1}]);
   assert.deepEqual(stats.cdYears, [{label: "2024", count: 1}, {label: "Unknown date", count: 1}]);
   assert.deepEqual(stats.authors, [{label: "Artist", count: 4}, {label: "Writer", count: 4}]);

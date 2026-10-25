@@ -53,4 +53,4 @@ await new Promise<void>((resolve, reject) => {
   probe.on('error', reject);
   probe.end();
 });
-console.log(`Stage 1 HTTP smoke passed at ${url.origin}: D1 counts, React SSR, sample exclusion, privacy headers, nonlocal Host rejection and ${cssPaths.length} CSS assets.`);
+console.log(`Stage 1 HTTP smoke passed at ${url.origin}: D1 counts, React SSR, privacy headers, nonlocal Host rejection and ${cssPaths.length} CSS assets.`);

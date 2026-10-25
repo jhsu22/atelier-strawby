@@ -58,7 +58,7 @@ Each row below is exercised by `tests/unit/normalization.test.ts`; persisted out
 | Requirement | Status | Evidence / boundary |
 | --- | --- | --- |
 | All Media / Manga / CDs switcher; manga by series, CDs by artist/album | V | Real seeded switcher and artist-shelf tests. Books is an additional retained category. |
-| 4–5 Japanese/soundtrack sample CDs | V | Four explicit samples, idempotently seeded and excluded from personal totals. Unknown release details are not invented. |
+| 4–5 Japanese/soundtrack sample CDs | N | Dropped at the owner's request on 2026-10-24. Migration `0005_remove_sample_cds` deletes any seeded samples. |
 | CD CSV, Discogs CSV and manual entry | V | Validated imports, explicit Date Added mapping, multi-label/media/track preservation and browser manual CRUD. |
 | Manga metadata: author, publisher, languages, owned count | V | Persisted read service and real drawer assertions. |
 | Numerical owned-volume grid, covers/dates/badges/edition tags/notes | V | Sorting, language-separated copies, exact cascade memories, loaded/failing artwork and detail tests. |
@@ -69,7 +69,7 @@ Each row below is exercised by `tests/unit/normalization.test.ts`; persisted out
 | EN/JP/KR filters | V | Combined language, publisher and media tests. |
 | Memory tags: Sammy, Kinokuniya, Box Sets, Korea, Proxy | V | Deterministic extraction from original notes, manual tag editing and timeline/browser filters. |
 | Chronological haul feed grouped by acquisition date | V | 55 known dates plus unknown group; exact original date/note reconciliation in SQLite/D1 and browser. |
-| Total volumes, series, publisher bars, yearly acquisitions, top authors | V | Independent CSV/SQL reconciliation, dynamic counts after edits, sample exclusion and chart accessibility. |
+| Total volumes, series, publisher bars, yearly acquisitions, top authors | V | Independent CSV/SQL reconciliation, dynamic counts after edits and chart accessibility. |
 | Add/edit modal with metadata suggestions | V | Manual and reviewed provider-assisted paths; invalid input, provider failure, stale edit handling and reload persistence. |
 | CSV and full JSON export | V | Spreadsheet protection, browser download and integration roundtrips. JSON includes provenance, not R2 bytes. |
 | Persistent edit/delete and backups | V | Real D1 CRUD/reopen; exact 2,124-copy restore and failed-chunk atomicity tests. |

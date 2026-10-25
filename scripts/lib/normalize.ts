@@ -109,7 +109,7 @@ function normalizedTables(plan: SeedPlan) {
     }
     add('edition_runs', copy.editionRunId, { id: copy.editionRunId, series_id: copy.seriesId, edition_title: copy.editionTitle, language: copy.language, language_basis: copy.languageBasis, publisher_id: copy.publisherId, format: copy.format, numbering_basis: copy.numberingBasis, numbering_verified: 0 });
     add('volume_editions', copy.volumeEditionId, { id: copy.volumeEditionId, edition_run_id: copy.editionRunId, volume_label: copy.volumeLabel, volume_sort: copy.volumeSort, numbering_key: copy.numberingKey, metadata_state: 'unverified' });
-    add('collection_items', copy.itemId, { id: copy.itemId, media_kind: 'manga', acquired_on: copy.acquiredOn, notes: copy.notes, is_sample: 0, version: 1, import_batch_id: plan.batchId, idempotency_key: `initial-collection:${copy.sourceRecordNumber}` });
+    add('collection_items', copy.itemId, { id: copy.itemId, media_kind: 'manga', acquired_on: copy.acquiredOn, notes: copy.notes, version: 1, import_batch_id: plan.batchId, idempotency_key: `initial-collection:${copy.sourceRecordNumber}` });
     add('volumes', copy.itemId, { item_id: copy.itemId, media_kind: 'manga', volume_edition_id: copy.volumeEditionId });
     for (const slug of copy.tags) {
       const tag = TAGS.find(t => t.slug === slug)!; const id = stableId('tag', slug);

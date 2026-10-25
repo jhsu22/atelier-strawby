@@ -15,8 +15,7 @@ export function TransferPanel({
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
-  const [samples, setSamples] = useState(false),
-    [confirmed, setConfirmed] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
   const [resumeToken, setResumeToken] = useState(() => {
     try {
       return localStorage.getItem("strawby-import-token") ?? "";
@@ -133,7 +132,7 @@ export function TransferPanel({
       <h3>Export & backup</h3>
       <p>
         JSON preserves the full collection, including physical-copy IDs,
-        editions, dates, notes, tracks, tags, sample flags and provenance.
+        editions, dates, notes, tracks, tags and provenance.
         Artwork files in R2 need a separate backup.
       </p>
       <div className="form-actions">
@@ -142,27 +141,19 @@ export function TransferPanel({
         </a>
         <a
           className="button"
-          href={`/api/export?kind=manga&samples=${samples}`}
+          href="/api/export?kind=manga"
           download
         >
           Manga & books CSV
         </a>
         <a
           className="button"
-          href={`/api/export?kind=cd&samples=${samples}`}
+          href="/api/export?kind=cd"
           download
         >
           CD CSV
         </a>
       </div>
-      <label className="check-label">
-        <input
-          type="checkbox"
-          checked={samples}
-          onChange={(e) => setSamples(e.target.checked)}
-        />
-        Include sample copies in CSV
-      </label>
       <p className="field-help">
         CSV protects spreadsheet formula cells. Use JSON for exact restoration.
       </p>

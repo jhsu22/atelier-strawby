@@ -16,7 +16,7 @@ async function noOverflow(page: Page) {
 test("timeline uses real dates and notes, combines filters on each copy and returns from detail", async ({ page }) => {
   await ready(page, "timeline");
   await expect(page.locator(".haul-card")).toHaveCount(56);
-  await expect(page.locator(".timeline-results").getByRole("status")).toContainText("55 recorded dates · 177 matching copies");
+  await expect(page.locator(".timeline-results").getByRole("status")).toContainText("55 recorded dates · 181 matching copies");
   const first = page.locator('[data-haul-date="2021-09-18"]');
   await expect(first.locator(".haul-memory p")).toHaveText("first manga, at some random vromans");
   await expect(page.locator('[data-haul-date="2021-10-27"] .haul-memory p')).toHaveText("first b&n manga trip");
@@ -53,12 +53,12 @@ test("timeline uses real dates and notes, combines filters on each copy and retu
 
 test("analytics show reconciled totals, all distributions, counting rules, gaps and detail navigation", async ({ page }) => {
   await ready(page, "stats");
-  for (const [metric, value] of [["Physical manga volumes", "177"], ["Unique manga series", "38"], ["Personal CDs", "0"], ["Books (separate)", "0"]]) {
+  for (const [metric, value] of [["Physical manga volumes", "177"], ["Unique manga series", "38"], ["CDs", "4"], ["Books (separate)", "0"]]) {
     await expect(page.locator(`[data-metric="${metric}"] strong`)).toHaveText(value!);
   }
   await expect(page.getByRole("region", {name: "Volumes by language"})).toContainText("167");
   await expect(page.getByRole("region", {name: "Manga acquisitions by year"})).toContainText("96");
-  await expect(page.getByRole("region", {name: "CD acquisitions by year"})).toContainText("No personal copies recorded.");
+  await expect(page.getByRole("region", {name: "CD acquisitions by year"})).toContainText("Unknown date");
   await expect(page.locator(".haul-ranking li").first()).toContainText("December 25, 2022");
   await expect(page.locator(".haul-ranking li").first()).toContainText("19 copies");
   await expect(page.locator(".collection-insights")).toContainText("Kodansha");
@@ -111,7 +111,7 @@ test("a persisted personal CD joins a manga date, filters and opens its album", 
     await expect(page.getByRole("dialog")).toHaveAccessibleName(title);
     await expect(page.getByRole("dialog")).toContainText("test-only mixed-media memory");
     await ready(page, "stats");
-    await expect(page.locator('[data-metric="Personal CDs"] strong')).toHaveText("1");
+    await expect(page.locator('[data-metric="CDs"] strong')).toHaveText("5");
     await expect(page.getByRole("region", {name: "CD acquisitions by year"})).toContainText("2021");
   } finally {
     const current = await page.request.get(`/api/items/${saved.id}`);

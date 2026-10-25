@@ -8,11 +8,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
   if (kind === "manga" || kind === "cd") {
     let csv = "";
     const result = await api(async () => {
-      csv = await exportCsv(
-        db,
-        kind,
-        url.searchParams.get("samples") === "true",
-      );
+      csv = await exportCsv(db, kind);
       return {};
     });
     if (!result.ok) return result;

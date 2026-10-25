@@ -676,7 +676,6 @@ const cell = (value: unknown) => {
 export async function exportCsv(
   db: Store,
   kind: "manga" | "cd",
-  includeSamples = false,
 ) {
   await assertNoImport(db);
   const before = await revision(db);
@@ -768,7 +767,6 @@ export async function exportCsv(
         .filter((medium) => medium.release_id === entry.releaseId)
         .map(({ release_id, ...medium }) => medium);
       for (const copy of entry.copies) {
-        if (copy.isSample && !includeSamples) continue;
         rows.push(
           [
             copy.id,

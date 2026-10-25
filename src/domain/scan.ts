@@ -193,6 +193,19 @@ export function draftFromScan(
     flags.push(`Volume ${volume || "?"} in this edition already records ISBN ${match.recordedIsbn}. A different ISBN usually means a different printing or edition.`);
   if (!usable && result.editions.length)
     flags.push("No catalog record lists this exact ISBN, so catalog details were not applied.");
+  // A printed record listing this exact ISBN, with nothing contradicting it,
+  // describes this edition, so its cover is edition artwork, not a fallback.
+  const verified = result.editions.filter((entry) => entry.isbnVerified);
+  const disagree = (field: "language" | "volume") =>
+    new Set(verified.map((entry) => entry[field]).filter(Boolean)).size > 1;
+  const editionCover = Boolean(
+    usable &&
+      !usable.ebook &&
+      !disagree("language") &&
+      !disagree("volume") &&
+      !(usable.language && match?.run && usable.language !== match.run.language) &&
+      !(match?.recordedIsbn && match.recordedIsbn !== result.isbn13),
+  );
   return {
     item: {
       kind: "manga",
@@ -214,10 +227,10 @@ export function draftFromScan(
         ? {
             artwork: {
               url: usable.cover,
-              scope: "representative" as const,
+              scope: editionCover ? ("edition" as const) : ("representative" as const),
               provider: usable.provider,
               sourceId: usable.sourceId,
-              attribution: `${usable.provider === "googlebooks" ? "Google Books" : "Open Library"} · catalog cover for this ISBN; printing unverified`,
+              attribution: `${usable.provider === "googlebooks" ? "Google Books" : "Open Library"} · catalog cover for this ISBN${editionCover ? "" : "; printing unverified"}`,
               language: usable.language,
             },
           }

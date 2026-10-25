@@ -53,8 +53,9 @@ const row = z.record(
 /** Columns added by later migrations, with the default older rows receive. */
 const addedColumns: Record<string, Record<string, Value>> = {
   edition_runs: { medium: "manga" },
-  volume_editions: { book_title: "" },
-  collection_items: { notes_private: 1, acquisition_batch_id: null },
+  volume_editions: { book_title: "", cover_unavailable: 0 },
+  album_releases: { cover_unavailable: 0 },
+  collection_items: { notes_private: 1, acquisition_batch_id: null, date_unknown: 0 },
 };
 /** Tables added by later migrations; version 1 backups made before them omit them. */
 const addedTables = new Set(["acquisition_batches"]);
@@ -96,6 +97,13 @@ export async function previewBackup(db: Store, raw: unknown) {
       ...Object.entries(parsed.tables),
     ]) as Backup["tables"],
   };
+  // Sample CDs were retired; backups made while they existed restore without them.
+  const retired = new Set((backup.tables.collection_items ?? []).filter((item) => item.is_sample === 1).map((item) => item.id));
+  if (retired.size) {
+    for (const name of ["collection_items", "volumes", "cds", "item_tags"])
+      if (backup.tables[name]) backup.tables[name] = backup.tables[name].filter((value) => !retired.has(name === "collection_items" ? value.id! : value.item_id!));
+    if (backup.tables.import_records) backup.tables.import_records = backup.tables.import_records.map((value) => (retired.has(value.item_id!) ? { ...value, item_id: null } : value));
+  }
   let skipped = 0;
   if (
     Object.keys(backup.tables).sort().join() !==

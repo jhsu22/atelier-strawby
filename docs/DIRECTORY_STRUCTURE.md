@@ -17,8 +17,9 @@ atelier_strawby/
     0002_request_limits.sql       Barcode-scan rate-limit counters
     0003_private_notes.sql        Per-copy note privacy (existing notes become private)
     0004_acquisition_batches.sql  Logged hauls: shared date and store per acquisition
+    0005_remove_sample_cds.sql    Deletes the retired sample CDs
+    0006_cleanup_queue.sql        Clean-up flags: unknown dates, no cover available
     meta/                        Drizzle snapshots and migration journal
-  data/sample-cds.json            Four labeled demonstration CDs
   public/
     fonts/                       Self-hosted fonts and licenses
     templates/                   Manga and CD CSV import templates
@@ -42,6 +43,7 @@ atelier_strawby/
       manage/                    Copy editor and transfer workflows
       scan/                      Barcode scanning, review and "Do I own this?"
       haul/                      Log a haul: shared details, ranges, stack scanning
+      cleanup/                   Data clean-up queue: one review card at a time
       timeline/ / stats/         Acquisition feed and collection analytics
       releases/                  External released-volume lookup
       covers/ / brand/ / ui/     Artwork fallback, visual identity, drawer, error boundary
@@ -59,7 +61,6 @@ atelier_strawby/
     env.d.ts / worker-configuration.d.ts  Runtime bindings
   scripts/
     seed-from-csv.ts / lib/       Deterministic normalization and resumable local seeding
-    seed-sample-cds.ts            Optional demonstration data
     verify-*.ts                  Seed, insights, schema and Wrangler migration checks
     cache-covers.ts               Local resumable artwork enrichment
     generate-app-icons.ts         Renders the installable-app icons from the brand mark

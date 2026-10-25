@@ -6,5 +6,5 @@ export const collectionSummarySchema: z.ZodType<CollectionSummary> = z.object({
   physicalCopies: count, uniqueSeries: count, datedCopies: count, undatedCopies: count,
   distinctAcquisitionDates: count, recordsWithNotes: count,
   languages: distribution, publishers: distribution, years: distribution,
-  personalCds: count, sampleCds: count,
+  personalCds: count,
 });

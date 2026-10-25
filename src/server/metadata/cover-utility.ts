@@ -15,7 +15,9 @@ import {
   openLibraryVolumeCovers,
 } from "./providers.ts";
 import type { Fetcher } from "./http.ts";
-import type { MetadataResult } from "../../domain/metadata.ts";
+import type { MetadataCandidate, MetadataResult } from "../../domain/metadata.ts";
+import { coverCandidatesRequestSchema } from "../../domain/cleanup.ts";
+import type { CoverCandidate, CoverCandidates } from "../../domain/cleanup.ts";
 import { artworkSchema } from "../../domain/item.ts";
 import type { ArtworkInput } from "../../domain/item.ts";
 import type { Medium } from "../../domain/types.ts";
@@ -577,4 +579,92 @@ async function applyArtwork(
       ])
     )[0]?.cover_asset_id === cover.id
   );
+}
+
+/**
+ * Cover choices for one volume with no artwork, for the owner to pick from in
+ * the clean-up queue. Unlike the unattended run above, near matches are
+ * offered too; the owner decides by looking. CD releases are never guessed.
+ */
+export async function coverCandidates(
+  db: Store,
+  raw: unknown,
+  options: { fetcher?: Fetcher; contact?: string } = {},
+): Promise<CoverCandidates> {
+  const { copyId, retry } = coverCandidatesRequestSchema.parse(raw);
+  const edition = (
+    await db.all(
+      `SELECT s.id AS seriesId,s.canonical_title AS title,e.volume_label AS volume,e.book_title AS bookTitle,r.language,r.medium,
+      COALESCE(p.name,'') AS publisher FROM volumes v JOIN volume_editions e ON e.id=v.volume_edition_id
+      JOIN edition_runs r ON r.id=e.edition_run_id JOIN series s ON s.id=r.series_id
+      LEFT JOIN publishers p ON p.id=r.publisher_id WHERE v.item_id=?`,
+      [copyId],
+    )
+  )[0] as (Omit<PendingEdition, "editionId"> & { bookTitle: string }) | undefined;
+  if (!edition) {
+    if ((await db.all("SELECT 1 FROM cds WHERE item_id=?", [copyId])).length)
+      return { candidates: [], warnings: ["CD covers come with the exact release: choose it in the editor."] };
+    throw new ApiError(404, "This copy no longer exists. Reload to continue.");
+  }
+  const found = new Map<string, CoverCandidate>();
+  const warnings: string[] = [];
+  const offer = (candidates: MetadataCandidate[], exact: (candidate: MetadataCandidate) => boolean) => {
+    for (const candidate of candidates) {
+      const art = candidate.patch.artwork;
+      if (!art || found.has(art.url) || found.size >= 8) continue;
+      found.set(art.url, {
+        artwork: artworkSchema.parse(art),
+        label: [candidate.title, candidate.subtitle].filter(Boolean).join(" · "),
+        exact: exact(candidate),
+      });
+    }
+  };
+  const failed = (error: unknown) =>
+    warnings.push(
+      error instanceof Deferred || (error instanceof ApiError && error.status === 429)
+        ? WAIT
+        : error instanceof Error
+          ? error.message
+          : "A cover source failed. Try again later.",
+    );
+  const lookup = { fetcher: options.fetcher, contact: options.contact };
+  const titles = await seriesTitles(db, edition.seriesId, edition.title);
+  const credits = await seriesCredits(db, edition.seriesId);
+  // MangaDex is comics only; its covers list the volume and language they show.
+  if (edition.medium === "manga")
+    try {
+      const series = await resolveSeries(db, edition.seriesId, titles, credits, { retry }, lookup);
+      if (typeof series === "string") {
+        const result = await lookupMetadata(
+          db,
+          { kind: "manga", provider: "mangadex", query: edition.title, id: series, volume: edition.volume, language: edition.language, retry },
+          lookup,
+        );
+        assertAvailable(result);
+        offer(result.candidates, (candidate) => candidate.patch.artwork?.scope === "edition");
+      } else warnings.push(series.reason);
+    } catch (error) {
+      failed(error);
+    }
+  try {
+    offer(
+      edition.medium === "book"
+        ? await openLibraryBookCovers(
+            db,
+            { title: edition.bookTitle || edition.title, authors: credits, language: edition.language, publisher: edition.publisher, retry },
+            lookup,
+          )
+        : await openLibraryVolumeCovers(
+            db,
+            { titles, language: edition.language, volume: edition.volume, publisher: edition.publisher, medium: edition.medium, retry },
+            lookup,
+          ),
+      (candidate) => candidate.publisherMatch === true,
+    );
+  } catch (error) {
+    failed(error);
+  }
+  const candidates = [...found.values()].sort((a, b) => Number(b.exact) - Number(a.exact));
+  if (!candidates.length && !warnings.length) warnings.push("No catalog has a cover for this volume yet.");
+  return { candidates, warnings };
 }

@@ -916,16 +916,6 @@ export function ItemEditor({
             replace derived tags.
           </small>
         </label>
-        {item.isSample && (
-          <label className="check-label">
-            <input
-              type="checkbox"
-              checked={item.isSample}
-              onChange={(e) => update({ isSample: e.target.checked })}
-            />
-            Sample copy · excluded from personal totals
-          </label>
-        )}
         <div className="form-actions">
           <button type="submit" className="button button-primary">
             {busy ? "Saving…" : id ? "Save changes" : "Add copy"}

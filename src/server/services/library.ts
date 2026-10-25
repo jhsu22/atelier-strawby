@@ -37,6 +37,8 @@ const mangaRow = z.object({
   book_title: string,
   volume_sort: z.number().nullable(),
   isbn13: nullable,
+  date_unknown: z.union([z.literal(0), z.literal(1)]),
+  cover_unavailable: z.union([z.literal(0), z.literal(1)]),
 });
 const cdRow = z.object({
   version: z.number().int().positive(),
@@ -50,11 +52,12 @@ const cdRow = z.object({
   haul_acquired_on: nullable,
   haul_store: nullable,
   haul_store_private: z.union([z.literal(0), z.literal(1)]).nullable(),
-  is_sample: z.union([z.literal(0), z.literal(1)]),
   album_id: string,
   title: string,
   release_id: string,
   release_date: nullable,
+  date_unknown: z.union([z.literal(0), z.literal(1)]),
+  cover_unavailable: z.union([z.literal(0), z.literal(1)]),
 });
 const credit = z.object({ display_name: string });
 const tagRow = z.object({ label: string, source: string, category: string });
@@ -204,6 +207,8 @@ export async function libraryData(
       format: row.format,
       acquiredOn: row.acquired_on,
       ...privacy(row),
+      // Clean-up queue flags are owner bookkeeping, not shelf data.
+      ...(owner ? { dateUnknown: row.date_unknown === 1, coverUnavailable: row.cover_unavailable === 1 } : {}),
     });
   }
   const albums = new Map<string, CdAlbum>();
@@ -214,6 +219,7 @@ export async function libraryData(
       entry = {
         kind: "cd",
         artwork: cover(row.cover_asset_id),
+        ...(owner ? { coverUnavailable: row.cover_unavailable === 1 } : {}),
         editionTitle: row.edition_title ?? "",
         id: row.release_id,
         title: row.title,
@@ -254,9 +260,9 @@ export async function libraryData(
     entry.copies.push({
       id: row.id,
       acquiredOn: row.acquired_on,
-      isSample: row.is_sample === 1,
       version: row.version,
       ...privacy(row),
+      ...(owner ? { dateUnknown: row.date_unknown === 1 } : {}),
     });
   }
   return { entries: [...series.values(), ...albums.values()] };

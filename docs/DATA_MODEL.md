@@ -8,7 +8,7 @@ Status: implemented in [the Drizzle schema](../src/server/db/schema/index.ts) an
 
 **Album → release → media/discs → tracks; release → owned CD.** Album grouping is independent of a particular country, label, catalog number, or CD+Blu-ray edition. A multi-disc package is one owned item with multiple media rows. Artists and author credits can be plural.
 
-Shared `collection_items` holds acquisition dates, personal notes, sample status, and edit versions. `volumes` and `cds` are one-to-one subtypes. This gives the requested Series/Volumes/CDs concepts while avoiding duplicated timeline and tagging logic.
+Shared `collection_items` holds acquisition dates, personal notes and edit versions. `volumes` and `cds` are one-to-one subtypes. This gives the requested Series/Volumes/CDs concepts while avoiding duplicated timeline and tagging logic.
 
 ```mermaid
 erDiagram
@@ -64,7 +64,7 @@ Index every FK used in joins and filters. Additional indexes: series/album sort 
 
 | Table | Principal columns and constraints |
 | --- | --- |
-| `collection_items` | `id PK`, `media_kind CHECK manga/cd`, `acquired_on?`, `notes?`, `notes_private` boolean default 1 (added by `0003_private_notes`; a private note and its derived memory tags are withheld from the public shelf), `acquisition_batch_id FK?` → `acquisition_batches` (added by `0004_acquisition_batches`), `is_sample` boolean default 0, `version INTEGER >= 1`, `import_batch_id FK?`, `idempotency_key UQ?`, timestamps; `UQ(id, media_kind)` supports typed subtype FKs. |
+| `collection_items` | `id PK`, `media_kind CHECK manga/cd`, `acquired_on?`, `notes?`, `notes_private` boolean default 1 (added by `0003_private_notes`; a private note and its derived memory tags are withheld from the public shelf), `acquisition_batch_id FK?` → `acquisition_batches` (added by `0004_acquisition_batches`), `is_sample` boolean default 0 (retired: sample CDs were removed by `0005_remove_sample_cds`; always 0 and unused by the app), `date_unknown` boolean default 0 (added by `0006_cleanup_queue`), `version INTEGER >= 1`, `import_batch_id FK?`, `idempotency_key UQ?`, timestamps; `UQ(id, media_kind)` supports typed subtype FKs. |
 | `volumes` | `item_id PK`, `media_kind` fixed to `manga`, `volume_edition_id FK`; composite FK `(item_id, media_kind)` → collection items. **No unique constraint on volume edition**: several owned records can reference it. |
 | `cds` | `item_id PK`, `media_kind` fixed to `cd`, `release_id FK`; composite FK `(item_id, media_kind)` → collection items. **No unique constraint on release**. |
 | `tags` | `id PK`, `slug UQ`, `label`, `category` (`memory`, `edition`). Examples: Gifts from Sammy / memory; Box Set / edition. |
@@ -72,7 +72,7 @@ Index every FK used in joins and filters. Additional indexes: series/album sort 
 
 Every committed collection item must have exactly one matching subtype. The fixed-kind composite FK prevents a mismatched or double subtype; create the parent and subtype in a single batch, and check for missing subtypes in integration tests and import finalization. SQL foreign keys alone do not guarantee the parent has a child.
 
-Owned count is `COUNT(collection_items)` within the selected media/sample/import scope. Unique owned volume numbers are a separate derived metric. Ownership pages always exclude items whose import batch is not `complete`. Date and sample indexes support timeline and stats. Tag joins must not multiply aggregate counts.
+Owned count is `COUNT(collection_items)` within the selected media/import scope. Unique owned volume numbers are a separate derived metric. Ownership pages always exclude items whose import batch is not `complete`. Date indexes support timeline and stats. Tag joins must not multiply aggregate counts.
 
 Default delete policy restricts deletion of referenced catalog rows; joins/media/tracks can cascade when their parent is deliberately removed. Do not automatically delete catalog metadata or R2 files when an item is edited. Destructive library management is not required by this PRD.
 
@@ -96,6 +96,18 @@ The operational tables support required caching and deterministic imports. They 
 ## Logged hauls
 
 `acquisition_batches` (`0004_acquisition_batches`) has `id PK` (a client-chosen UUID, so later parts of a large haul join it), `acquired_on?` (same calendar CHECK as copies), `store?`, `store_private` boolean default 1, and `created_at`. A haul save (`POST /api/hauls`, `src/server/services/hauls.ts`) creates or updates the haul row and plans every copy in one atomic D1 batch. Each copy also stores the haul's date and note in its own `acquired_on`, `notes` and `notes_private`, so the timeline, stats, search and note privacy work unchanged. Editing a copy keeps its haul unless the owner unchecks it. Deleting a copy leaves the haul row, which is harmless and kept in backups. A save holds at most 20 copies. A full 20-copy save measured 305 D1 queries (123 reads, 182 writes) for a new series and 225 for an existing one, under the 1,000-per-request paid limit. The server also refuses more than 650 planned writes. This is distinct from CSV `import_batches`. JSON backups made before 0004 restore without the table, and their copies have no haul.
+
+## Data clean-up queue
+
+`0006_cleanup_queue` adds three owner-review flags, each `INTEGER NOT NULL DEFAULT 0` with a `(0,1)` CHECK, added with `ADD COLUMN` (no table rebuild): `collection_items.date_unknown` (the owner confirmed the acquisition date is unknown), and `volume_editions.cover_unavailable` and `album_releases.cover_unavailable` (no cover exists). Recording a date in the editor clears `date_unknown`; saving a cover clears `cover_unavailable`. The flags are sent only in the owner's library view. JSON backups made before 0006 restore with every flag at 0.
+
+The queue itself (`src/domain/cleanup.ts`) is computed from the owner's library, with the same scope as the stats caveats. Language and numbering cards are per edition run, so one answer covers every copy in it. `POST /api/cleanup` (`src/server/services/cleanup.ts`) applies one answer atomically under the collection revision guard, and checks that what the owner saw is still current (the edition's recorded attributes, or the copy's version):
+
+- **Edition:** updates `edition_runs` in place, so copy, volume and run identities stay the same. An editor save would instead have filed the corrected copies under a separate run. If the corrected run is identical to another owned run, the two merge: volume editions move across, and a volume present in both keeps the surviving volume edition, gaining any ISBN or cover only the other one had.
+- **Date:** sets one copy, or a whole logged haul and its copies, since a haul shares one date. "I don't know" sets `date_unknown`.
+- **Cover:** confirming a representative cover creates an owner-selected, edition-scope copy of the asset (reusing cached R2 bytes) for that volume edition only, because a representative asset can be shared. Its identity is the one an editor re-save computes. Removing clears the reference. A chosen candidate (`POST /api/cleanup/covers`, which reuses the cover utility's MangaDex and Open Library matching but also offers near matches) is saved as edition scope. CD covers are never guessed.
+
+Every change bumps the version of each affected copy, so an open editor form gets a 409.
 
 ## Barcode scans and request limits
 

@@ -139,9 +139,12 @@ export const volumeEditions = sqliteTable("volume_editions", {
   coverAssetId: text("cover_asset_id").references(() => coverAssets.id),
   metadataState: text("metadata_state", { enum: ['unverified', 'partial', 'confirmed'] }).notNull().default(sql`'unverified'`),
   bookTitle: text("book_title").notNull().default(""),
+  // Added by 0006_cleanup_queue: the owner found no cover for this volume.
+  coverUnavailable: integer("cover_unavailable").notNull().default(sql`0`),
 }, (t) => [
   check("volume_editions_check_1", sql`metadata_state IN ('unverified','partial','confirmed')`),
   check("volume_editions_check_2", sql`isbn13 IS NULL OR (length(isbn13) = 13 AND isbn13 NOT GLOB '*[^0-9]*')`),
+  check("volume_editions_check_3", sql`cover_unavailable IN (0,1)`),
   uniqueIndex("volume_editions_edition_run_id_numbering_key_uq").on(t.editionRunId, t.numberingKey),
   index("volume_editions_edition_run_id_volume_sort_idx").on(t.editionRunId, t.volumeSort),
   index("volume_editions_cover_asset_id_idx").on(t.coverAssetId),
@@ -181,8 +184,11 @@ export const albumReleases = sqliteTable("album_releases", {
   barcode: text("barcode"),
   coverAssetId: text("cover_asset_id").references(() => coverAssets.id),
   metadataState: text("metadata_state", { enum: ['unverified', 'partial', 'confirmed'] }).notNull().default(sql`'unverified'`),
+  // Added by 0006_cleanup_queue: the owner found no cover for this release.
+  coverUnavailable: integer("cover_unavailable").notNull().default(sql`0`),
 }, (t) => [
   check("album_releases_check_1", sql`metadata_state IN ('unverified','partial','confirmed')`),
+  check("album_releases_check_3", sql`cover_unavailable IN (0,1)`),
   check("album_releases_check_2", sql`(release_date IS NULL AND date_precision IS NULL) OR (release_date IS NOT NULL AND date_precision IS NOT NULL AND ((date_precision = 'year' AND release_date GLOB '[0-9][0-9][0-9][0-9]') OR (date_precision = 'month' AND release_date GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]') OR (date_precision = 'day' AND release_date GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]')))`),
   index("album_releases_barcode_idx").on(t.barcode),
   index("album_releases_album_id_idx").on(t.albumId),
@@ -262,6 +268,8 @@ export const collectionItems = sqliteTable("collection_items", {
   mediaKind: text("media_kind", { enum: ['manga', 'cd'] }).notNull(),
   acquiredOn: text("acquired_on"),
   notes: text("notes"),
+  // Retired: sample CDs were removed (migration 0005). Always 0; dropping the
+  // column needs a collection_items rebuild, so it stays unused.
   isSample: integer("is_sample").notNull().default(sql`0`),
   version: integer("version").notNull().default(sql`1`),
   importBatchId: text("import_batch_id").references(() => importBatches.id),
@@ -271,11 +279,14 @@ export const collectionItems = sqliteTable("collection_items", {
   // Added by 0003_private_notes: a private note and its derived memory tags stay off the public shelf.
   notesPrivate: integer("notes_private").notNull().default(sql`1`),
   acquisitionBatchId: text("acquisition_batch_id").references(() => acquisitionBatches.id),
+  // Added by 0006_cleanup_queue: the owner confirmed the acquisition date is unknown.
+  dateUnknown: integer("date_unknown").notNull().default(sql`0`),
 }, (t) => [
   check("collection_items_check_1", sql`media_kind IN ('manga','cd')`),
   check("collection_items_check_2", sql`is_sample IN (0,1)`),
   check("collection_items_check_3", sql`version >= 1`),
   check("collection_items_check_5", sql`notes_private IN (0,1)`),
+  check("collection_items_check_6", sql`date_unknown IN (0,1)`),
   check("collection_items_check_4", sql`acquired_on IS NULL OR (acquired_on GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]' AND date(acquired_on, '+0 days') IS NOT NULL AND date(acquired_on, '+0 days') = acquired_on)`),
   uniqueIndex("collection_items_id_media_kind_uq").on(t.id, t.mediaKind),
   uniqueIndex("collection_items_idempotency_key_uq").on(t.idempotencyKey),

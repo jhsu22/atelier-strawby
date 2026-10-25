@@ -39,6 +39,10 @@ export interface MangaCopy {
   notesPrivate?: boolean;
   haul?: CopyHaul | null;
   tags: string[];
+  /** Owner view only: the owner confirmed the acquisition date is unknown. */
+  dateUnknown?: boolean;
+  /** Owner view only: no cover exists for this volume edition. */
+  coverUnavailable?: boolean;
 }
 /** A series of volume-shaped copies: manga (incl. light novels) or books. */
 export interface SeriesEntry {
@@ -58,7 +62,8 @@ export interface CdCopy {
   /** Owner view only; the public shelf omits private notes entirely. */
   notesPrivate?: boolean;
   haul?: CopyHaul | null;
-  isSample: boolean;
+  /** Owner view only: the owner confirmed the acquisition date is unknown. */
+  dateUnknown?: boolean;
 }
 export interface CdTrack {
   medium: number;
@@ -68,6 +73,8 @@ export interface CdTrack {
 }
 export interface CdAlbum {
   artwork?: Artwork | null;
+  /** Owner view only: no cover exists for this release. */
+  coverUnavailable?: boolean;
   editionTitle?: string;
   kind: "cd";
   id: string;

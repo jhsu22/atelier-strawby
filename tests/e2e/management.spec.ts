@@ -26,9 +26,12 @@ async function open(page: Page, title: string) {
     .click();
 }
 async function saved(page: Page) {
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: /^(Edit copy|Add to collection)$/ })).toHaveCount(0);
   await page.reload();
   await expect(page.locator("[data-hydrated=true]")).toBeVisible();
+  // Saving an edit returns to the entry it started from; close it to search.
+  if (await page.getByRole("dialog").count()) await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
 }
 
 test.afterEach(async ({ page, baseURL }) => {
@@ -80,6 +83,26 @@ test("book series keep separate titles and series numbers when reopened", async 
   await page.getByRole("button", { name: "Edit book 2 · EN", exact: true }).click();
   await expect(page.getByLabel("Book title", { exact: true })).toHaveValue(title);
   await expect(page.getByLabel("Number in series", { exact: true })).toHaveValue("2");
+});
+
+test("saving an edit returns to the tab, search and entry it started from", async ({ page, baseURL }, info) => {
+  const series = `${prefix}return ${info.project.name}`;
+  const created = await page.request.post("/api/items", {
+    headers: { Origin: new URL(baseURL!).origin, "X-Strawby-Request": "1" },
+    data: { item: { kind: "manga", medium: "book", title: series, volume: "1", bookTitle: "First" }, requestId: crypto.randomUUID() },
+  });
+  expect(created.status()).toBe(201);
+  await ready(page);
+  await page.getByRole("button", { name: /^Books/ }).click();
+  await open(page, series);
+  await page.getByRole("button", { name: "Edit book 1 · EN", exact: true }).click();
+  await page.getByRole("textbox", { name: "Notes", exact: true }).fill("Edited from the Books tab");
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveAccessibleName(series);
+  await expect(page.getByRole("dialog")).toContainText("Edited from the Books tab");
+  await expect(page.getByRole("button", { name: /^Books/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("searchbox", { name: "Search your collection" })).toHaveValue(series);
+  expect(new URL(page.url()).searchParams.get("media")).toBe("book");
 });
 
 test("manga add, metadata failure, edit, duplicate and confirmed delete persist across reloads", async ({
